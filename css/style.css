@@ -1,0 +1,633 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f4f4f4;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+header {
+    background-color: #2c3e50;
+    color: white;
+    padding: 1rem;
+    text-align: center;
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header h1 {
+    margin: 0;
+}
+
+.header-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.options-button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 0.5rem 1.5rem;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-size: 0.9rem;
+    font-weight: bold;
+    margin-top: 0;
+}
+
+.options-button:hover {
+    background-color: #2980b9;
+}
+
+.dashboard {
+    display: flex;
+    gap: 1rem;
+    height: calc(100vh - 120px);
+}
+
+.sidebar {
+    flex: 0 0 320px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    overflow-y: auto;
+}
+
+.options-panel, .passes-panel {
+    background-color: white;
+    border-radius: 5px;
+    padding: 1rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.passes-panel {
+    flex-grow: 1;
+}
+
+.map-container {
+    flex: 1;
+    min-height: 500px;
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+#satellite-map {
+    height: 100%;
+    width: 100%;
+}
+
+h2 {
+    margin-bottom: 1rem;
+    color: #2c3e50;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.5rem;
+}
+
+h3 {
+    margin: 0.5rem 0;
+    font-size: 1rem;
+    color: #2c3e50;
+}
+
+.form-group {
+    margin-bottom: 0.5rem;
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    margin-bottom: 0.25rem;
+    font-weight: bold;
+}
+
+input[type="number"], input[type="text"] {
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+}
+
+button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 3px;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #2980b9;
+}
+
+#satellite-list {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.satellite-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.25rem;
+    padding: 0.25rem;
+}
+
+.satellite-item:hover {
+    background-color: #f8f8f8;
+}
+
+.satellite-item input[type="checkbox"] {
+    margin-right: 0.5rem;
+}
+
+.satellite-item label {
+    margin-left: 0.5rem;
+    font-weight: normal;
+    cursor: pointer;
+    flex-grow: 1;
+}
+
+#upcoming-passes {
+    max-height: 100%;
+    overflow-y: auto;
+}
+
+.pass-item {
+    padding: 0.5rem;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.pass-item:last-child {
+    border-bottom: none;
+}
+
+.pass-item:hover {
+    background-color: #f0f0f0;
+}
+
+.pass-active {
+    background-color: #dff0d8;
+    border-left: 3px solid #5cb85c;
+}
+
+.pass-upcoming {
+    background-color: #fff3cd; /* Light orange */
+    border-left: 3px solid #ffc107; /* Darker orange */
+}
+
+.pass-visible {
+    background-color: #d1ecf1; /* Light blue */
+    border-left: 3px solid #17a2b8; /* Darker blue */
+}
+
+.pass-active {
+    background-color: #d4edda; /* Light green */
+    border-left: 3px solid #28a745; /* Darker green */
+}
+
+.pass-satellite-name {
+    font-weight: bold;
+}
+
+.pass-time {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.pass-details {
+    font-size: 0.8rem;
+    color: #777;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    overflow: auto;
+}
+
+.modal-content {
+    position: relative;
+    background-color: #fff;
+    margin: 50px auto;
+    width: 80%;
+    max-width: 800px;
+    max-height: 80vh;
+    border-radius: 5px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    padding: 1rem;
+    background-color: #2c3e50;
+    color: white;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    margin: 0;
+    border: none;
+    padding: 0;
+    color: white;
+}
+
+.close {
+    color: white;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+close:hover {
+    color: #ccc;
+}
+
+.modal-body {
+    padding: 1rem;
+    overflow-y: auto;
+    max-height: calc(80vh - 120px);
+}
+
+.modal-footer {
+    padding: 1rem;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.search-container {
+    margin-bottom: 1rem;
+}
+
+#satellite-search {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+}
+
+.satellite-selector {
+    margin-bottom: 1.5rem;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.location-settings {
+    border-top: 1px solid #eee;
+    padding-top: 1rem;
+}
+
+.location-actions {
+    display: flex;
+    margin-top: 10px;
+}
+
+#use-geolocation {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background-color: #4CAF50;
+    margin-top: 0;
+}
+
+#use-geolocation:hover {
+    background-color: #45a049;
+}
+
+#use-geolocation svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Fix for the svg point element which isn't standard */
+#use-geolocation svg point {
+    fill: white;
+}
+
+.satellite-dot {
+    width: 10px;
+    height: 10px;
+    background-color: red;
+    border-radius: 50%;
+}
+
+.satellite-label {
+    font-size: 12px;
+    white-space: nowrap;
+    color: #fff;
+    text-shadow: 1px 1px 1px #000;
+    margin-left: 12px;
+    margin-top: -10px;
+}
+
+.loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    z-index: 9999;
+}
+
+/* Manual TLE Input Dialog */
+.error-message {
+    color: #d9534f;
+    background-color: #f2dede;
+    padding: 10px;
+    border-radius: 3px;
+    margin-bottom: 15px;
+    display: none;
+}
+
+.format-example {
+    font-family: monospace;
+    background-color: #f8f8f8;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    white-space: pre-wrap;
+    font-size: 0.9em;
+    margin: 10px 0;
+}
+
+#tles-textarea {
+    width: 100%;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 0.9em;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    resize: vertical;
+    margin-bottom: 10px;
+}
+
+#manual-tle-input {
+    z-index: 1100;
+}
+
+.manual-close {
+    color: white;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.manual-close:hover {
+    color: #ccc;
+}
+
+/* Satellite Info Panel */
+.info-panel {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background-color: rgba(255, 255, 255, 0.95);
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    width: 300px;
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 1000;
+    font-size: 14px;
+    display: none;
+}
+
+.info-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    border-bottom: 1px solid #e0e0e0;
+    background-color: #2c3e50;
+    color: white;
+    border-radius: 8px 8px 0 0;
+}
+
+.info-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: bold;
+    color: white;
+}
+
+.close-info-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: white;
+    margin: 0;
+    padding: 0 5px;
+}
+
+.close-info-btn:hover {
+    color: #ddd;
+}
+
+.info-body {
+    padding: 10px 15px;
+}
+
+.info-section {
+    margin-bottom: 12px;
+}
+
+.info-section h4 {
+    margin: 0 0 5px 0;
+    font-size: 14px;
+    color: #555;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    row-gap: 5px;
+    column-gap: 10px;
+}
+
+.visible-indicator {
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+.not-visible-indicator {
+    color: #F44336;
+}
+
+/* Satellite marker styling */
+.satellite-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.satellite-dot {
+    width: 8px;
+    height: 8px;
+    background-color: #FF4500;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+}
+
+.satellite-label {
+    font-size: 10px;
+    white-space: nowrap;
+    background-color: rgba(255, 255, 255, 0.7);
+    padding: 1px 3px;
+    border-radius: 2px;
+    margin-top: 2px;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Highlighted satellite styles */
+.satellite-dot.highlight-pulse {
+    width: 10px;
+    height: 10px;
+    background-color: #FF9800;
+    border: 2px solid white;
+    box-shadow: 0 0 10px #FF9800;
+    animation: pulse 1.5s infinite;
+}
+
+.satellite-label.highlight {
+    font-weight: bold;
+    color: #FF9800;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.5);
+        opacity: 0.7;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Satellite Info Panel */
+.satellite-info-panel {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    width: 300px;
+    z-index: 1000;
+    display: none;
+}
+
+.info-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background-color: #2c3e50;
+    color: white;
+    border-radius: 5px 5px 0 0;
+}
+
+.info-header h3 {
+    margin: 0;
+    color: white;
+}
+
+.close-button {
+    background: none;
+    border: none;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    color: white;
+    padding: 0 5px;
+}
+
+.close-button:hover {
+    color: #ddd;
+}
+
+.info-content {
+    padding: 15px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.info-content table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.info-content table td {
+    padding: 5px 2px;
+    border-bottom: 1px solid #eee;
+}
+
+.info-content table td:first-child {
+    font-weight: bold;
+    width: 40%;
+}
+
+.pass-item {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.pass-item:hover {
+    background-color: #f0f0f0;
+}

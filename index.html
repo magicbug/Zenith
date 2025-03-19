@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amateur Radio Satellite Tracker</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Amateur Radio Satellite Tracker</h1>
+            <div class="header-buttons">
+                <button id="open-options" class="options-button">Options</button>
+            </div>
+        </header>
+        
+        <div class="dashboard">
+            <div class="sidebar">
+                <div class="passes-panel">
+                    <h2>Upcoming Passes</h2>
+                    <div id="upcoming-passes">
+                        <!-- Pass information will be added here dynamically -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="map-container">
+                <div id="satellite-map"></div>
+                <!-- Satellite info panel -->
+                <div id="satellite-info-panel" class="satellite-info-panel">
+                    <div class="info-header">
+                        <h3 id="info-satellite-name">Satellite Info</h3>
+                        <button id="close-info-panel" class="close-button">×</button>
+                    </div>
+                    <div id="info-content" class="info-content">
+                        <!-- Satellite information will be displayed here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Options Modal -->
+    <div id="options-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Options</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="satellite-selector">
+                    <h3>Select Satellites</h3>
+                    <div class="search-container">
+                        <input type="text" id="satellite-search" placeholder="Search satellites...">
+                    </div>
+                    <div id="satellite-list">
+                        <!-- Satellite checkboxes will be added here dynamically -->
+                    </div>
+                    <div class="modal-actions">
+                        <button id="select-all">Select All</button>
+                        <button id="deselect-all">Deselect All</button>
+                        <button id="refresh-tle">Refresh TLEs</button>
+                        <button id="show-manual-tle">Input TLEs Manually</button>
+                    </div>
+                </div>
+                
+                <div class="location-settings">
+                    <h3>Observer Location</h3>
+                    <div class="location-form">
+                        <div class="form-group">
+                            <label for="latitude">Latitude:</label>
+                            <input type="number" id="latitude" step="0.0001" value="51.5074">
+                        </div>
+                        <div class="form-group">
+                            <label for="longitude">Longitude:</label>
+                            <input type="number" id="longitude" step="0.0001" value="-0.1278">
+                        </div>
+                        <div class="form-group">
+                            <label for="elevation">Elevation (m):</label>
+                            <input type="number" id="elevation" value="0">
+                        </div>
+                        <div class="location-actions">
+                            <button id="use-geolocation" title="Use your current location">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <point x="12" y="12" r="3"></point>
+                                </svg>
+                                Use My Location
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button id="save-options">Save & Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manual TLE Input Dialog -->
+    <div id="manual-tle-input" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Manual TLE Input</h2>
+                <span class="close manual-close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="manual-tle-error" class="error-message"></div>
+                <p>Paste TLE data in 3-line format (Satellite Name, TLE Line 1, TLE Line 2):</p>
+                <p class="format-example">Example format:<br>
+                AO-91 (FOX-1B)<br>
+                1 43017U 17073E 23150.09546759 .00001976 00000-0 15688-3 0 9996<br>
+                2 43017 97.7000 182.9558 0025675 32.2147 328.1059 14.78059046296268</p>
+                <textarea id="tles-textarea" rows="15"></textarea>
+                <p>You can get TLEs from <a href="https://tle.oscarwatch.org" target="_blank">https://tle.oscarwatch.org</a> or any other source.</p>
+                <div class="modal-actions">
+                    <button id="submit-manual-tle">Submit TLEs</button>
+                    <button id="cancel-manual-tle">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/4.0.0/satellite.min.js"></script>
+    <script src="https://unpkg.com/leaflet.geodesic"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
