@@ -30,10 +30,14 @@ let showUnworkableRoves = false;
 
 // Initialize the application when the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
-    initMap();
+    // Load settings from local storage first, before map initialization
     loadObserverFromLocalStorage();
     loadSelectedSatellitesFromLocalStorage();
-    loadHamsAtSettingsFromLocalStorage(); // Add this line
+    loadHamsAtSettingsFromLocalStorage();
+    
+    // Initialize map after observer location is loaded
+    initMap();
+    
     updateObserverDisplay();
     setupEventListeners();
     fetchTLEs();
@@ -98,6 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Initialize the Leaflet map
 function initMap() {
+    // Initialize map with the observer location loaded from localStorage
     map = L.map('satellite-map').setView([observer.latitude, observer.longitude], 3);
     
     // Create a custom pane for satellite footprints that sits below markers
