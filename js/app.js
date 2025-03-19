@@ -1728,3 +1728,239 @@ function saveHamsAtSettingsToLocalStorage() {
     localStorage.setItem('enableRoves', enableRoves.toString());
     localStorage.setItem('showUnworkableRoves', showUnworkableRoves.toString());
 }
+
+// Schedule functionality
+let allScheduledPasses = [];
+let SCHEDULE_PREDICTION_DAYS = 1;
+
+// Add event listeners for Schedule modal
+document.addEventListener('DOMContentLoaded', () => {
+    // ...existing code...
+
+    // Initialize Schedule Modal
+    const scheduleModal = document.getElementById('schedule-modal');
+    const openScheduleBtn = document.getElementById('open-schedule');
+    const scheduleCloseBtn = document.querySelector('.schedule-close');
+    const refreshScheduleBtn = document.getElementById('refresh-schedule');
+    const scheduleDaysSelect = document.getElementById('schedule-days');
+    const satelliteFilterSelect = document.getElementById('schedule-satellite-filter');
+
+    // Schedule Modal open/close functionality
+    openScheduleBtn.addEventListener('click', () => {
+        scheduleModal.style.display = 'block';
+        populateSatelliteFilter();
+        generateScheduleTable();
+    });
+
+    scheduleCloseBtn.addEventListener('click', () => {
+        scheduleModal.style.display = 'none';
+    });
+
+    // Close schedule modal if clicked outside
+    window.addEventListener('click', (e) => {
+        if (e.target === scheduleModal) {
+            scheduleModal.style.display = 'none';
+        }
+    });
+
+    // Event listeners for schedule controls
+    satelliteFilterSelect.addEventListener('change', filterScheduleTable);
+    scheduleDaysSelect.addEventListener('change', () => {
+        SCHEDULE_PREDICTION_DAYS = parseInt(scheduleDaysSelect.value);
+        generateScheduleTable();
+    });
+    refreshScheduleBtn.addEventListener('click', generateScheduleTable);
+});
+
+// Populate the satellite filter dropdown
+function populateSatelliteFilter() {
+    const satelliteFilterSelect = document.getElementById('schedule-satellite-filter');
+    
+    // Clear existing options except "All Satellites"
+    while (satelliteFilterSelect.options.length > 1) {
+        satelliteFilterSelect.remove(1);
+    }
+
+    // Add selected satellites to dropdown
+    selectedSatellites.forEach(satName => {
+        const option = document.createElement('option');
+        option.value = satName;
+        option.textContent = satName;
+        satelliteFilterSelect.appendChild(option);
+    });
+}
+
+// Generate the schedule table with all upcoming passes
+function generateScheduleTable() {
+    const tableBody = document.getElementById('pass-schedule-body');
+    tableBody.innerHTML = ''; // Clear existing rows
+    
+    // Show loading message
+    tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">Loading pass schedule...</td></tr>';
+    
+    // Get the prediction period in days
+    const days = parseInt(document.getElementById('schedule-days').value) || 1;
+    
+    // Calculate passes for all selected satellites
+    const now = new Date();
+    const endTime = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+    allScheduledPasses = [];
+    
+    if (selectedSatellites.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No satellites selected</td></tr>';
+        return;
+    }
+    
+    // For each satellite, predict passes
+    selectedSatellites.forEach(satName => {
+        if (!window.tleData[satName]) return;
+        
+        try {
+            const sat = window.tleData[satName];
+            const satrec = satellite.twoline2satrec(sat.tle1, sat.tle2);
+            
+            // Predict passes
+            const satPasses = predictPasses(satrec, observer, now, endTime);
+            
+            satPasses.forEach(pass => {
+                allScheduledPasses.push({
+                    satellite: satName,
+                    start: pass.start,
+                    end: pass.end,
+                    maxElevation: pass.maxElevation,
+                    duration: Math.round((pass.end - pass.start) / (60 * 1000)) // Duration in minutes
+                });
+            });
+        } catch (error) {
+            console.error(`Error calculating passes for ${satName}:`, error);
+        }
+    });
+    
+    // Sort passes by start time
+    allScheduledPasses.sort((a, b) => a.start - b.start);
+    
+    // Display passes
+    if (allScheduledPasses.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center;">No passes found in the next ${days} day(s)</td></tr>`;
+        return;
+    }
+    
+    // Apply the current filter
+    filterScheduleTable();
+}
+
+// Filter the schedule table based on selected satellite
+function filterScheduleTable() {
+    const tableBody = document.getElementById('pass-schedule-body');
+    tableBody.innerHTML = ''; // Clear existing rows
+    
+    const satelliteFilter = document.getElementById('schedule-satellite-filter').value;
+    const now = new Date();
+    
+    // Filter passes by selected satellite
+    const filteredPasses = satelliteFilter === 'all' 
+        ? allScheduledPasses 
+        : allScheduledPasses.filter(pass => pass.satellite === satelliteFilter);
+    
+    // Sort by start time
+    filteredPasses.sort((a, b) => a.start - b.start);
+    
+    // Display filtered passes
+    filteredPasses.forEach(pass => {
+        const row = document.createElement('tr');
+        
+        // Check pass status
+        const isActive = now >= pass.start && now <= pass.end;
+        const timeToPass = (pass.start - now) / (60 * 1000); // Time to pass in minutes
+        const isUpcoming = !isActive && timeToPass > 0 && timeToPass <= 60; // Within next hour
+        const isWithinFootprint = isSatelliteWithinFootprint(pass.satellite);
+        
+        // Set row class based on pass status
+        if (isActive) {
+            row.classList.add('pass-active');
+        } else if (isUpcoming) {
+            row.classList.add('pass-upcoming');
+        } else if (isWithinFootprint) {
+            row.classList.add('pass-visible');
+        }
+        
+        // Format dates
+        const startDateTime = formatDateTimeWithDate(pass.start);
+        const endDateTime = formatDateTimeWithDate(pass.end);
+        const status = getPassStatusLabel(pass, now);
+        
+        // Create row cells
+        row.innerHTML = `
+            <td>${pass.satellite}</td>
+            <td>${startDateTime}</td>
+            <td>${endDateTime}</td>
+            <td>${Math.round(pass.maxElevation)}°</td>
+            <td>${pass.duration} min</td>
+            <td>${status}</td>
+        `;
+        
+        // Add click handler to show satellite info
+        row.addEventListener('click', () => {
+            const satName = pass.satellite;
+            const position = getSatellitePosition(satName);
+            if (position) {
+                map.setView([position.latitude, position.longitude], Math.max(map.getZoom(), 4));
+                showSatelliteInfo(satName);
+            }
+            
+            // Close the schedule modal
+            document.getElementById('schedule-modal').style.display = 'none';
+        });
+        
+        tableBody.appendChild(row);
+    });
+    
+    // If no passes match filter
+    if (filteredPasses.length === 0) {
+        const row = document.createElement('tr');
+        row.innerHTML = `<td colspan="6" style="text-align: center;">No passes found for ${satelliteFilter}</td>`;
+        tableBody.appendChild(row);
+    }
+}
+
+// Format date and time for display with date included
+function formatDateTimeWithDate(date) {
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const isToday = date.getDate() === now.getDate() && 
+                    date.getMonth() === now.getMonth() && 
+                    date.getFullYear() === now.getFullYear();
+                    
+    const isTomorrow = date.getDate() === tomorrow.getDate() && 
+                      date.getMonth() === tomorrow.getMonth() && 
+                      date.getFullYear() === tomorrow.getFullYear();
+    
+    const day = isToday ? 'Today' : 
+               isTomorrow ? 'Tomorrow' : 
+               `${date.getDate()}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear().toString().substring(2)}`;
+               
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    
+    return `${day} ${hours}:${minutes}`;
+}
+
+// Get a styled status label for a pass
+function getPassStatusLabel(pass, now) {
+    const isActive = now >= pass.start && now <= pass.end;
+    const timeToPass = (pass.start - now) / (60 * 1000); // Time to pass in minutes
+    const isUpcoming = !isActive && timeToPass > 0 && timeToPass <= 60; // Within next hour
+    const isWithinFootprint = isSatelliteWithinFootprint(pass.satellite);
+    
+    if (isActive) {
+        return '<span class="status-label status-active">Active</span>';
+    } else if (isUpcoming) {
+        return '<span class="status-label status-upcoming">Upcoming</span>';
+    } else if (isWithinFootprint) {
+        return '<span class="status-label status-visible">Visible</span>';
+    } else {
+        return '<span class="status-label status-normal">Scheduled</span>';
+    }
+}

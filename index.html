@@ -18,6 +18,7 @@
         <header>
             <h1>Amateur Radio Satellite Tracker</h1>
             <div class="header-buttons">
+                <button id="open-schedule" class="schedule-button">Schedule</button>
                 <button id="open-options" class="options-button">Options</button>
             </div>
         </header>
@@ -157,6 +158,54 @@
                 <div class="modal-actions">
                     <button id="submit-manual-tle">Submit TLEs</button>
                     <button id="cancel-manual-tle">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schedule Modal -->
+    <div id="schedule-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Satellite Pass Schedule</h2>
+                <span class="close schedule-close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="schedule-controls">
+                    <div class="form-group">
+                        <label for="schedule-satellite-filter">Filter by Satellite:</label>
+                        <select id="schedule-satellite-filter">
+                            <option value="all">All Satellites</option>
+                            <!-- Satellite options will be added dynamically -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="schedule-days">Schedule Days:</label>
+                        <select id="schedule-days">
+                            <option value="1">1 Day</option>
+                            <option value="3">3 Days</option>
+                            <option value="7">1 Week</option>
+                            <option value="14">2 Weeks</option>
+                        </select>
+                    </div>
+                    <button id="refresh-schedule" class="refresh-button">Refresh</button>
+                </div>
+                <div class="schedule-table-container">
+                    <table id="pass-schedule-table" class="schedule-table">
+                        <thead>
+                            <tr>
+                                <th>Satellite</th>
+                                <th>Start Time</th>
+                                <th>End Time</th>
+                                <th>Max Elevation</th>
+                                <th>Duration</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pass-schedule-body">
+                            <!-- Schedule data will be added here dynamically -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

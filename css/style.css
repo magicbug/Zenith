@@ -48,6 +48,7 @@ header h1 {
     font-size: 0.9rem;
     font-weight: bold;
     margin-top: 0;
+    min-width: 100px;
 }
 
 .options-button:hover {
@@ -908,4 +909,132 @@ close-info-btn:hover {
 
 .rove-item.unworkable .rove-grid {
     color: #777;
+}
+
+/* Add Schedule button styles */
+
+.schedule-button {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 0.5rem 1.5rem;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-size: 0.9rem;
+    font-weight: bold;
+    margin-top: 0;
+    min-width: 100px;
+}
+
+.schedule-button:hover {
+    background-color: #218838;
+}
+
+/* Schedule Modal Styles */
+.schedule-controls {
+    display: flex;
+    align-items: flex-end;
+    gap: 15px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.schedule-table-container {
+    overflow-x: auto;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+}
+
+.schedule-table th,
+.schedule-table td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+}
+
+.schedule-table th {
+    background-color: #f5f5f5;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
+}
+
+.schedule-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.schedule-table tr:hover {
+    background-color: #f1f1f1;
+}
+
+.schedule-table .pass-active {
+    background-color: #d4edda;
+}
+
+.schedule-table .pass-upcoming {
+    background-color: #fff3cd;
+}
+
+.schedule-table .pass-visible {
+    background-color: #d1ecf1;
+}
+
+.refresh-button {
+    background-color: #17a2b8;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin-top: 20px;
+    align-self: flex-end;
+}
+
+.refresh-button:hover {
+    background-color: #138496;
+}
+
+#schedule-satellite-filter,
+#schedule-days {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    width: 100%;
+}
+
+.status-label {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: bold;
+    color: white;
+    text-align: center;
+}
+
+.status-active {
+    background-color: #28a745;
+}
+
+.status-upcoming {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.status-visible {
+    background-color: #17a2b8;
+}
+
+.status-normal {
+    background-color: #6c757d;
 }
