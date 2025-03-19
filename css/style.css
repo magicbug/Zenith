@@ -60,23 +60,66 @@ header h1 {
     height: calc(100vh - 120px);
 }
 
+/* Update the sidebar styling to maintain correct width */
 .sidebar {
-    flex: 0 0 320px;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-    overflow-y: auto;
+    height: 100%;
+    width: 300px; /* Fixed width for sidebar */
+    overflow: hidden;
 }
 
-.options-panel, .passes-panel {
-    background-color: white;
-    border-radius: 5px;
-    padding: 1rem;
+.options-panel, .passes-panel, .roves-panel {
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 8px;
+    padding: 15px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    overflow-y: auto;
+    margin-bottom: 15px;
 }
 
 .passes-panel {
-    flex-grow: 1;
+    height: 70%;
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.roves-panel {
+    height: 30%;
+    display: flex;
+    flex-direction: column;
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.panel-content {
+    flex: 1;
+    overflow-y: auto;
+    margin-top: 10px;
+    padding-right: 5px;
+    /* Remove sidebar from the content area */
+    border: none;
+}
+
+.panel-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.panel-content::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 3px;
+}
+
+.panel-content::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
 }
 
 .map-container {
@@ -169,24 +212,26 @@ button:hover {
     flex-grow: 1;
 }
 
-#upcoming-passes {
-    max-height: 100%;
+#upcoming-passes, #upcoming-roves {
+    margin-top: 10px;
     overflow-y: auto;
+    max-height: calc(100% - 40px); /* Account for heading */
 }
 
-.pass-item {
-    padding: 0.5rem;
-    border-bottom: 1px solid #eee;
-    cursor: pointer;
-    transition: background-color 0.2s;
+.pass-item, .rove-item {
+    padding: 8px;
+    margin-bottom: 8px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    border-left: 4px solid #4a76ce;
 }
 
 .pass-item:last-child {
     border-bottom: none;
 }
 
-.pass-item:hover {
-    background-color: #f0f0f0;
+.pass-item:hover, .rove-item:hover {
+    background-color: #e9ecef;
 }
 
 .pass-active {
@@ -467,7 +512,7 @@ close:hover {
     padding: 0 5px;
 }
 
-.close-info-btn:hover {
+close-info-btn:hover {
     color: #ddd;
 }
 
@@ -630,4 +675,237 @@ close:hover {
 
 .pass-item:hover {
     background-color: #f0f0f0;
+}
+
+/* Add to your existing CSS file */
+
+/* Roves Panel Styling */
+.roves-panel {
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    overflow-y: auto;
+}
+
+#upcoming-roves {
+    margin-top: 10px;
+}
+
+.rove-item {
+    padding: 8px;
+    margin-bottom: 8px;
+    border-left: 4px solid #4a76ce;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+}
+
+.rove-item:hover {
+    background-color: #e9ecef;
+}
+
+.rove-header {
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+}
+
+.rove-callsign {
+    color: #1e3799;
+}
+
+.rove-grid {
+    color: #3867d6;
+}
+
+.rove-details {
+    margin-top: 5px;
+    font-size: 0.9em;
+    color: #555;
+}
+
+.rove-satellite {
+    font-weight: 500;
+}
+
+.rove-time {
+    font-style: italic;
+}
+
+.rove-mode {
+    display: inline-block;
+    padding: 2px 5px;
+    border-radius: 3px;
+    background-color: #eee;
+    font-size: 0.8em;
+    margin-left: 5px;
+}
+
+/* API Settings Styling */
+.api-settings {
+    margin-top: 20px;
+    border-top: 1px solid #ddd;
+    padding-top: 15px;
+}
+
+.api-form {
+    margin-top: 10px;
+}
+
+/* Add styles for the time and satellite line in roves display */
+
+.rove-time-sat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 5px;
+}
+
+.rove-time {
+    font-style: italic;
+    font-size: 0.9em;
+    color: #555;
+}
+
+.rove-satellite {
+    font-weight: 500;
+    color: #1e3799;
+    text-align: right;
+}
+
+/* Fix for satellite labels position on map */
+.leaflet-div-icon {
+    background: transparent;
+    border: none;
+}
+
+.satellite-label {
+    position: absolute;
+    width: max-content;
+    text-align: center;
+    transform: translate(-50%, -50%); /* Center the label */
+    white-space: nowrap;
+    font-size: 12px;
+    font-weight: bold;
+    text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
+    pointer-events: none;
+}
+
+.satellite-marker {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.satellite-label {
+    position: absolute;
+    left: 50%;
+    top: -12px; /* Position label above the marker */
+    transform: translateX(-50%);
+    white-space: nowrap;
+    font-size: 12px;
+    font-weight: bold;
+    text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
+    pointer-events: none;
+    text-align: center;
+}
+
+.satellite-marker-icon {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.satellite-marker {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.satellite-label {
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    font-size: 12px;
+    font-weight: bold;
+    text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
+    pointer-events: none;
+    text-align: center;
+}
+
+.satellite-marker-container {
+    position: relative !important;
+    display: block !important;
+    border: none !important;
+    background: none !important;
+}
+
+.satellite-marker {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    top: 0;
+    left: 0;
+    border: 2px solid white;
+    box-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
+}
+
+.satellite-label {
+    position: absolute;
+    transform: translate(-50%, -100%);
+    white-space: nowrap;
+    font-size: 12px;
+    font-weight: bold;
+    text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
+    pointer-events: none;
+    left: 0;
+    top: -2px;
+    display: none;
+}
+
+.satellite-label-container {
+    background: none !important;
+    border: none !important;
+}
+
+.satellite-name-centered {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    white-space: nowrap;
+    font-size: 12px;
+    font-weight: bold;
+    color: #000;
+    text-shadow: 
+        -1px -1px 0 #fff,
+        1px -1px 0 #fff,
+        -1px 1px 0 #fff,
+        1px 1px 0 #fff;
+    pointer-events: none;
+    text-align: center;
+}
+
+.rove-item.unworkable {
+    border-left-color: #999;
+    background-color: #f8f8f8;
+    opacity: 0.8;
+}
+
+.rove-item.unworkable .rove-callsign {
+    color: #666;
+}
+
+.rove-item.unworkable .rove-grid {
+    color: #777;
 }

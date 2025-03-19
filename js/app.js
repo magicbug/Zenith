@@ -22,11 +22,18 @@ const PASS_UPDATE_INTERVAL_MS = 60000; // Update passes every minute
 const PASS_PREDICTION_HOURS = 24; // Predict passes for the next 24 hours
 const FOOTPRINT_POINTS = 36; // Number of points to draw the footprint circle
 
+// Hams.at API configuration
+let hamsAtApiKey = '';
+let enableRoves = true;
+let upcomingRoves = [];
+let showUnworkableRoves = false;
+
 // Initialize the application when the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
     initMap();
     loadObserverFromLocalStorage();
     loadSelectedSatellitesFromLocalStorage();
+    loadHamsAtSettingsFromLocalStorage(); // Add this line
     updateObserverDisplay();
     setupEventListeners();
     fetchTLEs();
@@ -50,6 +57,43 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const mapContainer = document.querySelector('.map-container');
     mapContainer.appendChild(infoPanel);
+
+    // Load Hams.at API settings
+    loadApiSettings();
+    
+    // Setup Roves panel if enabled
+    if (enableRoves) {
+        fetchUpcomingRoves();
+    }
+    
+    // Add event listeners for API settings
+    document.getElementById('hams-at-api-key').addEventListener('input', function() {
+        hamsAtApiKey = this.value.trim();
+        saveHamsAtSettingsToLocalStorage();
+        if (enableRoves && hamsAtApiKey) {
+            fetchUpcomingRoves();
+        }
+    });
+    
+    document.getElementById('enable-roves').addEventListener('change', function() {
+        enableRoves = this.checked;
+        saveHamsAtSettingsToLocalStorage();
+        if (enableRoves && hamsAtApiKey) {
+            fetchUpcomingRoves();
+        } else {
+            document.getElementById('upcoming-roves').innerHTML = 
+                '<div class="rove-item">Roves display is disabled</div>';
+        }
+    });
+
+    // Add event listener for the unworkable roves toggle
+    document.getElementById('show-unworkable-roves').addEventListener('change', function() {
+        showUnworkableRoves = this.checked;
+        saveHamsAtSettingsToLocalStorage();
+        if (enableRoves && hamsAtApiKey) {
+            displayUpcomingRoves();
+        }
+    });
 });
 
 // Initialize the Leaflet map
@@ -560,37 +604,50 @@ function calculateSatellitePosition(sat, time) {
     }
 }
 
-// Update satellite marker on the map
+// Update the satellite marker creation function
 function updateSatelliteMarker(satName, position) {
     if (!position) return;
     
     const latLng = [position.latitude, position.longitude];
     
-    // Create or update marker
-    if (!satelliteMarkers[satName]) {
-        const satIcon = L.divIcon({
-            className: 'satellite-icon',
-            html: `<div class="satellite-dot"></div><div class="satellite-label">${satName}</div>`,
-            iconSize: [100, 20],
-            iconAnchor: [5, 5]
-        });
-        
-        satelliteMarkers[satName] = L.marker(latLng, {
-            icon: satIcon,
-            title: satName
+    // Calculate footprint radius
+    const earthRadius = 6371000;
+    const altitudeMeters = position.altitude * 1000;
+    const footprintRadiusMeters = Math.acos(earthRadius / (earthRadius + altitudeMeters)) * earthRadius;
+    
+    // Create or update footprint and label
+    if (!satelliteFootprints[satName]) {
+        // Create footprint circle with label
+        satelliteFootprints[satName] = L.circle(latLng, {
+            radius: footprintRadiusMeters,
+            color: getRandomColor(),
+            weight: 1,
+            opacity: 0.8,
+            fillOpacity: 0.2,
+            interactive: true // Make circle clickable
         }).addTo(map);
         
-        // Add click handler to show the info panel
-        satelliteMarkers[satName].on('click', () => {
+        // Add label in center of footprint
+        const labelIcon = L.divIcon({
+            className: 'satellite-label-container',
+            html: `<div class="satellite-name-centered">${satName}</div>`,
+            iconSize: [0, 0]
+        });
+        
+        satelliteFootprints[satName].label = L.marker(latLng, {
+            icon: labelIcon,
+            interactive: false // Make label non-interactive
+        }).addTo(map);
+        
+        // Add click handler to the footprint circle
+        satelliteFootprints[satName].on('click', () => {
             showSatelliteInfo(satName);
         });
     } else {
-        satelliteMarkers[satName].setLatLng(latLng);
-    }
-    
-    // Update info panel if it's currently showing this satellite
-    if (document.getElementById('satellite-info-panel').getAttribute('data-satellite') === satName) {
-        showSatelliteInfo(satName);
+        // Update positions and radius
+        satelliteFootprints[satName].setLatLng(latLng);
+        satelliteFootprints[satName].setRadius(footprintRadiusMeters);
+        satelliteFootprints[satName].label.setLatLng(latLng);
     }
 }
 
@@ -621,9 +678,12 @@ function showSatelliteInfo(satName) {
     const position = getSatellitePosition(satName);
     
     if (!position || !lookAngles) {
-        infoPanel.style.display = 'none';
+        console.error('Unable to get satellite position or look angles');
         return;
     }
+    
+    // Set the satellite name in the header
+    document.getElementById('info-satellite-name').textContent = satName;
     
     // Format orbital parameters
     const orbitalSpeed = calculateOrbitalSpeed(satName);
@@ -631,76 +691,68 @@ function showSatelliteInfo(satName) {
     const nextPass = getNextPass(satName);
     
     // Set the panel content
-    infoPanel.innerHTML = `
-        <div class="info-header">
-            <h3>${satName}</h3>
-            <button class="close-info-btn">&times;</button>
+    document.getElementById('info-content').innerHTML = `
+        <div class="info-section">
+            <h4>Current Position</h4>
+            <div class="info-grid">
+                <div>Latitude:</div><div>${position.latitude.toFixed(2)}°</div>
+                <div>Longitude:</div><div>${position.longitude.toFixed(2)}°</div>
+                <div>Altitude:</div><div>${(position.altitude * 1000).toFixed(0)} m</div>
+            </div>
         </div>
-        <div class="info-body">
-            <div class="info-section">
-                <h4>Current Position</h4>
-                <div class="info-grid">
-                    <div>Latitude:</div><div>${position.latitude.toFixed(2)}°</div>
-                    <div>Longitude:</div><div>${position.longitude.toFixed(2)}°</div>
-                    <div>Altitude:</div><div>${(position.altitude * 1000).toFixed(0)} m</div>
-                </div>
+        
+        <div class="info-section">
+            <h4>Look Angles from Observer</h4>
+            <div class="info-grid">
+                <div>Azimuth:</div><div>${lookAngles.azimuth.toFixed(1)}°</div>
+                <div>Elevation:</div><div>${lookAngles.elevation.toFixed(1)}°</div>
+                <div>Range:</div><div>${(lookAngles.range * 1000).toFixed(0)} km</div>
+                <div>Visibility:</div><div>${lookAngles.visible ? 
+                    '<span class="visible-indicator">Visible</span>' : 
+                    '<span class="not-visible-indicator">Not visible</span>'}</div>
             </div>
-            
-            <div class="info-section">
-                <h4>Look Angles from Observer</h4>
-                <div class="info-grid">
-                    <div>Azimuth:</div><div>${lookAngles.azimuth.toFixed(1)}°</div>
-                    <div>Elevation:</div><div>${lookAngles.elevation.toFixed(1)}°</div>
-                    <div>Range:</div><div>${(lookAngles.range * 1000).toFixed(0)} km</div>
-                    <div>Visibility:</div><div>${lookAngles.visible ? 
-                        '<span class="visible-indicator">Visible</span>' : 
-                        '<span class="not-visible-indicator">Not visible</span>'}</div>
-                </div>
-            </div>
-            
-            <div class="info-section">
-                <h4>Orbital Data</h4>
-                <div class="info-grid">
-                    <div>Speed:</div><div>${orbitalSpeed.toFixed(2)} km/s</div>
-                    <div>Period:</div><div>${orbitalPeriod.toFixed(0)} min</div>
-                </div>
-            </div>
-            
-            ${nextPass ? `
-            <div class="info-section">
-                <h4>Next Pass</h4>
-                <div class="info-grid">
-                    <div>Start:</div><div>${formatDateTime(nextPass.start)}</div>
-                    <div>Max Elevation:</div><div>${nextPass.maxElevation.toFixed(1)}°</div>
-                    <div>Duration:</div><div>${Math.round((nextPass.end - nextPass.start) / (60 * 1000))} min</div>
-                </div>
-            </div>
-            ` : ''}
         </div>
+        
+        <div class="info-section">
+            <h4>Orbital Data</h4>
+            <div class="info-grid">
+                <div>Speed:</div><div>${orbitalSpeed.toFixed(2)} km/s</div>
+                <div>Period:</div><div>${orbitalPeriod.toFixed(0)} min</div>
+            </div>
+        </div>
+        
+        ${nextPass ? `
+        <div class="info-section">
+            <h4>Next Pass</h4>
+            <div class="info-grid">
+                <div>Start:</div><div>${formatDateTime(nextPass.start)}</div>
+                <div>Max Elevation:</div><div>${nextPass.maxElevation.toFixed(1)}°</div>
+                <div>Duration:</div><div>${Math.round((nextPass.end - nextPass.start) / (60 * 1000))} min</div>
+            </div>
+        </div>
+        ` : ''}
     `;
     
-    // Set data attribute for current satellite
-    infoPanel.setAttribute('data-satellite', satName);
-    
-    // Show the panel
+    // Ensure the panel is visible
     infoPanel.style.display = 'block';
-    
-    // Add event listener to the close button
-    infoPanel.querySelector('.close-info-btn').addEventListener('click', (e) => {
-        e.stopPropagation();
-        infoPanel.style.display = 'none';
-    });
 }
 
 // Get satellite position
 function getSatellitePosition(satName) {
     const now = new Date();
-    if (!window.tleData[satName]) return null;
+    if (!window.tleData[satName]) {
+        console.error('TLE data not found for satellite:', satName);
+        return null;
+    }
     
     try {
         const sat = window.tleData[satName];
         const positionData = calculateSatellitePosition(sat, now);
-        return positionData ? positionData.position : null;
+        if (!positionData) {
+            console.error('Failed to calculate position for satellite:', satName);
+            return null;
+        }
+        return positionData.position;
     } catch (error) {
         console.error(`Error getting position for ${satName}:`, error);
         return null;
@@ -819,27 +871,50 @@ function getNextPass(satName) {
     }
 }
 
-// Update satellite footprint on the map
+// Update the footprint creation function
 function updateSatelliteFootprint(satName, position) {
     if (!position) return;
     
     // Calculate footprint radius in meters
-    const earthRadius = 6371000; // Earth radius in meters
+    const earthRadius = 6371000;
     const altitudeMeters = position.altitude * 1000;
     const footprintRadiusMeters = Math.acos(earthRadius / (earthRadius + altitudeMeters)) * earthRadius;
     
     // Create or update the footprint circle
     if (!satelliteFootprints[satName]) {
+        // Create footprint circle
         satelliteFootprints[satName] = L.circle([position.latitude, position.longitude], {
             radius: footprintRadiusMeters,
             color: getRandomColor(),
             weight: 1,
             opacity: 0.8,
-            fillOpacity: 0.2
+            fillOpacity: 0.2,
+            pane: 'footprints'  // Use the custom pane we created
         }).addTo(map);
+        
+        // Add label as a separate marker bound to the circle's center
+        const labelIcon = L.divIcon({
+            className: 'satellite-label-container',
+            html: `<div class="satellite-name-centered">${satName}</div>`,
+            iconSize: [0, 0]  // Size of 0 ensures no background
+        });
+        
+        satelliteFootprints[satName].label = L.marker([position.latitude, position.longitude], {
+            icon: labelIcon,
+            zIndexOffset: 500  // Above footprints but below markers
+        }).addTo(map);
+        
+        // Add click handler to the footprint circle
+        satelliteFootprints[satName].on('click', () => {
+            const infoPanel = document.getElementById('satellite-info-panel');
+            infoPanel.style.display = 'block'; // Show the panel
+            showSatelliteInfo(satName);
+        });
     } else {
+        // Update both footprint and label positions
         satelliteFootprints[satName].setLatLng([position.latitude, position.longitude]);
         satelliteFootprints[satName].setRadius(footprintRadiusMeters);
+        satelliteFootprints[satName].label.setLatLng([position.latitude, position.longitude]);
     }
 }
 
@@ -928,17 +1003,19 @@ function calculateUpcomingPasses() {
         passItem.addEventListener('click', () => {
             const satName = pass.satellite;
             
-            // Center the map on the satellite if it exists
-            if (satelliteMarkers[satName]) {
-                const position = satelliteMarkers[satName].getLatLng();
-                map.setView(position, Math.max(map.getZoom(), 4)); // Ensure minimum zoom level of 4
-                
-                // Highlight the satellite (could add a pulsing effect or other visual indicator)
-                const marker = satelliteMarkers[satName];
-                highlightSatellite(satName);
-                
-                // Show the satellite info panel
+            // Verify satellite exists in TLE data
+            if (!window.tleData[satName]) {
+                console.error('Satellite TLE data not found:', satName);
+                return;
+            }
+            
+            // Get current position
+            const position = getSatellitePosition(satName);
+            if (position) {
+                map.setView([position.latitude, position.longitude], Math.max(map.getZoom(), 4));
                 showSatelliteInfo(satName);
+            } else {
+                console.error('Unable to get satellite position:', satName);
             }
         });
         
@@ -1324,4 +1401,325 @@ function getPassStatusClass(pass) {
         return 'pass-visible'; // High elevation passes
     }
     return '';
+}
+
+// Add the following code to your existing app.js file
+
+// Add to your existing saveOptions function
+function saveOptions() {
+    // ...existing code...
+    
+    // Save API settings
+    saveApiSettings();
+    
+    // Update roves if enabled
+    if (enableRoves && hamsAtApiKey) {
+        fetchUpcomingRoves();
+    } else {
+        document.getElementById('upcoming-roves').innerHTML = 
+            '<div class="rove-item">Roves display is disabled or API key is missing.</div>';
+    }
+}
+
+// Load API settings from local storage
+function loadApiSettings() {
+    const savedApiKey = localStorage.getItem('hamsAtApiKey');
+    if (savedApiKey) {
+        hamsAtApiKey = savedApiKey;
+        document.getElementById('hams-at-api-key').value = hamsAtApiKey;
+    }
+    
+    const rovesEnabled = localStorage.getItem('enableRoves');
+    if (rovesEnabled !== null) {
+        enableRoves = rovesEnabled === 'true';
+        document.getElementById('enable-roves').checked = enableRoves;
+    }
+
+    const showUnworkable = localStorage.getItem('showUnworkableRoves');
+    if (showUnworkable !== null) {
+        showUnworkableRoves = showUnworkable === 'true';
+        document.getElementById('show-unworkable-roves').checked = showUnworkableRoves;
+    }
+}
+
+// Save API settings to local storage
+function saveApiSettings() {
+    localStorage.setItem('hamsAtApiKey', hamsAtApiKey);
+    localStorage.setItem('enableRoves', enableRoves.toString());
+    localStorage.setItem('showUnworkableRoves', showUnworkableRoves.toString());
+}
+
+// Update the fetchUpcomingRoves function to use the PHP proxy
+function fetchUpcomingRoves() {
+    // ...existing code...
+    
+    const rovesContainer = document.getElementById('upcoming-roves');
+    rovesContainer.innerHTML = '<div class="loading">Loading roves data...</div>';
+    
+    console.log('Fetching roves with API key:', hamsAtApiKey.substring(0, 5) + '...');
+    
+    // Use our PHP proxy instead of directly calling the API
+    fetch(`api/get_roves.php?key=${encodeURIComponent(hamsAtApiKey)}`)
+    .then(response => {
+        console.log('API response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`API request failed with status ${response.status}`);
+        }
+        return response.json();
+    })
+    // ...existing code...
+}
+
+// Display upcoming roves in the UI
+function displayUpcomingRoves() {
+    const rovesContainer = document.getElementById('upcoming-roves');
+    
+    // Filter roves based on workable preference
+    const filteredRoves = upcomingRoves.filter(rove => 
+        showUnworkableRoves ? true : rove.is_workable
+    );
+    
+    if (!filteredRoves.length) {
+        rovesContainer.innerHTML = '<div class="rove-item">No upcoming roves found.</div>';
+        return;
+    }
+    
+    rovesContainer.innerHTML = '';
+    
+    // Sort roves by start time
+    filteredRoves.sort((a, b) => new Date(a.aos_at) - new Date(b.aos_at));
+    
+    filteredRoves.forEach(rove => {
+        const aosDate = new Date(rove.aos_at);
+        const losDate = new Date(rove.los_at);
+        
+        const roveElement = document.createElement('div');
+        roveElement.className = 'rove-item';
+        
+        // Format the rove information
+        const header = document.createElement('div');
+        header.className = 'rove-header';
+        
+        const callsign = document.createElement('span');
+        callsign.className = 'rove-callsign';
+        callsign.textContent = rove.callsign;
+        
+        const grid = document.createElement('span');
+        grid.className = 'rove-grid';
+        grid.textContent = rove.grids.join(', ');
+        
+        header.appendChild(callsign);
+        header.appendChild(grid);
+        
+        const details = document.createElement('div');
+        details.className = 'rove-details';
+        
+        // Create a line with time and satellite name
+        const timeAndSat = document.createElement('div');
+        timeAndSat.className = 'rove-time-sat';
+        
+        const time = document.createElement('span');
+        time.className = 'rove-time';
+        time.textContent = `${formatDate(aosDate)} - ${formatDate(losDate)}`;
+        
+        const satellite = document.createElement('span');
+        satellite.className = 'rove-satellite';
+        satellite.textContent = `${rove.satellite.name}`;
+        
+        timeAndSat.appendChild(time);
+        timeAndSat.appendChild(satellite);
+        
+        details.appendChild(timeAndSat);
+        
+        // Add comment if available
+        if (rove.comment) {
+            const comment = document.createElement('div');
+            comment.className = 'rove-comment';
+            comment.textContent = rove.comment;
+            details.appendChild(comment);
+        }
+        
+        roveElement.appendChild(header);
+        roveElement.appendChild(details);
+        
+        // Add click handler to open the rove URL
+        if (rove.url) {
+            roveElement.style.cursor = 'pointer';
+            roveElement.addEventListener('click', () => {
+                window.open(rove.url, '_blank');
+            });
+        }
+        
+        rovesContainer.appendChild(roveElement);
+    });
+}
+
+// Set up auto-refresh for roves data
+function setupRovesAutoRefresh() {
+    // Refresh roves data every 15 minutes
+    setInterval(() => {
+        if (enableRoves && hamsAtApiKey) {
+            fetchUpcomingRoves();
+        }
+    }, 15 * 60 * 1000);
+}
+
+// Add this to your initialization
+setupRovesAutoRefresh();
+
+// Update the fetchUpcomingRoves function with better error handling and debugging
+function fetchUpcomingRoves() {
+    // ...existing code...
+    
+    const rovesContainer = document.getElementById('upcoming-roves');
+    rovesContainer.innerHTML = '<div class="loading">Loading roves data...</div>';
+    
+    console.log('Fetching roves with API key:', hamsAtApiKey.substring(0, 5) + '...');
+    
+    // Add a timeout to the fetch to prevent it from hanging indefinitely
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+    
+    // Use our PHP proxy instead of directly calling the API
+    fetch(`api/get_roves.php?key=${encodeURIComponent(hamsAtApiKey)}`, {
+        signal: controller.signal
+    })
+    .then(response => {
+        console.log('API proxy response status:', response.status);
+        clearTimeout(timeoutId);
+        if (!response.ok) {
+            throw new Error(`API request failed with status ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Roves data received:', data);
+        if (!data) {
+            throw new Error('No data received from API');
+        }
+        if (data.error) {
+            throw new Error(`API error: ${data.error}`);
+        }
+        if (!data.data) {
+            throw new Error('Invalid data format received from API');
+        }
+        upcomingRoves = data.data || [];
+        displayUpcomingRoves();
+    })
+    .catch(error => {
+        clearTimeout(timeoutId);
+        console.error('Error fetching roves data:', error);
+        
+        // Different message based on error type
+        let errorMessage = 'Failed to load roves: ';
+        if (error.name === 'AbortError') {
+            errorMessage += 'Request timed out. Check your network or the API server status.';
+        } else if (error.message.includes('NetworkError')) {
+            errorMessage += 'Network error. Check if the PHP proxy file exists and is accessible.';
+        } else {
+            errorMessage += error.message;
+        }
+        
+        rovesContainer.innerHTML = `<div class="rove-item error">${errorMessage}</div>`;
+    });
+}
+
+// Fix the issue with satellite info panel reappearing after closing
+
+// Find the close info panel event listener and modify it
+document.getElementById('close-info-panel').addEventListener('click', function() {
+    const infoPanel = document.getElementById('satellite-info-panel');
+    infoPanel.style.display = 'none';
+    
+    // Set a flag to indicate panel was manually closed
+    window.satelliteInfoPanelClosed = true;
+    
+    // Prevent event propagation
+    event.stopPropagation();
+});
+
+// Find the function that displays the satellite info and modify it
+function updateSatelliteInfo(satellite) {
+    // ...existing code...
+    
+    // Check if panel was manually closed before showing
+    if (window.satelliteInfoPanelClosed) {
+        return;
+    }
+    
+    // Show the info panel
+    const infoPanel = document.getElementById('satellite-info-panel');
+    infoPanel.style.display = 'block';
+    
+    // ...existing code...
+}
+
+// Add a reset for the closed flag when a satellite is clicked
+function onSatelliteMarkerClick(e) {
+    // Reset the closed flag when a satellite is manually selected
+    window.satelliteInfoPanelClosed = false;
+    
+    // ...existing code...
+}
+
+// Update satellite marker creation to ensure proper label positioning
+
+// Look for code similar to:
+function createSatelliteMarker(satellite, position) {
+    const icon = L.divIcon({
+        className: 'satellite-marker-icon',
+        html: `<div class="satellite-marker" style="background-color: ${satellite.color || '#1e88e5'}"></div>
+               <div class="satellite-label">${satellite.name}</div>`,
+        iconSize: [24, 24],     // Increased size to accommodate label
+        iconAnchor: [12, 12]    // Center point of the icon
+    });
+    
+    // ...existing code...
+}
+
+// ...existing code...
+
+function createSatelliteMarker(satellite, position) {
+    const icon = L.divIcon({
+        className: 'satellite-marker-icon',
+        html: `
+            <div class="satellite-label">${satellite.name}</div>
+            <div class="satellite-marker" style="background-color: ${satellite.color || '#1e88e5'}"></div>
+        `,
+        iconSize: null,  // Let the content determine the size
+        iconAnchor: [0, 0],  // Align to top-left corner
+        className: 'satellite-marker-container'  // New container class
+    });
+    
+    // ...existing code...
+}
+
+// ...existing code...
+
+// Add new function to load Hams.at settings
+function loadHamsAtSettingsFromLocalStorage() {
+    const savedKey = localStorage.getItem('hamsAtApiKey');
+    if (savedKey) {
+        hamsAtApiKey = savedKey;
+        document.getElementById('hams-at-api-key').value = hamsAtApiKey;
+    }
+
+    const rovesEnabled = localStorage.getItem('enableRoves');
+    if (rovesEnabled !== null) {
+        enableRoves = rovesEnabled === 'true';
+        document.getElementById('enable-roves').checked = enableRoves;
+    }
+
+    const showUnworkable = localStorage.getItem('showUnworkableRoves');
+    if (showUnworkable !== null) {
+        showUnworkableRoves = showUnworkable === 'true';
+        document.getElementById('show-unworkable-roves').checked = showUnworkableRoves;
+    }
+}
+
+// Add new function to save Hams.at settings
+function saveHamsAtSettingsToLocalStorage() {
+    localStorage.setItem('hamsAtApiKey', hamsAtApiKey);
+    localStorage.setItem('enableRoves', enableRoves.toString());
+    localStorage.setItem('showUnworkableRoves', showUnworkableRoves.toString());
 }

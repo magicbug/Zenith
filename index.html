@@ -1,12 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Amateur Radio Satellite Tracker</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="css/style.css">
+
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
 </head>
+
 <body>
     <div class="container">
         <header>
@@ -15,17 +21,24 @@
                 <button id="open-options" class="options-button">Options</button>
             </div>
         </header>
-        
+
         <div class="dashboard">
             <div class="sidebar">
                 <div class="passes-panel">
                     <h2>Upcoming Passes</h2>
-                    <div id="upcoming-passes">
+                    <div id="upcoming-passes" class="panel-content">
                         <!-- Pass information will be added here dynamically -->
                     </div>
                 </div>
+
+                <div class="roves-panel">
+                    <h2>Upcoming Roves</h2>
+                    <div id="upcoming-roves" class="panel-content">
+                        <!-- Rove information will be added here dynamically -->
+                    </div>
+                </div>
             </div>
-            
+
             <div class="map-container">
                 <div id="satellite-map"></div>
                 <!-- Satellite info panel -->
@@ -65,7 +78,7 @@
                         <button id="show-manual-tle">Input TLEs Manually</button>
                     </div>
                 </div>
-                
+
                 <div class="location-settings">
                     <h3>Observer Location</h3>
                     <div class="location-form">
@@ -83,12 +96,36 @@
                         </div>
                         <div class="location-actions">
                             <button id="use-geolocation" title="Use your current location">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
                                     <circle cx="12" cy="12" r="10"></circle>
                                     <point x="12" y="12" r="3"></point>
                                 </svg>
                                 Use My Location
                             </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="api-settings">
+                    <h3>API Configuration</h3>
+                    <div class="api-form">
+                        <div class="form-group">
+                            <label for="hams-at-api-key">Hams.at API Key:</label>
+                            <input type="text" id="hams-at-api-key" placeholder="Enter your Hams.at API key">
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="enable-roves" checked>
+                                Enable Upcoming Roves
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="show-unworkable-roves">
+                                Show Unworkable Roves
+                            </label>
                         </div>
                     </div>
                 </div>
@@ -111,11 +148,12 @@
                 <div id="manual-tle-error" class="error-message"></div>
                 <p>Paste TLE data in 3-line format (Satellite Name, TLE Line 1, TLE Line 2):</p>
                 <p class="format-example">Example format:<br>
-                AO-91 (FOX-1B)<br>
-                1 43017U 17073E 23150.09546759 .00001976 00000-0 15688-3 0 9996<br>
-                2 43017 97.7000 182.9558 0025675 32.2147 328.1059 14.78059046296268</p>
+                    AO-91 (FOX-1B)<br>
+                    1 43017U 17073E 23150.09546759 .00001976 00000-0 15688-3 0 9996<br>
+                    2 43017 97.7000 182.9558 0025675 32.2147 328.1059 14.78059046296268</p>
                 <textarea id="tles-textarea" rows="15"></textarea>
-                <p>You can get TLEs from <a href="https://tle.oscarwatch.org" target="_blank">https://tle.oscarwatch.org</a> or any other source.</p>
+                <p>You can get TLEs from <a href="https://tle.oscarwatch.org"
+                        target="_blank">https://tle.oscarwatch.org</a> or any other source.</p>
                 <div class="modal-actions">
                     <button id="submit-manual-tle">Submit TLEs</button>
                     <button id="cancel-manual-tle">Cancel</button>
@@ -130,4 +168,5 @@
     <script src="https://unpkg.com/leaflet.geodesic"></script>
     <script src="js/app.js"></script>
 </body>
+
 </html>
