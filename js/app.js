@@ -1974,103 +1974,124 @@ let polarRadarChart = null;
 function initPolarRadarChart() {
     const canvas = document.getElementById('polar-radar-chart');
     const ctx = canvas.getContext('2d');
-    
+
     function drawCompassFace() {
         const width = canvas.width;
         const height = canvas.height;
         const centerX = width / 2;
         const centerY = height / 2;
-        const radius = Math.min(centerX, centerY) - 20;
+        const radius = Math.min(centerX, centerY) - 30;
 
         // Clear canvas
         ctx.clearRect(0, 0, width, height);
         ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, width, height);
 
-        // Draw outer circle
+        // Draw outer compass ring
         ctx.beginPath();
         ctx.strokeStyle = '#333';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 3;
         ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
         ctx.stroke();
 
-        // Draw main compass lines and labels
-        const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
-        const degrees = [0, 45, 90, 135, 180, 225, 270, 315];
-        
-        for (let i = 0; i < 8; i++) {
-            const angle = (degrees[i] - 90) * Math.PI / 180; // -90 to start at North
+        // Draw cardinal and intercardinal points
+        const directions = [
+            { label: 'N', angle: 0, isCardinal: true },
+            { label: 'NE', angle: 45, isCardinal: false },
+            { label: 'E', angle: 90, isCardinal: true },
+            { label: 'SE', angle: 135, isCardinal: false },
+            { label: 'S', angle: 180, isCardinal: true },
+            { label: 'SW', angle: 225, isCardinal: false },
+            { label: 'W', angle: 270, isCardinal: true },
+            { label: 'NW', angle: 315, isCardinal: false }
+        ];
+
+        // Draw direction lines
+        directions.forEach(dir => {
+            const angleRad = (dir.angle - 90) * Math.PI / 180;
             
             // Draw direction line
             ctx.beginPath();
-            ctx.strokeStyle = i % 2 === 0 ? '#333' : '#666';
-            ctx.lineWidth = i % 2 === 0 ? 2 : 1;
+            ctx.strokeStyle = dir.isCardinal ? '#333' : '#666';
+            ctx.lineWidth = dir.isCardinal ? 2 : 1;
             ctx.moveTo(centerX, centerY);
             ctx.lineTo(
-                centerX + radius * Math.cos(angle),
-                centerY + radius * Math.sin(angle)
+                centerX + radius * Math.cos(angleRad),
+                centerY + radius * Math.sin(angleRad)
             );
             ctx.stroke();
 
-            // Add compass direction label
-            ctx.fillStyle = '#333';
-            ctx.font = 'bold 16px Arial';
+            // Add direction label
+            ctx.fillStyle = dir.isCardinal ? '#333' : '#666';
+            ctx.font = `${dir.isCardinal ? 'bold' : 'normal'} ${dir.isCardinal ? 16 : 14}px Arial`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            const labelRadius = radius + 15;
+            const labelRadius = radius + 20;
             ctx.fillText(
-                directions[i],
-                centerX + labelRadius * Math.cos(angle),
-                centerY + labelRadius * Math.sin(angle)
+                dir.label,
+                centerX + labelRadius * Math.cos(angleRad),
+                centerY + labelRadius * Math.sin(angleRad)
             );
-        }
+        });
 
-        // Draw minor degree markers and labels every 15 degrees
-        for (let deg = 0; deg < 360; deg += 15) {
-            if (deg % 45 !== 0) { // Skip where we already drew main lines
+        // Draw degree markers every 5 degrees
+        for (let deg = 0; deg < 360; deg += 5) {
+            if (deg % 45 !== 0) { // Skip where we have cardinal/intercardinal lines
                 const angle = (deg - 90) * Math.PI / 180;
+                const isMinor = deg % 15 !== 0;
+                const markerLength = isMinor ? 10 : 15;
                 
-                // Draw tick mark
+                // Draw marker
                 ctx.beginPath();
-                ctx.strokeStyle = '#999';
-                ctx.lineWidth = 1;
+                ctx.strokeStyle = isMinor ? '#999' : '#666';
+                ctx.lineWidth = isMinor ? 1 : 1.5;
+                const markerStart = radius - markerLength;
                 ctx.moveTo(
-                    centerX + (radius - 10) * Math.cos(angle),
-                    centerY + (radius - 10) * Math.sin(angle)
-                );
-                ctx.lineTo(
                     centerX + radius * Math.cos(angle),
                     centerY + radius * Math.sin(angle)
                 );
+                ctx.lineTo(
+                    centerX + markerStart * Math.cos(angle),
+                    centerY + markerStart * Math.sin(angle)
+                );
                 ctx.stroke();
 
-                // Add degree label
-                ctx.fillStyle = '#666';
-                ctx.font = '10px Arial';
-                ctx.fillText(
-                    deg + '°',
-                    centerX + (radius + 25) * Math.cos(angle),
-                    centerY + (radius + 25) * Math.sin(angle)
-                );
+                // Add degree label for major ticks
+                if (!isMinor) {
+                    ctx.fillStyle = '#666';
+                    ctx.font = '10px Arial';
+                    const textRadius = radius - 25;
+                    ctx.fillText(
+                        deg + '°',
+                        centerX + textRadius * Math.cos(angle),
+                        centerY + textRadius * Math.sin(angle)
+                    );
+                }
             }
         }
 
-        // Draw elevation circles every 15 degrees
-        for (let elevation = 15; elevation < 90; elevation += 15) {
-            const circleRadius = radius * (1 - elevation/90);
+        // Draw elevation circles every 10 degrees from horizon to zenith
+        for (let el = 10; el < 90; el += 10) {
+            const circleRadius = radius * (1 - el/90);
             ctx.beginPath();
-            ctx.strokeStyle = elevation % 30 === 0 ? '#666' : '#999';
-            ctx.lineWidth = elevation % 30 === 0 ? 1.5 : 0.5;
+            ctx.strokeStyle = el % 30 === 0 ? '#666' : '#999';
+            ctx.lineWidth = el % 30 === 0 ? 1 : 0.5;
             ctx.setLineDash([2, 2]);
             ctx.arc(centerX, centerY, circleRadius, 0, Math.PI * 2);
             ctx.stroke();
             ctx.setLineDash([]);
 
-            // Add elevation labels
-            ctx.fillStyle = '#666';
-            ctx.font = '10px Arial';
-            ctx.textAlign = 'left';
-            ctx.fillText(elevation + '°', centerX + 5, centerY - circleRadius);
+            // Add elevation labels on east side
+            if (el % 30 === 0) {
+                ctx.fillStyle = '#666';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText(
+                    el + '°',
+                    centerX + circleRadius + 5,
+                    centerY
+                );
+            }
         }
     }
 
@@ -2079,18 +2100,18 @@ function initPolarRadarChart() {
         const height = canvas.height;
         const centerX = width / 2;
         const centerY = height / 2;
-        const radius = Math.min(centerX, centerY) - 20;
+        const radius = Math.min(centerX, centerY) - 30;
 
         if (points.length > 0) {
             // Draw the path
             ctx.beginPath();
             ctx.strokeStyle = '#4a76ce';
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 2.5;
 
             points.forEach((point, index) => {
-                // Convert elevation and azimuth to x,y coordinates
-                const r = radius * (1 - point.elevation/90); // Higher elevation = closer to center
-                const angle = (point.azimuth - 90) * Math.PI / 180; // -90 to start at North
+                // Convert from polar to cartesian coordinates
+                const r = radius * (1 - point.elevation/90);
+                const angle = (point.azimuth - 90) * Math.PI / 180;
                 const x = centerX + r * Math.cos(angle);
                 const y = centerY + r * Math.sin(angle);
 
@@ -2099,87 +2120,73 @@ function initPolarRadarChart() {
                 } else {
                     ctx.lineTo(x, y);
                 }
-
-                // Draw point
-                ctx.fillStyle = index === 0 ? '#4CAF50' : // Start point
-                              index === points.length - 1 ? '#f44336' : // End point
-                              '#4a76ce'; // Track points
-                ctx.beginPath();
-                ctx.arc(x, y, index === 0 || index === points.length - 1 ? 4 : 2, 0, Math.PI * 2);
-                ctx.fill();
             });
             
             ctx.stroke();
+
+            // Draw start and end points
+            const start = points[0];
+            const end = points[points.length - 1];
+
+            // Draw start point (green)
+            const startR = radius * (1 - start.elevation/90);
+            const startAngle = (start.azimuth - 90) * Math.PI / 180;
+            ctx.beginPath();
+            ctx.fillStyle = '#4CAF50';
+            ctx.arc(
+                centerX + startR * Math.cos(startAngle),
+                centerY + startR * Math.sin(startAngle),
+                5, 0, Math.PI * 2
+            );
+            ctx.fill();
+
+            // Draw end point (red)
+            const endR = radius * (1 - end.elevation/90);
+            const endAngle = (end.azimuth - 90) * Math.PI / 180;
+            ctx.beginPath();
+            ctx.fillStyle = '#f44336';
+            ctx.arc(
+                centerX + endR * Math.cos(endAngle),
+                centerY + endR * Math.sin(endAngle),
+                5, 0, Math.PI * 2
+            );
+            ctx.fill();
         }
     }
 
-    // Add hover detection and tooltip
-    let tooltip = {
-        element: document.createElement('div'),
-        visible: false,
-        init: function() {
-            this.element.style.cssText = `
-                position: absolute;
-                background: rgba(0, 0, 0, 0.8);
-                color: white;
-                padding: 5px 10px;
-                border-radius: 4px;
-                font-size: 12px;
-                pointer-events: none;
-                z-index: 1000;
-                display: none;
-            `;
-            document.body.appendChild(this.element);
-        },
-        show: function(text, x, y) {
-            this.element.innerHTML = text;
-            this.element.style.display = 'block';
-            this.element.style.left = x + 'px';
-            this.element.style.top = y + 'px';
-            this.visible = true;
-        },
-        hide: function() {
-            this.element.style.display = 'none';
-            this.visible = false;
-        }
-    };
-    tooltip.init();
-
-    // Add mouse move handler for tooltip
     canvas.addEventListener('mousemove', function(event) {
         const rect = canvas.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-        
-        // Convert x,y to azimuth and elevation
-        const dx = x - centerX;
-        const dy = y - centerY;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        
-        if (distance <= radius) {
-            let azimuth = Math.atan2(dy, dx) * 180 / Math.PI + 90;
-            if (azimuth < 0) azimuth += 360;
-            const elevation = 90 * (1 - distance/radius);
-            
-            tooltip.show(
-                `Az: ${azimuth.toFixed(1)}°<br>El: ${elevation.toFixed(1)}°`,
-                event.clientX + 10,
-                event.clientY + 10
-            );
-        } else {
-            tooltip.hide();
-        }
-    });
+        const mouseX = event.clientX - rect.left;
+        const mouseY = event.clientY - rect.top;
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const radius = Math.min(centerX, centerY) - 30;
 
-    canvas.addEventListener('mouseleave', function() {
-        tooltip.hide();
+        // Calculate distance from center
+        const dx = mouseX - centerX;
+        const dy = mouseY - centerY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance <= radius) {
+            // Calculate azimuth (0° at North, clockwise)
+            let azimuth = Math.atan2(dx, -dy) * 180 / Math.PI;
+            if (azimuth < 0) azimuth += 360;
+
+            // Calculate elevation (90° at center, 0° at edge)
+            const elevation = 90 * (1 - distance/radius);
+
+            canvas.title = `Az: ${azimuth.toFixed(1)}°, El: ${elevation.toFixed(1)}°`;
+        } else {
+            canvas.title = '';
+        }
     });
 
     return {
-        clear: () => ctx.clearRect(0, 0, width, height),
         draw: (points) => {
             drawCompassFace();
-            drawPassTrack(points);
+            if (points && points.length > 0) {
+                drawPassTrack(points);
+            }
         }
     };
 }
