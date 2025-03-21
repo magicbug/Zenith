@@ -1019,6 +1019,7 @@ function calculateUpcomingPasses() {
             if (position) {
                 map.setView([position.latitude, position.longitude], Math.max(map.getZoom(), 4));
                 showSatelliteInfo(satName);
+                showPolarRadarForPass(pass);
             } else {
                 console.error('Unable to get satellite position:', satName);
             }
@@ -1906,6 +1907,7 @@ function filterScheduleTable() {
             if (position) {
                 map.setView([position.latitude, position.longitude], Math.max(map.getZoom(), 4));
                 showSatelliteInfo(satName);
+                showPolarRadarForPass(pass);
             }
             
             // Close the schedule modal
@@ -1963,4 +1965,337 @@ function getPassStatusLabel(pass, now) {
     } else {
         return '<span class="status-label status-normal">Scheduled</span>';
     }
+}
+
+// Polar radar chart instance
+let polarRadarChart = null;
+
+// Initialize polar radar chart
+function initPolarRadarChart() {
+    const canvas = document.getElementById('polar-radar-chart');
+    const ctx = canvas.getContext('2d');
+    
+    function drawCompassFace() {
+        const width = canvas.width;
+        const height = canvas.height;
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const radius = Math.min(centerX, centerY) - 20;
+
+        // Clear canvas
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, width, height);
+
+        // Draw outer circle
+        ctx.beginPath();
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 2;
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Draw main compass lines and labels
+        const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+        const degrees = [0, 45, 90, 135, 180, 225, 270, 315];
+        
+        for (let i = 0; i < 8; i++) {
+            const angle = (degrees[i] - 90) * Math.PI / 180; // -90 to start at North
+            
+            // Draw direction line
+            ctx.beginPath();
+            ctx.strokeStyle = i % 2 === 0 ? '#333' : '#666';
+            ctx.lineWidth = i % 2 === 0 ? 2 : 1;
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(
+                centerX + radius * Math.cos(angle),
+                centerY + radius * Math.sin(angle)
+            );
+            ctx.stroke();
+
+            // Add compass direction label
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const labelRadius = radius + 15;
+            ctx.fillText(
+                directions[i],
+                centerX + labelRadius * Math.cos(angle),
+                centerY + labelRadius * Math.sin(angle)
+            );
+        }
+
+        // Draw minor degree markers and labels every 15 degrees
+        for (let deg = 0; deg < 360; deg += 15) {
+            if (deg % 45 !== 0) { // Skip where we already drew main lines
+                const angle = (deg - 90) * Math.PI / 180;
+                
+                // Draw tick mark
+                ctx.beginPath();
+                ctx.strokeStyle = '#999';
+                ctx.lineWidth = 1;
+                ctx.moveTo(
+                    centerX + (radius - 10) * Math.cos(angle),
+                    centerY + (radius - 10) * Math.sin(angle)
+                );
+                ctx.lineTo(
+                    centerX + radius * Math.cos(angle),
+                    centerY + radius * Math.sin(angle)
+                );
+                ctx.stroke();
+
+                // Add degree label
+                ctx.fillStyle = '#666';
+                ctx.font = '10px Arial';
+                ctx.fillText(
+                    deg + '°',
+                    centerX + (radius + 25) * Math.cos(angle),
+                    centerY + (radius + 25) * Math.sin(angle)
+                );
+            }
+        }
+
+        // Draw elevation circles every 15 degrees
+        for (let elevation = 15; elevation < 90; elevation += 15) {
+            const circleRadius = radius * (1 - elevation/90);
+            ctx.beginPath();
+            ctx.strokeStyle = elevation % 30 === 0 ? '#666' : '#999';
+            ctx.lineWidth = elevation % 30 === 0 ? 1.5 : 0.5;
+            ctx.setLineDash([2, 2]);
+            ctx.arc(centerX, centerY, circleRadius, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Add elevation labels
+            ctx.fillStyle = '#666';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText(elevation + '°', centerX + 5, centerY - circleRadius);
+        }
+    }
+
+    function drawPassTrack(points) {
+        const width = canvas.width;
+        const height = canvas.height;
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const radius = Math.min(centerX, centerY) - 20;
+
+        if (points.length > 0) {
+            // Draw the path
+            ctx.beginPath();
+            ctx.strokeStyle = '#4a76ce';
+            ctx.lineWidth = 2;
+
+            points.forEach((point, index) => {
+                // Convert elevation and azimuth to x,y coordinates
+                const r = radius * (1 - point.elevation/90); // Higher elevation = closer to center
+                const angle = (point.azimuth - 90) * Math.PI / 180; // -90 to start at North
+                const x = centerX + r * Math.cos(angle);
+                const y = centerY + r * Math.sin(angle);
+
+                if (index === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+
+                // Draw point
+                ctx.fillStyle = index === 0 ? '#4CAF50' : // Start point
+                              index === points.length - 1 ? '#f44336' : // End point
+                              '#4a76ce'; // Track points
+                ctx.beginPath();
+                ctx.arc(x, y, index === 0 || index === points.length - 1 ? 4 : 2, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            
+            ctx.stroke();
+        }
+    }
+
+    // Add hover detection and tooltip
+    let tooltip = {
+        element: document.createElement('div'),
+        visible: false,
+        init: function() {
+            this.element.style.cssText = `
+                position: absolute;
+                background: rgba(0, 0, 0, 0.8);
+                color: white;
+                padding: 5px 10px;
+                border-radius: 4px;
+                font-size: 12px;
+                pointer-events: none;
+                z-index: 1000;
+                display: none;
+            `;
+            document.body.appendChild(this.element);
+        },
+        show: function(text, x, y) {
+            this.element.innerHTML = text;
+            this.element.style.display = 'block';
+            this.element.style.left = x + 'px';
+            this.element.style.top = y + 'px';
+            this.visible = true;
+        },
+        hide: function() {
+            this.element.style.display = 'none';
+            this.visible = false;
+        }
+    };
+    tooltip.init();
+
+    // Add mouse move handler for tooltip
+    canvas.addEventListener('mousemove', function(event) {
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        
+        // Convert x,y to azimuth and elevation
+        const dx = x - centerX;
+        const dy = y - centerY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance <= radius) {
+            let azimuth = Math.atan2(dy, dx) * 180 / Math.PI + 90;
+            if (azimuth < 0) azimuth += 360;
+            const elevation = 90 * (1 - distance/radius);
+            
+            tooltip.show(
+                `Az: ${azimuth.toFixed(1)}°<br>El: ${elevation.toFixed(1)}°`,
+                event.clientX + 10,
+                event.clientY + 10
+            );
+        } else {
+            tooltip.hide();
+        }
+    });
+
+    canvas.addEventListener('mouseleave', function() {
+        tooltip.hide();
+    });
+
+    return {
+        clear: () => ctx.clearRect(0, 0, width, height),
+        draw: (points) => {
+            drawCompassFace();
+            drawPassTrack(points);
+        }
+    };
+}
+
+// Show the polar radar chart for a pass
+function showPolarRadarForPass(pass) {
+    if (!polarRadarChart) {
+        polarRadarChart = initPolarRadarChart();
+    }
+
+    // Get pass points
+    const points = calculatePassPoints(pass);
+    
+    // Draw the chart
+    polarRadarChart.draw(points);
+    
+    // Set chart title
+    document.getElementById('polar-radar-title').textContent = `${pass.satellite} Pass Track`;
+    
+    // Show the panel
+    document.getElementById('polar-radar-panel').style.display = 'block';
+}
+
+// Calculate points along the pass for visualization
+function calculatePassPoints(pass) {
+    const points = [];
+    const numPoints = 50; // Number of points to calculate
+    
+    try {
+        const satrec = satellite.twoline2satrec(
+            window.tleData[pass.satellite].tle1,
+            window.tleData[pass.satellite].tle2
+        );
+        
+        // Convert observer coordinates to radians
+        const observerGd = {
+            latitude: observer.latitude * Math.PI / 180,
+            longitude: observer.longitude * Math.PI / 180,
+            height: observer.elevation / 1000 // km
+        };
+        
+        // Calculate points along the pass
+        for (let i = 0; i < numPoints; i++) {
+            const time = new Date(pass.start.getTime() + (i / (numPoints - 1)) * (pass.end - pass.start));
+            
+            const positionAndVelocity = satellite.propagate(satrec, time);
+            if (!positionAndVelocity.position) continue;
+            
+            const gmst = satellite.gstime(time);
+            const positionEcf = satellite.eciToEcf(positionAndVelocity.position, gmst);
+            const lookAngles = satellite.ecfToLookAngles(observerGd, positionEcf);
+            
+            if (lookAngles.elevation >= 0) { // Only include points above horizon
+                points.push({
+                    azimuth: (lookAngles.azimuth * 180 / Math.PI + 360) % 360,
+                    elevation: lookAngles.elevation * 180 / Math.PI
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Error calculating pass points:', error);
+    }
+    
+    return points;
+}
+
+// Update the pass item click handler to show the polar radar
+document.addEventListener('DOMContentLoaded', () => {
+    // ... existing event listeners ...
+
+    // Add close button handler for polar radar
+    document.getElementById('close-polar-radar').addEventListener('click', () => {
+        document.getElementById('polar-radar-panel').style.display = 'none';
+    });
+});
+
+// Update the pass item creation to show both info and polar radar
+function updateUpcomingPasses() {
+    // ... existing code ...
+    
+    passes.forEach(pass => {
+        const passItem = document.createElement('div');
+        // ... existing pass item creation code ...
+        
+        // Update click handler to show both info and polar radar
+        passItem.addEventListener('click', () => {
+            showSatelliteInfo(pass.satellite);
+            showPolarRadarForPass(pass);
+        });
+        
+        upcomingPassesElement.appendChild(passItem);
+    });
+}
+
+// Also update schedule table row click handler
+function filterScheduleTable() {
+    // ... existing code ...
+    
+    filteredPasses.forEach(pass => {
+        const row = document.createElement('tr');
+        // ... existing row creation code ...
+        
+        // Update click handler to show both info and polar radar
+        row.addEventListener('click', () => {
+            const satName = pass.satellite;
+            const position = getSatellitePosition(satName);
+            if (position) {
+                map.setView([position.latitude, position.longitude], Math.max(map.getZoom(), 4));
+                showSatelliteInfo(satName);
+                showPolarRadarForPass(pass);
+            }
+            
+            // Close the schedule modal
+            document.getElementById('schedule-modal').style.display = 'none';
+        });
+        
+        tableBody.appendChild(row);
+    });
 }

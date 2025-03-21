@@ -1038,3 +1038,27 @@ close-info-btn:hover {
 .status-normal {
     background-color: #6c757d;
 }
+
+/* Polar Radar Panel */
+.polar-radar-panel {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    background-color: rgba(255, 255, 255, 0.95);
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    width: 300px;
+    height: 350px;
+    z-index: 1000;
+    display: none;
+}
+
+.polar-radar-content {
+    padding: 10px;
+    height: calc(100% - 50px); /* Account for header height */
+}
+
+#polar-radar-chart {
+    width: 100% !important;
+    height: 100% !important;
+}

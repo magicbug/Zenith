@@ -7,6 +7,9 @@
     <title>Amateur Radio Satellite Tracker</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="css/style.css">
+    <!-- Add Chart.js and its scatter plugin -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-scatter"></script>
 
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
@@ -42,6 +45,16 @@
 
             <div class="map-container">
                 <div id="satellite-map"></div>
+                <!-- Add before the satellite info panel -->
+                <div id="polar-radar-panel" class="polar-radar-panel">
+                    <div class="info-header">
+                        <h3 id="polar-radar-title">Pass Visualization</h3>
+                        <button id="close-polar-radar" class="close-button">×</button>
+                    </div>
+                    <div class="polar-radar-content">
+                        <canvas id="polar-radar-chart"></canvas>
+                    </div>
+                </div>
                 <!-- Satellite info panel -->
                 <div id="satellite-info-panel" class="satellite-info-panel">
                     <div class="info-header">
