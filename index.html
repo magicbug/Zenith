@@ -76,70 +76,97 @@
                 <h2>Options</h2>
                 <span class="close">&times;</span>
             </div>
+
+            <div class="tab-navigation">
+                <button class="tab-button active" data-tab="satellites">Satellites</button>
+                <button class="tab-button" data-tab="location">Observer Location</button>
+                <button class="tab-button" data-tab="radio">Radio</button>
+                <button class="tab-button" data-tab="hamsat">Hams.at</button>
+            </div>
+
             <div class="modal-body">
-                <div class="satellite-selector">
-                    <h3>Select Satellites</h3>
-                    <div class="search-container">
-                        <input type="text" id="satellite-search" placeholder="Search satellites...">
+                <div class="tab-content">
+                    <!-- Satellites Tab -->
+                    <div class="tab-pane active" id="satellites-tab">
+                        <div class="satellite-selector">
+                            <h3>Select Satellites</h3>
+                            <div class="search-container">
+                                <input type="text" id="satellite-search" placeholder="Search satellites...">
+                            </div>
+                            <div id="satellite-list">
+                                <!-- Satellite checkboxes will be added here dynamically -->
+                            </div>
+                            <div class="modal-actions">
+                                <button id="select-all">Select All</button>
+                                <button id="deselect-all">Deselect All</button>
+                                <button id="refresh-tle">Refresh TLEs</button>
+                                <button id="show-manual-tle">Input TLEs Manually</button>
+                            </div>
+                        </div>
                     </div>
-                    <div id="satellite-list">
-                        <!-- Satellite checkboxes will be added here dynamically -->
-                    </div>
-                    <div class="modal-actions">
-                        <button id="select-all">Select All</button>
-                        <button id="deselect-all">Deselect All</button>
-                        <button id="refresh-tle">Refresh TLEs</button>
-                        <button id="show-manual-tle">Input TLEs Manually</button>
-                    </div>
-                </div>
 
-                <div class="location-settings">
-                    <h3>Observer Location</h3>
-                    <div class="location-form">
-                        <div class="form-group">
-                            <label for="latitude">Latitude:</label>
-                            <input type="number" id="latitude" step="0.0001" value="51.5074">
-                        </div>
-                        <div class="form-group">
-                            <label for="longitude">Longitude:</label>
-                            <input type="number" id="longitude" step="0.0001" value="-0.1278">
-                        </div>
-                        <div class="form-group">
-                            <label for="elevation">Elevation (m):</label>
-                            <input type="number" id="elevation" value="0">
-                        </div>
-                        <div class="location-actions">
-                            <button id="use-geolocation" title="Use your current location">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <point x="12" y="12" r="3"></point>
-                                </svg>
-                                Use My Location
-                            </button>
+                    <!-- Observer Location Tab -->
+                    <div class="tab-pane" id="location-tab">
+                        <div class="location-settings">
+                            <h3>Observer Location</h3>
+                            <div class="location-form">
+                                <div class="form-group">
+                                    <label for="latitude">Latitude:</label>
+                                    <input type="number" id="latitude" step="0.0001" value="51.5074">
+                                </div>
+                                <div class="form-group">
+                                    <label for="longitude">Longitude:</label>
+                                    <input type="number" id="longitude" step="0.0001" value="-0.1278">
+                                </div>
+                                <div class="form-group">
+                                    <label for="elevation">Elevation (m):</label>
+                                    <input type="number" id="elevation" value="0">
+                                </div>
+                                <div class="location-actions">
+                                    <button id="use-geolocation" title="Use your current location">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <point x="12" y="12" r="3"></point>
+                                        </svg>
+                                        Use My Location
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="api-settings">
-                    <h3>API Configuration</h3>
-                    <div class="api-form">
-                        <div class="form-group">
-                            <label for="hams-at-api-key">Hams.at API Key:</label>
-                            <input type="text" id="hams-at-api-key" placeholder="Enter your Hams.at API key">
+                    <!-- Radio Tab -->
+                    <div class="tab-pane" id="radio-tab">
+                        <div class="radio-settings">
+                            <h3>Radio Settings</h3>
+                            <p>Radio configuration options will be added in a future update.</p>
                         </div>
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" id="enable-roves" checked>
-                                Enable Upcoming Roves
-                            </label>
-                        </div>
-                        <div class="form-group">
-                            <label>
-                                <input type="checkbox" id="show-unworkable-roves">
-                                Show Unworkable Roves
-                            </label>
+                    </div>
+
+                    <!-- Hams.at Tab -->
+                    <div class="tab-pane" id="hamsat-tab">
+                        <div class="api-settings">
+                            <h3>Hams.at Configuration</h3>
+                            <div class="api-form">
+                                <div class="form-group">
+                                    <label for="hams-at-api-key">Hams.at API Key:</label>
+                                    <input type="text" id="hams-at-api-key" placeholder="Enter your Hams.at API key">
+                                </div>
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox" id="enable-roves" checked>
+                                        Enable Upcoming Roves
+                                    </label>
+                                </div>
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox" id="show-unworkable-roves">
+                                        Show Unworkable Roves
+                                    </label>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

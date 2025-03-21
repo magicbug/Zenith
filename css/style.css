@@ -1,3 +1,58 @@
+/* Tabs Navigation Styles */
+.tab-navigation {
+    display: flex;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 0px;
+    white-space: nowrap;
+}
+
+.tab-button {
+    padding: 10px 20px;
+    background-color: #f8f8f8;
+    border: 1px solid #ddd;
+    border-bottom: none;
+    border-radius: 4px 4px 0 0;
+    margin-right: 5px;
+    cursor: pointer;
+    position: relative;
+    top: 1px;
+    color: #333; /* Darker text color for better contrast */
+    font-weight: 500; /* Medium font weight for better visibility */
+    transition: all 0.2s ease; /* Smooth transition for hover effects */
+}
+
+.tab-button.active {
+    background-color: #fff;
+    border-bottom: 1px solid #fff;
+    font-weight: bold;
+    color: #2c3e50; /* Darker color for the active tab */
+}
+
+.tab-button:hover:not(.active) {
+    background-color: #f0f0f0;
+    color: #000; /* Darker text on hover for better contrast */
+}
+
+/* Tab Content Styles */
+.tab-content {
+    min-height: 300px; /* Ensure minimum height for content area */
+}
+
+.tab-pane {
+    display: none;
+    padding: 1px 0;
+}
+
+.tab-pane.active {
+    display: block;
+}
+
+/* Remove redundant section titles and borders since we have tabs now */
+.location-settings, .api-settings, .radio-settings {
+    border-top: none;
+    padding-top: 0;
+}
+
 * {
     box-sizing: border-box;
     margin: 0;
@@ -356,11 +411,6 @@ close:hover {
     display: flex;
     gap: 0.5rem;
     flex-wrap: wrap;
-}
-
-.location-settings {
-    border-top: 1px solid #eee;
-    padding-top: 1rem;
 }
 
 .location-actions {
@@ -743,11 +793,6 @@ close-info-btn:hover {
 }
 
 /* API Settings Styling */
-.api-settings {
-    margin-top: 20px;
-    border-top: 1px solid #ddd;
-    padding-top: 15px;
-}
 
 .api-form {
     margin-top: 10px;

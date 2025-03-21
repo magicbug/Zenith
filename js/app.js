@@ -97,6 +97,23 @@ document.addEventListener('DOMContentLoaded', () => {
             displayUpcomingRoves();
         }
     });
+
+    // Tab switching functionality
+    const tabButtons = document.querySelectorAll('.tab-button');
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            // Remove active class from all buttons and panes
+            document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+            
+            // Add active class to clicked button
+            button.classList.add('active');
+            
+            // Get the tab ID and activate the corresponding pane
+            const tabId = button.getAttribute('data-tab');
+            document.getElementById(tabId + '-tab').classList.add('active');
+        });
+    });
 });
 
 // Initialize the Leaflet map
