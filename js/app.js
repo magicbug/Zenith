@@ -16,7 +16,6 @@ window.tleData = {};
 
 // Constants
 const TLE_URL = 'fetch_tle.php';  // Changed to use our PHP proxy script
-const CORS_PROXY = 'https://corsproxy.io/?';  // Adding CORS proxy
 const UPDATE_INTERVAL_MS = 5000; // Update satellite positions every 5 seconds
 const PASS_UPDATE_INTERVAL_MS = 60000; // Update passes every minute
 const PASS_PREDICTION_HOURS = 24; // Predict passes for the next 24 hours
@@ -1455,16 +1454,16 @@ function saveApiSettings() {
     localStorage.setItem('showUnworkableRoves', showUnworkableRoves.toString());
 }
 
-// Update the fetchUpcomingRoves function to use the PHP proxy
+// Fetch upcoming roves from the hams.at api
+// This function will be called when the API key is set or changed
+// and when the roves are enabled
 function fetchUpcomingRoves() {
-    // ...existing code...
-    
+
     const rovesContainer = document.getElementById('upcoming-roves');
     rovesContainer.innerHTML = '<div class="loading">Loading roves data...</div>';
     
     console.log('Fetching roves with API key:', hamsAtApiKey.substring(0, 5) + '...');
     
-    // Use our PHP proxy instead of directly calling the API
     fetch(`api/get_roves.php?key=${encodeURIComponent(hamsAtApiKey)}`)
     .then(response => {
         console.log('API response status:', response.status);
@@ -1473,7 +1472,6 @@ function fetchUpcomingRoves() {
         }
         return response.json();
     })
-    // ...existing code...
 }
 
 // Display upcoming roves in the UI
@@ -2303,11 +2301,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Update the pass item creation to show both info and polar radar
 function updateUpcomingPasses() {
-    // ... existing code ...
     
     passes.forEach(pass => {
         const passItem = document.createElement('div');
-        // ... existing pass item creation code ...
         
         // Update click handler to show both info and polar radar
         passItem.addEventListener('click', () => {
@@ -2319,7 +2315,8 @@ function updateUpcomingPasses() {
     });
 }
 
-// Also update schedule table row click handler
+// Filter the schedule table based on selected satellite
+// This function is used to filter the schedule table based on the selected satellite
 function filterScheduleTable() {
     const tableBody = document.getElementById('pass-schedule-body');
     tableBody.innerHTML = ''; // Clear existing rows
@@ -2394,6 +2391,7 @@ function filterScheduleTable() {
 }
 
 // Format date and time for display with date included
+// This function is used to format the date and time for the schedule table
 function formatDateTimeWithDate(date) {
     const now = new Date();
     const tomorrow = new Date(now);
@@ -2418,6 +2416,7 @@ function formatDateTimeWithDate(date) {
 }
 
 // Get a styled status label for a pass
+// This function is used to determine the status of a pass and return a styled label
 function getPassStatusLabel(pass, now) {
     const isActive = now >= pass.start && now <= pass.end;
     const timeToPass = (pass.start - now) / (60 * 1000); // Time to pass in minutes

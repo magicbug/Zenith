@@ -1051,7 +1051,6 @@ close-info-btn:hover {
     height: 100%; /* Allow the panel to take full height */
     max-width: 500px; /* Optional: Set a maximum width */
     max-height: 400px; /* Optional: Set a maximum height */
-    display: flex; /* Ensure content aligns properly */
     align-items: center;
     justify-content: center;
     z-index: 1000;
