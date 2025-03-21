@@ -1975,12 +1975,23 @@ function initPolarRadarChart() {
     const canvas = document.getElementById('polar-radar-chart');
     const ctx = canvas.getContext('2d');
 
+    // Dynamically set canvas dimensions to match parent container
+    const parent = canvas.parentElement;
+    canvas.width = parent.offsetWidth;
+    canvas.height = parent.offsetHeight;
+
     function drawCompassFace() {
         const width = canvas.width;
         const height = canvas.height;
         const centerX = width / 2;
         const centerY = height / 2;
-        const radius = Math.min(centerX, centerY) - 30;
+        let radius = Math.min(centerX, centerY) - 30;
+
+        // Ensure radius is non-negative
+        if (radius <= 0) {
+            console.warn('Canvas dimensions are too small to draw the compass.');
+            return;
+        }
 
         // Clear canvas
         ctx.clearRect(0, 0, width, height);
@@ -2006,11 +2017,8 @@ function initPolarRadarChart() {
             { label: 'NW', angle: 315, isCardinal: false }
         ];
 
-        // Draw direction lines
         directions.forEach(dir => {
             const angleRad = (dir.angle - 90) * Math.PI / 180;
-            
-            // Draw direction line
             ctx.beginPath();
             ctx.strokeStyle = dir.isCardinal ? '#333' : '#666';
             ctx.lineWidth = dir.isCardinal ? 2 : 1;
@@ -2021,7 +2029,6 @@ function initPolarRadarChart() {
             );
             ctx.stroke();
 
-            // Add direction label
             ctx.fillStyle = dir.isCardinal ? '#333' : '#666';
             ctx.font = `${dir.isCardinal ? 'bold' : 'normal'} ${dir.isCardinal ? 16 : 14}px Arial`;
             ctx.textAlign = 'center';
@@ -2033,40 +2040,40 @@ function initPolarRadarChart() {
                 centerY + labelRadius * Math.sin(angleRad)
             );
         });
-
-        // Draw degree markers every 5 degrees
-        for (let deg = 0; deg < 360; deg += 5) {
-            if (deg % 45 !== 0) { // Skip where we have cardinal/intercardinal lines
-                const angle = (deg - 90) * Math.PI / 180;
-                const isMinor = deg % 15 !== 0;
-                const markerLength = isMinor ? 10 : 15;
+        
+        // Draw degree markings every 15 degrees
+        for (let deg = 0; deg < 360; deg += 15) {
+            // Skip where we already have cardinal/intercardinal labels
+            if (deg % 45 !== 0) {
+                const angleRad = (deg - 90) * Math.PI / 180;
+                const markerLength = 10;
                 
-                // Draw marker
+                // Draw degree marker
                 ctx.beginPath();
-                ctx.strokeStyle = isMinor ? '#999' : '#666';
-                ctx.lineWidth = isMinor ? 1 : 1.5;
+                ctx.strokeStyle = '#666';
+                ctx.lineWidth = 1;
                 const markerStart = radius - markerLength;
                 ctx.moveTo(
-                    centerX + radius * Math.cos(angle),
-                    centerY + radius * Math.sin(angle)
+                    centerX + radius * Math.cos(angleRad),
+                    centerY + radius * Math.sin(angleRad)
                 );
                 ctx.lineTo(
-                    centerX + markerStart * Math.cos(angle),
-                    centerY + markerStart * Math.sin(angle)
+                    centerX + markerStart * Math.cos(angleRad),
+                    centerY + markerStart * Math.sin(angleRad)
                 );
                 ctx.stroke();
-
-                // Add degree label for major ticks
-                if (!isMinor) {
-                    ctx.fillStyle = '#666';
-                    ctx.font = '10px Arial';
-                    const textRadius = radius - 25;
-                    ctx.fillText(
-                        deg + '°',
-                        centerX + textRadius * Math.cos(angle),
-                        centerY + textRadius * Math.sin(angle)
-                    );
-                }
+                
+                // Add degree label
+                ctx.fillStyle = '#666';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                const textRadius = radius + 14;
+                ctx.fillText(
+                    `${deg}°`,
+                    centerX + textRadius * Math.cos(angleRad),
+                    centerY + textRadius * Math.sin(angleRad)
+                );
             }
         }
 
@@ -2102,7 +2109,7 @@ function initPolarRadarChart() {
         const centerY = height / 2;
         const radius = Math.min(centerX, centerY) - 30;
 
-        if (points.length > 0) {
+        if (points && points.length > 0) {
             // Draw the path
             ctx.beginPath();
             ctx.strokeStyle = '#4a76ce';
@@ -2128,29 +2135,47 @@ function initPolarRadarChart() {
             const start = points[0];
             const end = points[points.length - 1];
 
-            // Draw start point (green)
+            // Draw start point (green) with AOS label
             const startR = radius * (1 - start.elevation/90);
             const startAngle = (start.azimuth - 90) * Math.PI / 180;
+            const startX = centerX + startR * Math.cos(startAngle);
+            const startY = centerY + startR * Math.sin(startAngle);
+            
             ctx.beginPath();
             ctx.fillStyle = '#4CAF50';
-            ctx.arc(
-                centerX + startR * Math.cos(startAngle),
-                centerY + startR * Math.sin(startAngle),
-                5, 0, Math.PI * 2
-            );
+            ctx.arc(startX, startY, 5, 0, Math.PI * 2);
             ctx.fill();
+            
+            // Add AOS label
+            ctx.fillStyle = '#4CAF50';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            // Position the label slightly offset from the point
+            const aosLabelX = startX + (startX > centerX ? -10 : 10);
+            const aosLabelY = startY + (startY > centerY ? -10 : 10);
+            ctx.fillText('AOS', aosLabelX, aosLabelY);
 
-            // Draw end point (red)
+            // Draw end point (red) with LOS label
             const endR = radius * (1 - end.elevation/90);
             const endAngle = (end.azimuth - 90) * Math.PI / 180;
+            const endX = centerX + endR * Math.cos(endAngle);
+            const endY = centerY + endR * Math.sin(endAngle);
+            
             ctx.beginPath();
             ctx.fillStyle = '#f44336';
-            ctx.arc(
-                centerX + endR * Math.cos(endAngle),
-                centerY + endR * Math.sin(endAngle),
-                5, 0, Math.PI * 2
-            );
+            ctx.arc(endX, endY, 5, 0, Math.PI * 2);
             ctx.fill();
+            
+            // Add LOS label
+            ctx.fillStyle = '#f44336';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            // Position the label slightly offset from the point
+            const losLabelX = endX + (endX > centerX ? -10 : 10);
+            const losLabelY = endY + (endY > centerY ? -10 : 10);
+            ctx.fillText('LOS', losLabelX, losLabelY);
         }
     }
 
@@ -2197,17 +2222,30 @@ function showPolarRadarForPass(pass) {
         polarRadarChart = initPolarRadarChart();
     }
 
+    // Ensure the panel is visible before setting dimensions
+    const panel = document.getElementById('polar-radar-panel');
+    panel.style.display = 'block';
+
+    // Dynamically resize the canvas to match the parent container
+    const canvas = document.getElementById('polar-radar-chart');
+    const parent = canvas.parentElement;
+    canvas.width = parent.offsetWidth;
+    canvas.height = parent.offsetHeight;
+
+    // Check if dimensions are valid
+    if (canvas.width <= 0 || canvas.height <= 0) {
+        console.error('Canvas dimensions are invalid. Ensure the parent container has proper dimensions.');
+        return;
+    }
+
     // Get pass points
     const points = calculatePassPoints(pass);
-    
+
     // Draw the chart
     polarRadarChart.draw(points);
-    
+
     // Set chart title
     document.getElementById('polar-radar-title').textContent = `${pass.satellite} Pass Track`;
-    
-    // Show the panel
-    document.getElementById('polar-radar-panel').style.display = 'block';
 }
 
 // Calculate points along the pass for visualization
