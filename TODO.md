@@ -7,9 +7,19 @@
 [] Stop map zooming in when clicking on satellites its annoying
 [x] Implimented Sked Schedule.
 [x] Added Pass HTML5 notifications
+[] Create a General Tab in options
+[] Place Notifications options under General in the Modal
 
 ## Important but can wait
 [] Insert some nice icons around the place
+[] In Options for hams.at add a link to https://hams.at/users/settings for getting api key
 
 ## Research
 [] Look at how to do offline maps
+[] Implimenting CSN Technologies API for radio control
+
+## TLE Clean up 
+
+[] Remove ID 55562
+[] Remove ID 49069
+[] Remove ID 44355
