@@ -1122,3 +1122,56 @@ close-info-btn:hover {
     display: block; /* Center the canvas */
     margin: auto; /* Center the canvas */
 }
+
+/* Sked Planning Styles */
+.sked-planning-controls {
+    display: flex;
+    align-items: flex-end;
+    gap: 15px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+#sked-observer2-coords {
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 3px;
+}
+
+.small-text {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.sked-planning-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+}
+
+.sked-planning-table th,
+.sked-planning-table td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+}
+
+.mutual-pass-active {
+    background-color: #e3f2fd;
+    border-left: 4px solid #2196f3;
+}
+
+.mutual-pass-upcoming {
+    background-color: #fff8e1;
+    border-left: 4px solid #ffc107;
+}
+
+/* Match the existing schedule button styles */
+#open-sked-planning {
+    background-color: #28a745;
+    margin-right: 10px;
+}
+
+#open-sked-planning:hover {
+    background-color: #218838;
+}

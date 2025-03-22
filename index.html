@@ -19,6 +19,7 @@
             <h1>Zenith Satellite Tracker</h1>
             <div class="header-buttons">
                 <button id="open-schedule" class="schedule-button">Schedule</button>
+                <button id="open-sked-planning" class="schedule-button">Sked Planning</button>
                 <button id="open-options" class="options-button">Options</button>
             </div>
         </header>
@@ -241,6 +242,71 @@
                         </thead>
                         <tbody id="pass-schedule-body">
                             <!-- Schedule data will be added here dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sked Planning Modal -->
+    <div id="sked-planning-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Sked Planning</h2>
+                <span class="close sked-planning-close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="sked-planning-controls">
+                    <div class="form-group">
+                        <label for="sked-observer2-grid">Remote Station Grid Square:</label>
+                        <input type="text" id="sked-observer2-grid" placeholder="e.g. IO91wm" maxlength="8">
+                        <div id="sked-observer2-coords" class="small-text"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="sked-satellite-filter">Filter by Satellite:</label>
+                        <select id="sked-satellite-filter">
+                            <option value="all">All Satellites</option>
+                            <!-- Satellite options will be added dynamically -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="sked-days">Schedule Days:</label>
+                        <select id="sked-days">
+                            <option value="1">1 Day</option>
+                            <option value="3">3 Days</option>
+                            <option value="7">1 Week</option>
+                            <option value="14">2 Weeks</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="sked-min-elevation">Minimum Elevation (°):</label>
+                        <select id="sked-min-elevation">
+                            <option value="1">1°</option>
+                            <option value="2">2°</option>
+                            <option value="3">3°</option>
+                            <option value="5" selected>5°</option>
+                            <option value="10">10°</option>
+                            <option value="15">15°</option>
+                            <option value="20">20°</option>
+                        </select>
+                    </div>
+                    <button id="refresh-sked-planning" class="refresh-button">Find Mutual Passes</button>
+                </div>
+                <div class="schedule-table-container">
+                    <table id="sked-planning-table" class="schedule-table">
+                        <thead>
+                            <tr>
+                                <th>Satellite</th>
+                                <th>Start Time</th>
+                                <th>End Time</th>
+                                <th>Your Max El</th>
+                                <th>Their Max El</th>
+                                <th>Duration</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sked-planning-body">
+                            <!-- Sked data will be added here dynamically -->
                         </tbody>
                     </table>
                 </div>
