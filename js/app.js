@@ -19,6 +19,11 @@ let passesUpdateInterval;
 let allSkedPasses = [];
 let SKED_PREDICTION_DAYS = 1;
 let SKED_MIN_ELEVATION = 5;
+// Notification-related variables
+let notifiedPasses = new Map(); // Store IDs of passes we've notified for
+let notificationCheckInterval;
+let notificationsEnabled = false;
+const NOTIFICATION_THRESHOLD_MINUTES = 15; // Minutes before pass to show notification
 
 // Make tleData a true window-level variable to avoid scope issues
 window.tleData = {};
@@ -123,6 +128,15 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById(tabId + '-tab').classList.add('active');
         });
     });
+
+    // Initialize notifications
+    initNotifications();
+    
+    // Test notification button
+    const testNotificationBtn = document.getElementById('test-notification');
+    if (testNotificationBtn) {
+        testNotificationBtn.addEventListener('click', showTestNotification);
+    }
 });
 
 // Initialize the Leaflet map
@@ -185,6 +199,13 @@ function setupEventListeners() {
         modal.style.display = 'block';
         // Force repopulate satellite list when opening modal
         populateSatelliteList();
+        
+        // Set the notification checkbox state based on current setting
+        const notificationCheckbox = document.getElementById('enable-notifications');
+        if (notificationCheckbox) {
+            const savedNotificationsEnabled = localStorage.getItem('notificationsEnabled');
+            notificationCheckbox.checked = savedNotificationsEnabled === 'true';
+        }
     });
 
     closeBtn.addEventListener('click', () => {
@@ -194,6 +215,20 @@ function setupEventListeners() {
     saveBtn.addEventListener('click', () => {
         updateObserverLocation();
         updateSelectedSatellites();
+        
+        // Save notification preferences when closing the modal
+        const notificationsEnabled = document.getElementById('enable-notifications').checked;
+        localStorage.setItem('notificationsEnabled', notificationsEnabled.toString());
+        
+        if (notificationsEnabled) {
+            initNotifications();
+        } else {
+            if (notificationCheckInterval) {
+                clearInterval(notificationCheckInterval);
+                notificationCheckInterval = null;
+            }
+        }
+        
         modal.style.display = 'none';
     });
 
@@ -2841,4 +2876,315 @@ function filterSkedPlanningTable() {
         row.innerHTML = `<td colspan="6" style="text-align: center;">No mutual passes found for ${satelliteFilter}</td>`;
         tableBody.appendChild(row);
     }
+}
+
+// Initialize notification permissions and check interval
+function initNotifications() {
+    // Check if the browser supports notifications
+    if (!("Notification" in window)) {
+        console.log("This browser does not support desktop notifications");
+        notificationsEnabled = false;
+        return;
+    }
+
+    // Check if permission is already granted
+    if (Notification.permission === "granted") {
+        notificationsEnabled = true;
+        startNotificationCheck();
+    } else if (Notification.permission !== "denied") {
+        // Request permission
+        Notification.requestPermission().then(permission => {
+            notificationsEnabled = (permission === "granted");
+            if (notificationsEnabled) {
+                startNotificationCheck();
+            }
+        });
+    }
+}
+
+// Start checking for passes that need notifications
+function startNotificationCheck() {
+    // Clear any existing interval
+    if (notificationCheckInterval) {
+        clearInterval(notificationCheckInterval);
+    }
+    
+    // Check immediately
+    checkUpcomingPassesForNotifications();
+    
+    // Then check every minute
+    notificationCheckInterval = setInterval(checkUpcomingPassesForNotifications, 60000);
+}
+
+// Check for passes that need notifications
+function checkUpcomingPassesForNotifications() {
+    if (!notificationsEnabled) return;
+    
+    const now = new Date();
+    
+    // Go through all upcoming passes
+    const upcomingPassesElement = document.getElementById('upcoming-passes');
+    const passItems = upcomingPassesElement.querySelectorAll('.pass-item');
+    
+    passItems.forEach(passItem => {
+        // Extract satellite info from the pass item
+        const satelliteName = passItem.querySelector('.pass-satellite-name').textContent;
+        const timeText = passItem.querySelector('.pass-time').textContent;
+        const detailsText = passItem.querySelector('.pass-details').textContent;
+        
+        // Extract times (assuming format like "12:30 to 12:45")
+        const timeMatch = timeText.match(/(\d+:\d+)/g);
+        if (!timeMatch || timeMatch.length < 2) return;
+        
+        const startTimeStr = timeMatch[0];
+        const endTimeStr = timeMatch[1];
+        
+        // Create a Date object for the start time
+        const [hours, minutes] = startTimeStr.split(':').map(Number);
+        const startTime = new Date(now);
+        startTime.setHours(hours, minutes, 0, 0);
+        
+        // If the time has already passed today, it might be for tomorrow
+        if (startTime < now && now.getHours() > hours) {
+            startTime.setDate(startTime.getDate() + 1);
+        }
+        
+        // Calculate minutes until the pass
+        const minutesUntilPass = (startTime - now) / (60 * 1000);
+        
+        // Check if we're within the notification threshold
+        if (minutesUntilPass > 0 && minutesUntilPass <= NOTIFICATION_THRESHOLD_MINUTES) {
+            // Create a unique ID for this pass
+            const passId = `${satelliteName}-${startTimeStr}-${endTimeStr}`;
+            
+            // Check if we've already notified for this pass
+            if (!notifiedPasses.has(passId)) {
+                // Create notification
+                showPassNotification(satelliteName, startTimeStr, endTimeStr, detailsText, passId, startTime);
+                
+                // Mark this pass as notified
+                notifiedPasses.set(passId, {
+                    satellite: satelliteName,
+                    startTime: startTime,
+                    notification: null  // Will be set in showPassNotification
+                });
+            }
+        }
+    });
+    
+    // Clean up old notified passes
+    cleanupOldNotifications();
+}
+
+// Show a notification for an upcoming pass
+function showPassNotification(satellite, startTime, endTime, details, passId, actualStartTime) {
+    if (!notificationsEnabled) return;
+    
+    // Extract max elevation from details text
+    let maxElevation = "unknown";
+    const elevationMatch = details.match(/Max Elevation: (\d+)°/);
+    if (elevationMatch && elevationMatch[1]) {
+        maxElevation = elevationMatch[1] + "°";
+    }
+    
+    // Extract duration from details text
+    let duration = "unknown";
+    const durationMatch = details.match(/Duration: (\d+) min/);
+    if (durationMatch && durationMatch[1]) {
+        duration = durationMatch[1] + " min";
+    }
+    
+    // Create the notification
+    const options = {
+        body: `Pass from ${startTime} to ${endTime}\nDuration: ${duration}, Max Elevation: ${maxElevation}`,
+        icon: '/favicon.ico',
+        tag: passId,
+        requireInteraction: true  // Keep notification visible until user dismisses it
+    };
+    
+    const notification = new Notification(`Upcoming Pass: ${satellite}`, options);
+    
+    // Store the notification so we can close it later
+    if (notifiedPasses.has(passId)) {
+        notifiedPasses.get(passId).notification = notification;
+    }
+    
+    // Add click handler to focus the app
+    notification.onclick = function() {
+        window.focus();
+        
+        // Highlight the satellite
+        highlightSatellite(satellite);
+        
+        // Close notification
+        this.close();
+    };
+    
+    // Schedule automatic closing of notification after the pass ends
+    // Add 5 minutes to account for potential delays
+    const now = new Date();
+    const endTimeDate = new Date(actualStartTime);
+    
+    // Parse duration and add to end time
+    if (durationMatch && durationMatch[1]) {
+        endTimeDate.setMinutes(endTimeDate.getMinutes() + parseInt(durationMatch[1]) + 5);
+        
+        // Schedule notification cleanup
+        setTimeout(() => {
+            if (notification) {
+                notification.close();
+            }
+            
+            // Remove from notified passes
+            if (notifiedPasses.has(passId)) {
+                notifiedPasses.delete(passId);
+            }
+        }, endTimeDate - now);
+    }
+}
+
+// Clean up old notification entries
+function cleanupOldNotifications() {
+    const now = new Date();
+    
+    // Go through all notifications and remove the old ones
+    for (const [passId, passInfo] of notifiedPasses.entries()) {
+        const startTime = passInfo.startTime;
+        
+        // If the pass started more than 3 hours ago, remove it from the list
+        if ((now - startTime) > 3 * 60 * 60 * 1000) {
+            // Close notification if it exists
+            if (passInfo.notification) {
+                passInfo.notification.close();
+            }
+            
+            // Remove from the map
+            notifiedPasses.delete(passId);
+        }
+    }
+}
+
+// Add notification functionality to the document ready function
+document.addEventListener('DOMContentLoaded', () => {
+    // ...existing code...
+    
+    // Add notification toggle to settings
+    const optionsForm = document.querySelector('#options-form');
+    if (optionsForm) {
+        const notificationsDiv = document.createElement('div');
+        notificationsDiv.className = 'options-section';
+        notificationsDiv.innerHTML = `
+            <h3>Notifications</h3>
+            <div class="form-group">
+                <label for="enable-notifications">Enable pass notifications:</label>
+                <input type="checkbox" id="enable-notifications">
+                <span class="help-text">Get notified ${NOTIFICATION_THRESHOLD_MINUTES} minutes before a pass</span>
+            </div>
+        `;
+        
+        optionsForm.appendChild(notificationsDiv);
+        
+        // Add event listener for the notification toggle
+        document.getElementById('enable-notifications').addEventListener('change', function() {
+            if (this.checked) {
+                initNotifications();
+            } else {
+                notificationsEnabled = false;
+                if (notificationCheckInterval) {
+                    clearInterval(notificationCheckInterval);
+                    notificationCheckInterval = null;
+                }
+            }
+            
+            // Save setting
+            localStorage.setItem('notificationsEnabled', notificationsEnabled.toString());
+        });
+        
+        // Load setting from local storage
+        const savedNotificationsEnabled = localStorage.getItem('notificationsEnabled');
+        if (savedNotificationsEnabled === 'true') {
+            document.getElementById('enable-notifications').checked = true;
+            initNotifications();
+        }
+    }
+});
+
+// Add an event listener for the test notification button
+document.addEventListener('DOMContentLoaded', () => {
+    // ...existing code...
+    
+    // Test notification button
+    const testNotificationBtn = document.getElementById('test-notification');
+    if (testNotificationBtn) {
+        testNotificationBtn.addEventListener('click', showTestNotification);
+    }
+    
+    // ...existing code...
+});
+
+// Function to show a test notification
+function showTestNotification() {
+    // First check if notifications are enabled/available
+    if (!("Notification" in window)) {
+        alert("This browser does not support desktop notifications");
+        return;
+    }
+    
+    // Check if permission is already granted
+    if (Notification.permission === "granted") {
+        // Show a test notification
+        createTestNotification();
+    } else if (Notification.permission !== "denied") {
+        // Request permission
+        Notification.requestPermission().then(permission => {
+            if (permission === "granted") {
+                createTestNotification();
+            } else {
+                alert("Notification permission denied. Please enable notifications in your browser settings.");
+            }
+        });
+    } else {
+        // Permission was previously denied
+        alert("Notification permission was denied. Please enable notifications in your browser settings.");
+    }
+}
+
+// Create and show a test notification
+function createTestNotification() {
+    // Get the current time plus 15 minutes for the demo
+    const now = new Date();
+    const passTime = new Date(now.getTime() + 15 * 60000);
+    const hours = passTime.getHours().toString().padStart(2, '0');
+    const minutes = passTime.getMinutes().toString().padStart(2, '0');
+    const startTimeStr = `${hours}:${minutes}`;
+    
+    // End time 10 minutes later
+    const endTime = new Date(passTime.getTime() + 10 * 60000);
+    const endHours = endTime.getHours().toString().padStart(2, '0');
+    const endMinutes = endTime.getMinutes().toString().padStart(2, '0');
+    const endTimeStr = `${endHours}:${endMinutes}`;
+    
+    // Notification options
+    const options = {
+        body: `Pass from ${startTimeStr} to ${endTimeStr}\nDuration: 10 min, Max Elevation: 45°`,
+        icon: '/favicon.ico',
+        requireInteraction: true  // Keep notification visible until user dismisses it
+    };
+    
+    // Create the notification
+    const notification = new Notification('Test: Upcoming Pass: ISS', options);
+    
+    // Add click handler to focus the app
+    notification.onclick = function() {
+        window.focus();
+        this.close();
+        
+        // Show a confirmation that the notification works
+        alert('Success! Notifications are working correctly.');
+    };
+    
+    // Auto-close after 10 seconds to avoid user confusion
+    setTimeout(() => {
+        notification.close();
+    }, 10000);
 }
