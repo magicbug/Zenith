@@ -13,8 +13,11 @@
 ## Important but can wait
 [] Insert some nice icons around the place
 [] In Options for hams.at add a link to https://hams.at/users/settings for getting api key
+[] Add an about modal 
+[] Look at how to make the design function better on mobile and tablet devices
 
 ## Research
+[] Consider changing the name to OscarWatch
 [] Look at how to do offline maps
 [] Implimenting CSN Technologies API for radio control
 

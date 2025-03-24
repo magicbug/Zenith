@@ -41,12 +41,17 @@ let enableRoves = true;
 let upcomingRoves = [];
 let showUnworkableRoves = false;
 
+// CSN Technologies S.A.T configuration
+let enableCsnSat = false;
+let csnSatAddress = '';
+
 // Initialize the application when the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
     // Load settings from local storage first, before map initialization
     loadObserverFromLocalStorage();
     loadSelectedSatellitesFromLocalStorage();
     loadHamsAtSettingsFromLocalStorage();
+    loadCsnSatSettingsFromLocalStorage();
     
     // Initialize map after observer location is loaded
     initMap();
@@ -110,6 +115,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (enableRoves && hamsAtApiKey) {
             displayUpcomingRoves();
         }
+    });
+
+    // Add event listeners for CSN SAT settings
+    document.getElementById('enable-csn-sat').addEventListener('change', function() {
+        enableCsnSat = this.checked;
+        saveCsnSatSettingsToLocalStorage();
+    });
+    
+    document.getElementById('csn-sat-address').addEventListener('input', function() {
+        csnSatAddress = this.value.trim();
+        saveCsnSatSettingsToLocalStorage();
     });
 
     // Tab switching functionality
@@ -1478,6 +1494,9 @@ function saveOptions() {
     // Save API settings
     saveApiSettings();
     
+    // Save CSN SAT settings
+    saveCsnSatSettingsToLocalStorage();
+    
     // Update roves if enabled
     if (enableRoves && hamsAtApiKey) {
         fetchUpcomingRoves();
@@ -1787,6 +1806,27 @@ function saveHamsAtSettingsToLocalStorage() {
     localStorage.setItem('hamsAtApiKey', hamsAtApiKey);
     localStorage.setItem('enableRoves', enableRoves.toString());
     localStorage.setItem('showUnworkableRoves', showUnworkableRoves.toString());
+}
+
+// Load CSN SAT settings from local storage
+function loadCsnSatSettingsFromLocalStorage() {
+    const enabledSetting = localStorage.getItem('enableCsnSat');
+    if (enabledSetting !== null) {
+        enableCsnSat = enabledSetting === 'true';
+        document.getElementById('enable-csn-sat').checked = enableCsnSat;
+    }
+
+    const address = localStorage.getItem('csnSatAddress');
+    if (address) {
+        csnSatAddress = address;
+        document.getElementById('csn-sat-address').value = csnSatAddress;
+    }
+}
+
+// Save CSN SAT settings to local storage
+function saveCsnSatSettingsToLocalStorage() {
+    localStorage.setItem('enableCsnSat', enableCsnSat.toString());
+    localStorage.setItem('csnSatAddress', csnSatAddress);
 }
 
 // Schedule functionality
