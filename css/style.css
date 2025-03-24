@@ -1175,3 +1175,159 @@ close-info-btn:hover {
 #open-sked-planning:hover {
     background-color: #218838;
 }
+
+/* Add at the end of the file */
+
+/* CSN Technologies S.A.T Panel */
+.sat-panel {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;  /* Changed from right: 10px to left: 20px */
+    width: 300px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    display: none;
+    flex-direction: column;
+    z-index: 500;
+}
+
+.sat-panel .info-header {
+    background-color: #3f51b5;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+}
+
+.sat-panel .info-header h3 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.sat-panel-content {
+    padding: 10px;
+    overflow-y: auto;
+    max-height: 200px;
+}
+
+.sat-status {
+    margin-bottom: 8px;
+    padding: 5px;
+    border-radius: 4px;
+}
+
+.sat-status.success {
+    background-color: #e8f5e9;
+    border-left: 4px solid #4caf50;
+}
+
+.sat-status.error {
+    background-color: #ffebee;
+    border-left: 4px solid #f44336;
+}
+
+.sat-status.pending {
+    background-color: #e3f2fd;
+    border-left: 4px solid #2196f3;
+}
+
+.sat-selected {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+    padding: 8px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    border-left: 4px solid #3f51b5;
+}
+
+/* SAT Panel Buttons */
+.sat-panel-buttons {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.sat-button {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-weight: bold;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+    margin: 0;
+}
+
+.sat-button.sat-enabled {
+    background-color: #4caf50;
+    color: white;
+}
+
+.sat-button.sat-disabled {
+    background-color: #f44336;
+    color: white;
+}
+
+.sat-button.sat-center {
+    background-color: #2196f3;
+    color: white;
+}
+
+.sat-button:hover {
+    opacity: 0.9;
+}
+
+.button-pressed {
+    transform: scale(0.95);
+}
+
+/* Rotator info styling */
+.sat-rotator-info {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    background-color: #f5f5f5;
+    padding: 8px;
+    border-radius: 4px;
+    border-left: 4px solid #2196f3;
+}
+
+.sat-rotator-info table {
+    width: 100%;
+}
+
+.sat-rotator-info td:nth-child(odd) {
+    font-weight: bold;
+    width: 25%;
+    text-align: right;
+    padding-right: 5px;
+}
+
+.sat-rotator-info td:nth-child(even) {
+    width: 25%;
+    text-align: left;
+}
+
+.sat-panel-buttons-secondary {
+    margin-top: 6px;
+    border-top: none;
+    padding-top: 0;
+}
+
+.sat-button.sat-park {
+    background-color: #ff9800;
+    color: white;
+}
+
+.sat-button.sat-park:hover {
+    background-color: #f57c00;
+}

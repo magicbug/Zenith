@@ -63,6 +63,39 @@
                         <!-- Satellite information will be displayed here -->
                     </div>
                 </div>
+
+                <!-- CSN Technologies S.A.T Panel -->
+                <div id="sat-panel" class="sat-panel">
+                    <div class="info-header">
+                        <h3 id="sat-panel-title">CSN Technologies S.A.T</h3>
+                        <button id="close-sat-panel" class="close-button">×</button>
+                    </div>
+                    <div id="sat-panel-content" class="sat-panel-content">
+                        <!-- S.A.T information will be displayed here -->
+                        <div id="sat-status-message" class="sat-status"></div>
+                        <div id="sat-selected" class="sat-selected" style="display: none;"></div>
+                        
+                        <!-- Rotator status table -->
+                        <div class="sat-rotator-info">
+                            <table>
+                                <tr>
+                                    <td>Azimuth:</td>
+                                    <td id="sat-current-az">--</td>
+                                    <td>Elevation:</td>
+                                    <td id="sat-current-el">--</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="sat-panel-buttons">
+                        <button id="sat-radio-toggle" class="sat-button sat-enabled">Radio Enabled</button>
+                        <button id="sat-lock-vfo" class="sat-button sat-enabled">Lock VFO</button>
+                        <button id="sat-center" class="sat-button sat-center">Center</button>
+                    </div>
+                    <div class="sat-panel-buttons sat-panel-buttons-secondary">
+                        <button id="sat-park" class="sat-button sat-park">Park Antennas</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

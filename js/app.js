@@ -44,6 +44,8 @@ let showUnworkableRoves = false;
 // CSN Technologies S.A.T configuration
 let enableCsnSat = false;
 let csnSatAddress = '';
+let satAPIAvailable = false;
+let currentSelectedSatelliteForSAT = '';
 
 // Initialize the application when the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
@@ -52,6 +54,11 @@ document.addEventListener('DOMContentLoaded', () => {
     loadSelectedSatellitesFromLocalStorage();
     loadHamsAtSettingsFromLocalStorage();
     loadCsnSatSettingsFromLocalStorage();
+    
+    // Check S.A.T API availability
+    if (enableCsnSat && csnSatAddress) {
+        checkSATAPIAvailability();
+    }
     
     // Initialize map after observer location is loaded
     initMap();
@@ -121,11 +128,25 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('enable-csn-sat').addEventListener('change', function() {
         enableCsnSat = this.checked;
         saveCsnSatSettingsToLocalStorage();
+        
+        // Check API availability when enabled
+        if (enableCsnSat && csnSatAddress) {
+            checkSATAPIAvailability();
+        }
     });
     
     document.getElementById('csn-sat-address').addEventListener('input', function() {
         csnSatAddress = this.value.trim();
         saveCsnSatSettingsToLocalStorage();
+        
+        // Check API availability if enabled and address field has content
+        if (enableCsnSat && csnSatAddress) {
+            // Use debounce to avoid making too many API calls while typing
+            clearTimeout(window.satAddressTimeout);
+            window.satAddressTimeout = setTimeout(() => {
+                checkSATAPIAvailability();
+            }, 1000); // Wait 1 second after typing stops
+        }
     });
 
     // Tab switching functionality
@@ -153,6 +174,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (testNotificationBtn) {
         testNotificationBtn.addEventListener('click', showTestNotification);
     }
+    
+    // Initialize S.A.T control buttons
+    initSatControlButtons();
 });
 
 // Initialize the Leaflet map
@@ -243,6 +267,25 @@ function setupEventListeners() {
                 clearInterval(notificationCheckInterval);
                 notificationCheckInterval = null;
             }
+        }
+        
+        // Save API settings
+        saveApiSettings();
+        
+        // Save CSN SAT settings
+        saveCsnSatSettingsToLocalStorage();
+        
+        // Check the S.A.T API availability after saving settings
+        if (enableCsnSat && csnSatAddress) {
+            checkSATAPIAvailability();
+        }
+        
+        // Update roves if enabled
+        if (enableRoves && hamsAtApiKey) {
+            fetchUpcomingRoves();
+        } else {
+            document.getElementById('upcoming-roves').innerHTML = 
+                '<div class="rove-item">Roves display is disabled or API key is missing.</div>';
         }
         
         modal.style.display = 'none';
@@ -816,6 +859,11 @@ function showSatelliteInfo(satName) {
     
     // Ensure the panel is visible
     infoPanel.style.display = 'block';
+    
+    // Send the satellite selection to the S.A.T system if enabled
+    if (enableCsnSat && satAPIAvailable) {
+        selectSatelliteForSAT(satName);
+    }
 }
 
 // Get satellite position
@@ -1161,9 +1209,9 @@ function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
     const toRad = (deg) => deg * (Math.PI / 180);
 
     const dLat = toRad(lat2 - lat1);
-    const dLon = toRad(lon2 - lon1);
+    const dLon = toRad(lon1 - lon2);
     const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+Math.sin(dLat / 2) * Math.sin(dLat / 2) +
         Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
         Math.sin(dLon / 2) * Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
@@ -3227,4 +3275,440 @@ function createTestNotification() {
     setTimeout(() => {
         notification.close();
     }, 10000);
+}
+
+// Check if the CSN Technologies S.A.T API is available
+function checkSATAPIAvailability() {
+    if (!enableCsnSat || !csnSatAddress) {
+        satAPIAvailable = false;
+        return;
+    }
+
+    console.log('Checking CSN S.A.T API availability through proxy for:', csnSatAddress);
+    
+    // Use our PHP proxy instead of direct API call
+    const proxyUrl = `api/sat_proxy.php?address=${encodeURIComponent(csnSatAddress)}&action=status`;
+    
+    fetch(proxyUrl)
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('S.A.T API proxy response:', data);
+        
+        if (data.success) {
+            satAPIAvailable = true;
+            console.log('S.A.T API available through proxy');
+            
+            // Show the S.A.T panel with success message
+            showSATPanel("S.A.T API is available and ready", "success");
+            
+            // Start fetching tracking data immediately
+            startSatTrackPolling();
+            return true;
+        } else {
+            console.error('S.A.T API error:', data.error);
+            satAPIAvailable = false;
+            showSATPanel(`S.A.T API error: ${data.error}`, "error");
+            return false;
+        }
+    })
+    .catch(error => {
+        console.error('Error checking S.A.T API through proxy:', error);
+        satAPIAvailable = false;
+        showSATPanel(`Error connecting to S.A.T API: ${error.message}`, "error");
+        return false;
+    });
+}
+
+// Send satellite selection to the S.A.T API
+function selectSatelliteForSAT(satName) {
+    if (!enableCsnSat || !csnSatAddress || !satAPIAvailable) {
+        return false;
+    }
+
+    console.log('Selecting satellite for S.A.T through proxy:', satName);
+    
+    // Use our PHP proxy for satellite selection
+    const proxyUrl = `api/sat_proxy.php?address=${encodeURIComponent(csnSatAddress)}&action=select&satellite=${encodeURIComponent(satName)}`;
+    
+    // Show that we're sending the selection to the API
+    showSATPanel(`Selecting satellite: ${satName}...`);
+    
+    return fetch(proxyUrl)
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('S.A.T selection response:', data);
+        
+        if (data.success) {
+            currentSelectedSatelliteForSAT = satName;
+            
+            // Update the S.A.T panel with the successful selection
+            showSATPanel(`Satellite selected: ${satName}`, 'success');
+            updateSATSelectedSatellite(satName);
+            return true;
+        } else {
+            console.error('S.A.T API selection error:', data.error);
+            showSATPanel(`Failed to select satellite: ${satName}. Error: ${data.error}`, 'error');
+            return false;
+        }
+    })
+    .catch(error => {
+        console.error('Error selecting satellite for S.A.T:', error);
+        showSATPanel(`Error selecting satellite: ${error.message}`, 'error');
+        return false;
+    });
+}
+
+// Show/hide the S.A.T panel
+function showSATPanel(message, status = 'pending') {
+    const satPanel = document.getElementById('sat-panel');
+    const satPanelContent = document.getElementById('sat-panel-content');
+    
+    // Create or update status message
+    let statusElement = satPanelContent.querySelector('#sat-status-message');
+    if (!statusElement) {
+        statusElement = document.getElementById('sat-status-message');
+    }
+    
+    if (statusElement) {
+        statusElement.className = `sat-status ${status}`;
+        statusElement.textContent = message;
+    }
+    
+    // Show the panel
+    satPanel.style.display = 'flex';
+    
+    // Start tracking data polling when panel is shown
+    startSatTrackPolling();
+}
+
+// Update the selected satellite in the S.A.T panel
+function updateSATSelectedSatellite(satName) {
+    const satPanelContent = document.getElementById('sat-panel-content');
+    
+    // Create or update selected satellite display
+    let selectedElement = satPanelContent.querySelector('.sat-selected');
+    if (!selectedElement) {
+        selectedElement = document.createElement('div');
+        selectedElement.className = 'sat-selected';
+        satPanelContent.appendChild(selectedElement);
+    }
+    
+    selectedElement.innerHTML = `
+        <div>
+            <strong>Selected Satellite:</strong> ${satName}
+        </div>
+    `;
+}
+
+// Close the S.A.T panel
+function closeSATPanel() {
+    const satPanel = document.getElementById('sat-panel');
+    satPanel.style.display = 'none';
+    
+    // Stop tracking data polling when panel is hidden
+    stopSatTrackPolling();
+}
+
+// Add event listener for S.A.T panel close button
+document.addEventListener('DOMContentLoaded', () => {
+    // Existing event listeners...
+    
+    // S.A.T panel close button
+    document.getElementById('close-sat-panel').addEventListener('click', closeSATPanel);
+    
+    // Add event listener for enable/disable S.A.T checkbox
+    document.getElementById('enable-csn-sat').addEventListener('change', function() {
+        enableCsnSat = this.checked;
+        saveCsnSatSettingsToLocalStorage();
+        
+        // Check API availability when enabled
+        if (enableCsnSat && csnSatAddress) {
+            checkSATAPIAvailability();
+        }
+    });
+    
+    // Add event listener for S.A.T address input
+    document.getElementById('csn-sat-address').addEventListener('input', function() {
+        csnSatAddress = this.value.trim();
+        saveCsnSatSettingsToLocalStorage();
+    });
+});
+
+// Add these functions for the S.A.T panel buttons
+document.addEventListener('DOMContentLoaded', () => {
+    // ...existing code...
+    
+    // Initialize S.A.T control buttons
+    initSatControlButtons();
+});
+
+// Initialize S.A.T control buttons with event listeners
+function initSatControlButtons() {
+    // Radio toggle button
+    const radioToggleBtn = document.getElementById('sat-radio-toggle');
+    if (radioToggleBtn) {
+        // Default state is enabled (green)
+        let radioEnabled = true;
+        
+        radioToggleBtn.addEventListener('click', () => {
+            // Toggle the state
+            radioEnabled = !radioEnabled;
+            
+            // Update button appearance
+            if (radioEnabled) {
+                radioToggleBtn.textContent = 'Radio Enabled';
+                radioToggleBtn.classList.remove('sat-disabled');
+                radioToggleBtn.classList.add('sat-enabled');
+            } else {
+                radioToggleBtn.textContent = 'Radio Disabled';
+                radioToggleBtn.classList.remove('sat-enabled');
+                radioToggleBtn.classList.add('sat-disabled');
+            }
+            
+            // Send command to S.A.T
+            sendSatCommand('r');
+        });
+    }
+    
+    // Lock VFO button
+    const lockVfoBtn = document.getElementById('sat-lock-vfo');
+    if (lockVfoBtn) {
+        // Default state is enabled (green)
+        let vfoLocked = true;
+        
+        lockVfoBtn.addEventListener('click', () => {
+            // Toggle the state
+            vfoLocked = !vfoLocked;
+            
+            // Update button appearance
+            if (vfoLocked) {
+                lockVfoBtn.textContent = 'Lock VFO';
+                lockVfoBtn.classList.remove('sat-disabled');
+                lockVfoBtn.classList.add('sat-enabled');
+            } else {
+                lockVfoBtn.textContent = 'Unlock VFO';
+                lockVfoBtn.classList.remove('sat-enabled');
+                lockVfoBtn.classList.add('sat-disabled');
+            }
+            
+            // Send command to S.A.T
+            sendSatCommand('v');
+        });
+    }
+    
+    // Center transponder button
+    const centerBtn = document.getElementById('sat-center');
+    if (centerBtn) {
+        centerBtn.addEventListener('click', () => {
+            // Send center command to S.A.T
+            sendSatCommand('d');
+            
+            // Visual feedback that the button was pressed
+            centerBtn.classList.add('button-pressed');
+            setTimeout(() => {
+                centerBtn.classList.remove('button-pressed');
+            }, 200);
+        });
+    }
+    
+    // Park antennas button
+    const parkBtn = document.getElementById('sat-park');
+    if (parkBtn) {
+        parkBtn.addEventListener('click', () => {
+            // Show confirmation dialog
+            if (confirm('This will park the antennas and stop tracking the current satellite. Continue?')) {
+                // Send park command to S.A.T
+                sendSatCommand('z');
+                
+                // Visual feedback that the button was pressed
+                parkBtn.classList.add('button-pressed');
+                setTimeout(() => {
+                    parkBtn.classList.remove('button-pressed');
+                }, 200);
+                
+                // Clear the selected satellite display
+                updateSATSelectedSatellite('None - Antennas Parked');
+                
+                // Update the status message
+                showSATPanel('Antennas parked successfully', 'success');
+            }
+        });
+    }
+}
+
+// Send a command to the S.A.T system
+function sendSatCommand(command) {
+    if (!enableCsnSat || !csnSatAddress || !satAPIAvailable) {
+        showSATPanel('Error: S.A.T is not available', 'error');
+        return false;
+    }
+
+    console.log(`Sending ${command} command to S.A.T`);
+    
+    // Show sending status
+    showSATPanel(`Sending command...`);
+    
+    // Use our proxy to avoid mixed content issues
+    const proxyUrl = `api/sat_proxy.php?address=${encodeURIComponent(csnSatAddress)}&action=cmd&command=${command}`;
+    
+    // Send the command via our proxy
+    return fetch(proxyUrl)
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('S.A.T command response:', data);
+        
+        if (data.success) {
+            showSATPanel('Command sent successfully', 'success');
+            return true;
+        } else {
+            console.error('S.A.T command error:', data.error);
+            showSATPanel(`Command failed: ${data.error}`, 'error');
+            return false;
+        }
+    })
+    .catch(error => {
+        console.error('Error sending S.A.T command:', error);
+        showSATPanel(`Error: ${error.message}`, 'error');
+        return false;
+    });
+}
+
+// Add tracking API functionality to the S.A.T system
+let satTrackInterval = null;
+let satTrackData = null;
+const SAT_TRACK_POLL_INTERVAL = 3000; // Poll every 3 seconds
+
+// Function to start polling the tracking API
+function startSatTrackPolling() {
+    if (satTrackInterval) {
+        clearInterval(satTrackInterval);
+    }
+    
+    // Poll immediately
+    fetchSatTrackData();
+    
+    // Then set up regular polling
+    satTrackInterval = setInterval(fetchSatTrackData, SAT_TRACK_POLL_INTERVAL);
+}
+
+// Function to stop polling the tracking API
+function stopSatTrackPolling() {
+    if (satTrackInterval) {
+        clearInterval(satTrackInterval);
+        satTrackInterval = null;
+    }
+}
+
+// Fetch tracking data from the S.A.T API
+function fetchSatTrackData() {
+    if (!enableCsnSat || !csnSatAddress || !satAPIAvailable) {
+        return;
+    }
+
+    // Use our proxy to avoid mixed content issues
+    const proxyUrl = `api/sat_proxy.php?address=${encodeURIComponent(csnSatAddress)}&action=track`;
+    
+    fetch(proxyUrl)
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(result => {
+        if (result.success && result.data) {
+            // Store the tracking data
+            satTrackData = result.data;
+            
+            // Update the rotator display
+            updateSatRotatorDisplay();
+            
+            // Update button states
+            updateSatButtonStates();
+            
+            // Debug log
+            console.log('Updated S.A.T tracking data:', satTrackData);
+        } else if (result.error) {
+            console.error('S.A.T tracking error:', result.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching S.A.T tracking data:', error);
+    });
+}
+
+// Update the rotator display with current azimuth and elevation
+function updateSatRotatorDisplay() {
+    if (!satTrackData) return;
+    
+    // Get the display elements
+    const azElement = document.getElementById('sat-current-az');
+    const elElement = document.getElementById('sat-current-el');
+    
+    if (azElement && satTrackData.az !== undefined) {
+        // Format azimuth as whole number
+        azElement.textContent = Math.round(satTrackData.az) + "°";
+    }
+    
+    if (elElement && satTrackData.el !== undefined) {
+        // Format elevation as whole number
+        elElement.textContent = Math.round(satTrackData.el) + "°";
+    }
+    
+    // Update selected satellite info if available
+    if (satTrackData.satname) {
+        updateSATSelectedSatellite(satTrackData.satname);
+    }
+}
+
+// Update button states based on tracking data
+function updateSatButtonStates() {
+    if (!satTrackData) return;
+    
+    // Radio toggle button
+    const radioToggleBtn = document.getElementById('sat-radio-toggle');
+    if (radioToggleBtn && satTrackData.rigEnabled !== undefined) {
+        const radioEnabled = satTrackData.rigEnabled === 1;
+        
+        if (radioEnabled) {
+            radioToggleBtn.textContent = 'Radio Enabled';
+            radioToggleBtn.classList.remove('sat-disabled');
+            radioToggleBtn.classList.add('sat-enabled');
+        } else {
+            radioToggleBtn.textContent = 'Radio Disabled';
+            radioToggleBtn.classList.remove('sat-enabled');
+            radioToggleBtn.classList.add('sat-disabled');
+        }
+    }
+    
+    // VFO lock button
+    const lockVfoBtn = document.getElementById('sat-lock-vfo');
+    if (lockVfoBtn && satTrackData.lockVFO !== undefined) {
+        const vfoLocked = satTrackData.lockVFO === 1;
+        
+        if (vfoLocked) {
+            lockVfoBtn.textContent = 'Lock VFO';
+            lockVfoBtn.classList.remove('sat-disabled');
+            lockVfoBtn.classList.add('sat-enabled');
+        } else {
+            lockVfoBtn.textContent = 'Unlock VFO';
+            lockVfoBtn.classList.remove('sat-enabled');
+            lockVfoBtn.classList.add('sat-disabled');
+        }
+    }
 }
