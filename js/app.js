@@ -3674,6 +3674,78 @@ function updateSatRotatorDisplay() {
     if (satTrackData.satname) {
         updateSATSelectedSatellite(satTrackData.satname);
     }
+    
+    // Update transponder information
+    updateTransponderInfo();
+}
+
+// Update the transponder information with frequency data - properly incorporating offsets and Doppler
+function updateTransponderInfo() {
+    if (!satTrackData) return;
+    
+    const transponderDesc = document.getElementById('sat-transponder-desc');
+    const uplinkFreq = document.getElementById('sat-uplink-freq');
+    const downlinkFreq = document.getElementById('sat-downlink-freq');
+    const uplinkMode = document.getElementById('sat-uplink-mode');
+    const downlinkMode = document.getElementById('sat-downlink-mode');
+    
+    // Check if we have frequency data to display
+    if (!satTrackData.freq || !Array.isArray(satTrackData.freq)) {
+        transponderDesc.textContent = "No transponder data available";
+        return;
+    }
+    
+    // Find the active frequency by matching the afreq field with the uid
+    const activeFreqId = satTrackData.afreq;
+    const activeFreq = satTrackData.freq.find(f => f.uid === activeFreqId);
+    
+    if (activeFreq) {
+        // Format and display the transponder description
+        transponderDesc.textContent = activeFreq.descr.trim();
+        
+        // Calculate and format uplink frequency with offset and Doppler in MHz
+        if (activeFreq.upFreq > 0) {
+            // Apply both offset and Doppler to the main frequency
+            const offsetHz = activeFreq.off_up || 0;
+            const dopplerHz = activeFreq.dop_up || 0;
+            const totalUplinkHz = activeFreq.upFreq + offsetHz + dopplerHz;
+            const totalUplinkMHz = (totalUplinkHz / 1000000).toFixed(4);
+            
+            // Show frequency with everything applied
+            uplinkFreq.textContent = `${totalUplinkMHz} MHz`;
+            
+            // Show mode
+            uplinkMode.textContent = activeFreq.upMode.trim() || "---";
+        } else {
+            uplinkFreq.textContent = "---";
+            uplinkMode.textContent = "---";
+        }
+        
+        // Calculate and format downlink frequency with offset and Doppler in MHz
+        if (activeFreq.downFreq > 0) {
+            // Apply both offset and Doppler to the main frequency
+            const offsetHz = activeFreq.off_down || 0;
+            const dopplerHz = activeFreq.dop_down || 0;
+            const totalDownlinkHz = activeFreq.downFreq + offsetHz + dopplerHz;
+            const totalDownlinkMHz = (totalDownlinkHz / 1000000).toFixed(4);
+            
+            // Show frequency with everything applied
+            downlinkFreq.textContent = `${totalDownlinkMHz} MHz`;
+            
+            // Show mode
+            downlinkMode.textContent = activeFreq.downMode.trim() || "---";
+        } else {
+            downlinkFreq.textContent = "---";
+            downlinkMode.textContent = "---";
+        }
+    } else {
+        // No active frequency found
+        transponderDesc.textContent = "No active transponder";
+        uplinkFreq.textContent = "---";
+        downlinkFreq.textContent = "---";
+        uplinkMode.textContent = "---";
+        downlinkMode.textContent = "---";
+    }
 }
 
 // Update button states based on tracking data

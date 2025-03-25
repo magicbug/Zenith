@@ -1183,7 +1183,7 @@ close-info-btn:hover {
     position: absolute;
     bottom: 20px;
     left: 20px;  /* Changed from right: 10px to left: 20px */
-    width: 300px;
+    width: 400px;
     background-color: rgba(255, 255, 255, 0.9);
     border-radius: 5px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
@@ -1211,7 +1211,7 @@ close-info-btn:hover {
 .sat-panel-content {
     padding: 10px;
     overflow-y: auto;
-    max-height: 200px;
+    max-height: 300px;
 }
 
 .sat-status {
@@ -1330,4 +1330,59 @@ close-info-btn:hover {
 
 .sat-button.sat-park:hover {
     background-color: #f57c00;
+}
+
+/* Transponder information styling */
+.sat-transponder-info {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 4px;
+    border-left: 4px solid #ff9800;
+}
+
+.sat-transponder-info h4 {
+    margin-top: 0;
+    margin-bottom: 5px;
+    color: #333;
+    font-size: 14px;
+}
+
+#sat-transponder-desc {
+    font-weight: 500;
+    color: #555;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 5px;
+    font-style: italic;
+}
+
+.freq-grid {
+    display: grid;
+    grid-template-columns: 60px 1fr auto;
+    grid-gap: 5px;
+    align-items: center;
+}
+
+.freq-label {
+    font-weight: bold;
+    color: #555;
+}
+
+#sat-uplink-freq, #sat-downlink-freq {
+    font-family: monospace;
+    font-size: 15px;
+    color: #1976d2;
+    font-weight: 500;
+}
+
+#sat-uplink-mode, #sat-downlink-mode {
+    background-color: #e0e0e0;
+    border-radius: 3px;
+    padding: 2px 6px;
+    font-size: 11px;
+    text-align: center;
+    color: #333;
+    font-weight: bold;
 }
