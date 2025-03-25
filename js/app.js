@@ -35,6 +35,11 @@ const PASS_UPDATE_INTERVAL_MS = 60000; // Update passes every minute
 const PASS_PREDICTION_HOURS = 24; // Predict passes for the next 24 hours
 const FOOTPRINT_POINTS = 36; // Number of points to draw the footprint circle
 
+// Add to your global variables at the top of the file
+let satInfoUpdateInterval = null;
+const SAT_INFO_UPDATE_INTERVAL_MS = 1000; // Update info every second
+let currentInfoSatellite = null;
+
 // Hams.at API configuration
 let hamsAtApiKey = '';
 let enableRoves = true;
@@ -795,9 +800,68 @@ function createSatellitePopup(satName, position) {
     return popup;
 }
 
-// Show satellite info in the panel
+// Make sure to add this event listener to your setup
+document.addEventListener('DOMContentLoaded', () => {
+
+    // Add close button for satellite info panel
+    const infoCloseBtn = document.getElementById('close-info-panel');
+    if (infoCloseBtn) {
+        infoCloseBtn.addEventListener('click', () => {
+            // Hide the panel
+            document.getElementById('satellite-info-panel').style.display = 'none';
+            
+            // Clear the update interval
+            if (satInfoUpdateInterval) {
+                clearInterval(satInfoUpdateInterval);
+                satInfoUpdateInterval = null;
+            }
+            
+            // Reset currently selected satellite
+            currentInfoSatellite = null;
+        });
+    }
+    
+});
+
+// Update the showSatelliteInfo function to implement real-time updates
 function showSatelliteInfo(satName) {
     const infoPanel = document.getElementById('satellite-info-panel');
+    
+    // Store the currently selected satellite for the update interval
+    currentInfoSatellite = satName;
+    
+    // First update immediately
+    updateSatelliteInfoDisplay(satName);
+    
+    // Ensure the panel is visible
+    infoPanel.style.display = 'block';
+    
+    // Clear any existing update interval
+    if (satInfoUpdateInterval) {
+        clearInterval(satInfoUpdateInterval);
+    }
+    
+    // Start a new update interval while the panel is visible
+    satInfoUpdateInterval = setInterval(() => {
+        if (infoPanel.style.display === 'block') {
+            updateSatelliteInfoDisplay(currentInfoSatellite);
+        } else {
+            // If panel is hidden, clear the interval
+            clearInterval(satInfoUpdateInterval);
+            satInfoUpdateInterval = null;
+        }
+    }, SAT_INFO_UPDATE_INTERVAL_MS);
+    
+    // Send the satellite selection to the S.A.T system if enabled
+    if (enableCsnSat && satAPIAvailable) {
+        selectSatelliteForSAT(satName);
+    }
+}
+
+// Add a new function that handles updating the satellite info display
+function updateSatelliteInfoDisplay(satName) {
+    if (!satName) return;
+    
     const lookAngles = calculateLookAngles(satName);
     const position = getSatellitePosition(satName);
     
@@ -856,14 +920,6 @@ function showSatelliteInfo(satName) {
         </div>
         ` : ''}
     `;
-    
-    // Ensure the panel is visible
-    infoPanel.style.display = 'block';
-    
-    // Send the satellite selection to the S.A.T system if enabled
-    if (enableCsnSat && satAPIAvailable) {
-        selectSatelliteForSAT(satName);
-    }
 }
 
 // Get satellite position
