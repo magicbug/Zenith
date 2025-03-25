@@ -125,6 +125,7 @@
 
             <div class="tab-navigation">
                 <button class="tab-button active" data-tab="satellites">Satellites</button>
+                <button class="tab-button" data-tab="general">General</button>
                 <button class="tab-button" data-tab="location">Observer Location</button>
                 <button class="tab-button" data-tab="radio">Radio</button>
                 <button class="tab-button" data-tab="hamsat">Hams.at</button>
@@ -148,6 +149,30 @@
                                 <button id="refresh-tle">Refresh TLEs</button>
                                 <button id="show-manual-tle">Input TLEs Manually</button>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- General Tab -->
+                    <div class="tab-pane" id="general-tab">
+                        <div class="general-settings">
+                            <h3>General Settings</h3>
+                            
+                            <div class="notifications-section">
+                                <h4>Notifications</h4>
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox" id="enable-notifications">
+                                        Enable Pass Notifications
+                                    </label>
+                                    <p class="help-text">You will receive notifications 15 minutes before a satellite pass begins.</p>
+                                </div>
+                                <div class="form-group notification-test">
+                                    <button id="test-notification" class="button secondary">Test Notification</button>
+                                    <p class="help-text">Send a sample notification to see how they will appear on your device.</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Additional general settings can be added here in the future -->
                         </div>
                     </div>
 
@@ -187,20 +212,6 @@
                     <div class="tab-pane" id="radio-tab">
                         <div class="radio-settings">
                             <h3>Radio Settings</h3>
-                            <div class="notifications-section">
-                                <h4>Notifications</h4>
-                                <div class="form-group">
-                                    <label>
-                                        <input type="checkbox" id="enable-notifications">
-                                        Enable Pass Notifications
-                                    </label>
-                                    <p class="help-text">You will receive notifications 15 minutes before a satellite pass begins.</p>
-                                </div>
-                                <div class="form-group notification-test">
-                                    <button id="test-notification" class="button secondary">Test Notification</button>
-                                    <p class="help-text">Send a sample notification to see how they will appear on your device.</p>
-                                </div>
-                            </div>
                             
                             <!-- CSN Technologies S.A.T Configuration -->
                             <div class="sat-config-section">
