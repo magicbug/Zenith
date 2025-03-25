@@ -2510,7 +2510,7 @@ function filterScheduleTable() {
             <td>${pass.satellite}</td>
             <td>${startDateTime}</td>
             <td>${endDateTime}</td>
-            <td>${Math.round(pass.maxElevation)}Â°</td>
+            <td>${Math.round(pass.maxElevation)}°</td>
             <td>${pass.duration} min</td>
             <td>${status}</td>
         `;
