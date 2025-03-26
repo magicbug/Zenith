@@ -1360,7 +1360,7 @@ close-info-btn:hover {
 
 .freq-grid {
     display: grid;
-    grid-template-columns: 60px 1fr auto;
+    grid-template-columns: 80px 1fr auto;
     grid-gap: 5px;
     align-items: center;
 }
