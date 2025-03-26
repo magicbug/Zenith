@@ -1386,3 +1386,64 @@ close-info-btn:hover {
     color: #333;
     font-weight: bold;
 }
+
+/* Help Button and Modal Styles */
+.help-button {
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    padding: 0.5rem 1.5rem;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-size: 0.9rem;
+    font-weight: bold;
+    margin-top: 0;
+    min-width: 100px;
+}
+
+.help-button:hover {
+    background-color: #3e8e41;
+}
+
+.help-content {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.help-section {
+    margin-bottom: 25px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+}
+
+.help-section:last-child {
+    border-bottom: none;
+}
+
+.help-section h3 {
+    color: #2c3e50;
+    margin-bottom: 12px;
+    font-size: 18px;
+}
+
+.help-section p {
+    margin-bottom: 10px;
+    line-height: 1.5;
+}
+
+.help-section ul, 
+.help-section ol {
+    margin-left: 20px;
+    margin-bottom: 10px;
+}
+
+.help-section li {
+    margin-bottom: 5px;
+    line-height: 1.5;
+}
+
+.help-section strong {
+    font-weight: bold;
+    color: #333;
+}

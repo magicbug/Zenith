@@ -182,6 +182,28 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialize S.A.T control buttons
     initSatControlButtons();
+
+    // Help modal functionality
+    const helpModal = document.getElementById('help-modal');
+    const openHelpBtn = document.getElementById('open-help');
+    const helpCloseBtn = document.querySelector('.help-close');
+
+    openHelpBtn.addEventListener('click', () => {
+        helpModal.style.display = 'block';
+    });
+
+    helpCloseBtn.addEventListener('click', () => {
+        helpModal.style.display = 'none';
+    });
+
+    // Close help modal if clicked outside
+    window.addEventListener('click', (e) => {
+        if (e.target === helpModal) {
+            helpModal.style.display = 'none';
+        }
+    });
+
+    // Tab switching functionality
 });
 
 // Initialize the Leaflet map

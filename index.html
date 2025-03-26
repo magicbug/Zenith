@@ -21,6 +21,7 @@
                 <button id="open-schedule" class="schedule-button">Schedule</button>
                 <button id="open-sked-planning" class="schedule-button">Sked Planning</button>
                 <button id="open-options" class="options-button">Options</button>
+                <button id="open-help" class="help-button">Help</button>
             </div>
         </header>
 
@@ -398,6 +399,104 @@
                             <!-- Sked data will be added here dynamically -->
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="help-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Help</h2>
+                <span class="close help-close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="help-content">
+                    <section class="help-section">
+                        <h3>Getting Started</h3>
+                        <p>Zenith is a satellite tracking application that helps you monitor satellite passes, plan contacts, and track amateur radio satellites.</p>
+                        <p>To get started:</p>
+                        <ol>
+                            <li>Click the <strong>Options</strong> button to configure your location and select satellites to track.</li>
+                            <li>Browse the map to see real-time satellite positions and footprints.</li>
+                            <li>View upcoming passes in the sidebar panel on the left.</li>
+                        </ol>
+                    </section>
+
+                    <section class="help-section">
+                        <h3>Map Navigation</h3>
+                        <p>The main map shows Earth with satellite positions in real-time:</p>
+                        <ul>
+                            <li><strong>Zoom</strong>: Use the scroll wheel or +/- buttons</li>
+                            <li><strong>Pan</strong>: Click and drag the map</li>
+                            <li><strong>Satellite Info</strong>: Click on a satellite marker for detailed information</li>
+                        </ul>
+                    </section>
+
+                    <section class="help-section">
+                        <h3>Satellite Selection</h3>
+                        <p>To select which satellites to track:</p>
+                        <ol>
+                            <li>Click <strong>Options</strong> and go to the "Satellites" tab</li>
+                            <li>Check the boxes for satellites you want to track</li>
+                            <li>Use the search box to filter the satellite list</li>
+                            <li>Click <strong>Save & Close</strong> to apply your selection</li>
+                        </ol>
+                    </section>
+
+                    <section class="help-section">
+                        <h3>Pass Predictions</h3>
+                        <p>Upcoming satellite passes appear in the left sidebar:</p>
+                        <ul>
+                            <li><strong>Green</strong>: Currently visible passes</li>
+                            <li><strong>Yellow</strong>: Upcoming passes</li>
+                            <li><strong>Blue</strong>: Passes that will be visible soon</li>
+                        </ul>
+                        <p>Click on a pass to view detailed information about the satellite and to see a polar radar visualization of the pass.</p>
+                    </section>
+
+                    <section class="help-section">
+                        <h3>Schedule View</h3>
+                        <p>Click the <strong>Schedule</strong> button to see a detailed table of all upcoming passes. You can:</p>
+                        <ul>
+                            <li>Filter passes by satellite</li>
+                            <li>Choose how many days to show in the schedule</li>
+                            <li>View start/end times, maximum elevation, and duration</li>
+                        </ul>
+                    </section>
+
+                    <section class="help-section">
+                        <h3>Sked Planning</h3>
+                        <p>Use the <strong>Sked Planning</strong> feature to find mutual visibility windows with another station:</p>
+                        <ol>
+                            <li>Enter the remote station's grid square</li>
+                            <li>Select which satellites to include</li>
+                            <li>Set minimum elevation and time period</li>
+                            <li>Click "Find Mutual Passes" to see opportunities for contacts</li>
+                        </ol>
+                    </section>
+
+                    <section class="help-section">
+                        <h3>Roves Integration</h3>
+                        <p>If you have a Hams.at API key, you can:</p>
+                        <ul>
+                            <li>View upcoming rover activations in the sidebar</li>
+                            <li>Click a rove to open its details on Hams.at</li>
+                            <li>Configure roves display in the Options under the "Hams.at" tab</li>
+                        </ul>
+                    </section>
+
+                    <section class="help-section">
+                        <h3>Radio Integration</h3>
+                        <p>Zenith supports integration with CSN Technologies S.A.T for automatic satellite tracking with compatible rotators and radios.</p>
+                        <p>To configure:</p>
+                        <ol>
+                            <li>Go to <strong>Options</strong> > "Radio" tab</li>
+                            <li>Enable CSN Technologies S.A.T integration</li>
+                            <li>Enter your device's IP address or domain name</li>
+                        </ol>
+                    </section>
                 </div>
             </div>
         </div>
