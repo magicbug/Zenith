@@ -3010,6 +3010,9 @@ function filterSkedPlanningTable() {
         const startDateTime = formatDateTimeWithDate(pass.start);
         const endDateTime = formatDateTimeWithDate(pass.end);
         
+        // Create Google Calendar link
+        const calendarLink = createGoogleCalendarLink(pass);
+        
         // Create row cells
         row.innerHTML = `
             <td>${pass.satellite}</td>
@@ -3018,10 +3021,26 @@ function filterSkedPlanningTable() {
             <td>${Math.round(pass.maxElevation1)}°</td>
             <td>${Math.round(pass.maxElevation2)}°</td>
             <td>${pass.duration} min</td>
+            <td>
+                <a href="${calendarLink}" target="_blank" class="calendar-link" title="Add to Google Calendar">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                </a>
+            </td>
         `;
         
         // Add click handler to show satellite info
-        row.addEventListener('click', () => {
+        row.addEventListener('click', (e) => {
+            // Don't trigger if clicking the calendar link
+            if (e.target.closest('.calendar-link')) {
+                e.stopPropagation();
+                return;
+            }
+
             const satName = pass.satellite;
             const position = getSatellitePosition(satName);
             if (position) {
@@ -3039,9 +3058,35 @@ function filterSkedPlanningTable() {
     // If no passes match filter
     if (filteredPasses.length === 0) {
         const row = document.createElement('tr');
-        row.innerHTML = `<td colspan="6" style="text-align: center;">No mutual passes found for ${satelliteFilter}</td>`;
+        row.innerHTML = `<td colspan="7" style="text-align: center;">No mutual passes found for ${satelliteFilter}</td>`;
         tableBody.appendChild(row);
     }
+}
+
+function createGoogleCalendarLink(pass) {
+    // Format dates in the required format: YYYYMMDDTHHmmssZ
+    const formatDateForCalendar = (date) => {
+        return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    };
+
+    const startTime = formatDateForCalendar(pass.start);
+    const endTime = formatDateForCalendar(pass.end);
+    
+    // Create event title and description
+    const title = `Satellite Pass: ${pass.satellite}`;
+    const description = `Mutual visibility pass with remote station\n` +
+        `Your maximum elevation: ${Math.round(pass.maxElevation1)}°\n` +
+        `Their maximum elevation: ${Math.round(pass.maxElevation2)}°\n` +
+        `Duration: ${pass.duration} minutes`;
+    
+    // Build calendar URL
+    const calendarURL = new URL('https://calendar.google.com/calendar/render');
+    calendarURL.searchParams.append('action', 'TEMPLATE');
+    calendarURL.searchParams.append('text', title);
+    calendarURL.searchParams.append('details', description);
+    calendarURL.searchParams.append('dates', `${startTime}/${endTime}`);
+    
+    return calendarURL.toString();
 }
 
 // Initialize notification permissions and check interval

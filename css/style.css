@@ -1447,3 +1447,27 @@ close-info-btn:hover {
     font-weight: bold;
     color: #333;
 }
+
+.calendar-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border-radius: 4px;
+    color: #333;
+    transition: background-color 0.2s;
+}
+
+.calendar-link:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.calendar-link svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Center the calendar icon in its table cell */
+#sked-planning-table td:last-child {
+    text-align: center;
+}
