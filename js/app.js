@@ -3120,11 +3120,15 @@ function checkUpcomingPassesForNotifications() {
         
         // Check if we're within the notification threshold
         if (minutesUntilPass > 0 && minutesUntilPass <= NOTIFICATION_THRESHOLD_MINUTES) {
-            // Create a unique ID for this pass
-            const passId = `${satelliteName}-${startTimeStr}-${endTimeStr}`;
+            // Create a unique ID for this pass that includes the date to avoid duplicates
+            // across multiple days at the same time
+            const dateStr = startTime.toDateString();
+            const passId = `${satelliteName}-${dateStr}-${startTimeStr}-${endTimeStr}`;
             
             // Check if we've already notified for this pass
             if (!notifiedPasses.has(passId)) {
+                console.log(`Showing notification for pass: ${passId}`);
+                
                 // Create notification
                 showPassNotification(satelliteName, startTimeStr, endTimeStr, detailsText, passId, startTime);
                 
@@ -3134,6 +3138,8 @@ function checkUpcomingPassesForNotifications() {
                     startTime: startTime,
                     notification: null  // Will be set in showPassNotification
                 });
+            } else {
+                console.log(`Already notified for pass: ${passId}`);
             }
         }
     });
