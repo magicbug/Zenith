@@ -29,6 +29,6 @@
 
 ## TLE Clean up 
 
-[] Remove ID 55562
-[] Remove ID 49069
-[] Remove ID 44355
+[x] Remove ID 55562
+[x] Remove ID 49069
+[x] Remove ID 44355
