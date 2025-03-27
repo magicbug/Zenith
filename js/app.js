@@ -4085,3 +4085,44 @@ function getSunPositionEci(date) {
     
     return sunPos;
 }
+
+// Add event listener for CSN panel button
+document.addEventListener('DOMContentLoaded', () => {
+    // Existing event listeners...
+    
+    // Add event listener for the CSN panel button in the header
+    const openSatPanelBtn = document.getElementById('open-sat-panel-btn');
+    if (openSatPanelBtn) {
+        openSatPanelBtn.addEventListener('click', () => {
+            const satPanel = document.getElementById('sat-panel');
+            if (satPanel) {
+                // Only show the panel if CSN S.A.T is enabled and the API is available
+                if (enableCsnSat && satAPIAvailable) {
+                    satPanel.style.display = 'flex';
+                    
+                    // Start tracking data polling when panel is shown
+                    startSatTrackPolling();
+                } else {
+                    // If S.A.T is not enabled, show a message and direct them to options
+                    alert('CSN Technologies S.A.T is not enabled or not available. Please check your settings in the Options panel under the Radio tab.');
+                    
+                    // Open the options modal to the Radio tab
+                    const optionsModal = document.getElementById('options-modal');
+                    if (optionsModal) {
+                        optionsModal.style.display = 'block';
+                        
+                        // Switch to the Radio tab
+                        document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+                        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+                        
+                        const radioTabButton = document.querySelector('.tab-button[data-tab="radio"]');
+                        if (radioTabButton) {
+                            radioTabButton.classList.add('active');
+                            document.getElementById('radio-tab').classList.add('active');
+                        }
+                    }
+                }
+            }
+        });
+    }
+});

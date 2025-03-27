@@ -1471,3 +1471,26 @@ close-info-btn:hover {
 #sked-planning-table td:last-child {
     text-align: center;
 }
+
+/* CSN panel button styling */
+.sat-button-header {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 0.5rem 1.5rem;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-size: 0.9rem;
+    font-weight: bold;
+    margin-top: 0;
+    min-width: 100px;
+}
+
+.sat-button-header:hover {
+    background-color: #2980b9;
+}
+
+.sat-button-header:active {
+    background-color: #1c6ea4;
+}
