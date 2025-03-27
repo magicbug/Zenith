@@ -3730,7 +3730,16 @@ function sendSatCommand(command) {
     showSATPanel(`Sending command...`);
     
     // Use our proxy to avoid mixed content issues
-    const proxyUrl = `api/sat_proxy.php?address=${encodeURIComponent(csnSatAddress)}&action=cmd&command=${command}`;
+    let proxyUrl;
+    
+    // Check if it's a transponder selection command (format: A|123)
+    if (command.startsWith('A|')) {
+        // Special format for transponder selection
+        proxyUrl = `api/sat_proxy.php?address=${encodeURIComponent(csnSatAddress)}&action=cmd&command=${encodeURIComponent(command)}`;
+    } else {
+        // Regular single-character command
+        proxyUrl = `api/sat_proxy.php?address=${encodeURIComponent(csnSatAddress)}&action=cmd&command=${command}`;
+    }
     
     // Send the command via our proxy
     return fetch(proxyUrl)
@@ -3744,7 +3753,15 @@ function sendSatCommand(command) {
         console.log('S.A.T command response:', data);
         
         if (data.success) {
-            showSATPanel('Command sent successfully', 'success');
+            // If it was a transponder command, add custom message
+            if (command.startsWith('A|')) {
+                showSATPanel('Transponder changed successfully', 'success');
+            } else {
+                showSATPanel('Command sent successfully', 'success');
+            }
+            
+            // Fetch updated tracking data after a short delay to see changes
+            setTimeout(fetchSatTrackData, 500);
             return true;
         } else {
             console.error('S.A.T command error:', data.error);
@@ -3892,7 +3909,7 @@ function updateSatRotatorDisplay() {
 function updateTransponderInfo() {
     if (!satTrackData) return;
     
-    const transponderDesc = document.getElementById('sat-transponder-desc');
+    const transponderSelect = document.getElementById('sat-transponder-select');
     const uplinkFreq = document.getElementById('sat-uplink-freq');
     const downlinkFreq = document.getElementById('sat-downlink-freq');
     const uplinkMode = document.getElementById('sat-uplink-mode');
@@ -3900,18 +3917,58 @@ function updateTransponderInfo() {
     
     // Check if we have frequency data to display
     if (!satTrackData.freq || !Array.isArray(satTrackData.freq)) {
-        transponderDesc.textContent = "No transponder data available";
+        if (transponderSelect) {
+            // Clear dropdown and add a placeholder option
+            transponderSelect.innerHTML = '<option value="">No transponder data available</option>';
+            transponderSelect.disabled = true;
+        }
         return;
     }
     
-    // Find the active frequency by matching the afreq field with the uid
+    // Find the active frequency ID
     const activeFreqId = satTrackData.afreq;
+    
+    // Save current onchange handler to avoid adding multiple handlers
+    const currentOnChangeHandler = transponderSelect.onchange;
+    
+    // Clear and rebuild the dropdown
+    transponderSelect.innerHTML = '';
+    transponderSelect.disabled = false;
+    
+    // Sort transponders for consistent display order
+    const sortedFreqs = [...satTrackData.freq].sort((a, b) => {
+        // Sort by sort field if available, otherwise by uid
+        if (a.sort !== undefined && b.sort !== undefined) {
+            return a.sort - b.sort;
+        }
+        return a.uid - b.uid;
+    });
+    
+    // Populate dropdown with all available transponders
+    sortedFreqs.forEach(freq => {
+        const option = document.createElement('option');
+        option.value = freq.uid;
+        option.textContent = freq.descr.trim();
+        option.selected = freq.uid === activeFreqId;
+        transponderSelect.appendChild(option);
+    });
+    
+    // Set the onChange handler (only once)
+    if (!currentOnChangeHandler) {
+        transponderSelect.onchange = function() {
+            const selectedUid = this.value;
+            if (selectedUid) {
+                // Send command to change transponder
+                sendSatCommand(`A|${selectedUid}`);
+                console.log(`Changing transponder to UID: ${selectedUid}`);
+            }
+        };
+    }
+    
+    // Display frequencies for the active transponder
     const activeFreq = satTrackData.freq.find(f => f.uid === activeFreqId);
     
     if (activeFreq) {
-        // Format and display the transponder description
-        transponderDesc.textContent = activeFreq.descr.trim();
-        
         // Calculate and format uplink frequency with offset and Doppler in MHz
         if (activeFreq.upFreq > 0) {
             // Apply both offset and Doppler to the main frequency
@@ -3949,7 +4006,6 @@ function updateTransponderInfo() {
         }
     } else {
         // No active frequency found
-        transponderDesc.textContent = "No active transponder";
         uplinkFreq.textContent = "---";
         downlinkFreq.textContent = "---";
         uplinkMode.textContent = "---";
@@ -4166,4 +4222,23 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('DOMContentLoaded', () => {    
     // Initialize CSN tracking to check for already selected satellites
     setTimeout(initializeCsnTracking, 1000); // Small delay to ensure everything is loaded
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Existing code for initializing CSN S.A.T settings and event listeners...
+    const transponderDesc = document.getElementById('sat-transponder-desc');
+    if (transponderDesc) {
+        const transponderSelectContainer = document.createElement('div');
+        transponderSelectContainer.className = 'sat-transponder-select-container';
+        
+        const transponderSelect = document.createElement('select');
+        transponderSelect.id = 'sat-transponder-select';
+        transponderSelect.className = 'sat-transponder-select';
+        transponderSelect.innerHTML = '<option value="">Loading transponders...</option>';
+        
+        // Replace the transponder description with our select
+        transponderSelectContainer.appendChild(transponderSelect);
+        transponderDesc.parentNode.replaceChild(transponderSelectContainer, transponderDesc);
+    }
+    
 });

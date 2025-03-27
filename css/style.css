@@ -1494,3 +1494,10 @@ close-info-btn:hover {
 .sat-button-header:active {
     background-color: #1c6ea4;
 }
+
+#sat-transponder-select {
+    width: 100%;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    margin-bottom: 10px;
+}
