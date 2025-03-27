@@ -9,7 +9,7 @@
 [x] Added Pass HTML5 notifications
 [x] Create a General Tab in options
 [x] Place Notifications options under General in the Modal
-[] When first loading CSN panel check the track to see if a satellite is already selected if it is select it as the tracked sat in the page
+[x] When first loading CSN panel check the track to see if a satellite is already selected if it is select it as the tracked sat in the page
 [] Show the CSN Transponders List as a dropdown and make it change the transponder when its changed.
 [X] Need a button at the top of the index.html page to open the CSN panel if its closed
 [x] Add ability to show if the satellite is in darkness or sunlight

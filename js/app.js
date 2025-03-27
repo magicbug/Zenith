@@ -3448,11 +3448,11 @@ function createTestNotification() {
     }, 10000);
 }
 
-// Check if the CSN Technologies S.A.T API is available
+// Update the checkSATAPIAvailability function to return a promise
 function checkSATAPIAvailability() {
     if (!enableCsnSat || !csnSatAddress) {
         satAPIAvailable = false;
-        return;
+        return Promise.resolve(false);
     }
 
     console.log('Checking CSN S.A.T API availability through proxy for:', csnSatAddress);
@@ -3460,7 +3460,7 @@ function checkSATAPIAvailability() {
     // Use our PHP proxy instead of direct API call
     const proxyUrl = `api/sat_proxy.php?address=${encodeURIComponent(csnSatAddress)}&action=status`;
     
-    fetch(proxyUrl)
+    return fetch(proxyUrl)
     .then(response => {
         if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
@@ -3785,7 +3785,7 @@ function stopSatTrackPolling() {
     }
 }
 
-// Fetch tracking data from the S.A.T API
+// Modify the fetchSatTrackData function to update the tracked satellite
 function fetchSatTrackData() {
     if (!enableCsnSat || !csnSatAddress || !satAPIAvailable) {
         return;
@@ -3812,6 +3812,27 @@ function fetchSatTrackData() {
             // Update button states
             updateSatButtonStates();
             
+            // If we have a satellite name in the tracking data, update it as the selected satellite
+            if (satTrackData.satname && satTrackData.satname.trim() !== '') {
+                // Only update if different from current selection to avoid unnecessary updates
+                if (satTrackData.satname !== currentSelectedSatelliteForSAT) {
+                    currentSelectedSatelliteForSAT = satTrackData.satname;
+                    
+                    // Update the selected satellite in the interface
+                    updateSATSelectedSatellite(satTrackData.satname);
+                    
+                    // If the satellite is also in our TLE data, select it in the main app
+                    if (window.tleData && window.tleData[satTrackData.satname]) {
+                        // Only highlight the satellite if it hasn't been done before
+                        if (!window.satHighlightedFromCSN) {
+                            highlightSatellite(satTrackData.satname);
+                            showSatelliteInfo(satTrackData.satname);
+                            window.satHighlightedFromCSN = true;
+                        }
+                    }
+                }
+            }
+            
             // Debug log
             console.log('Updated S.A.T tracking data:', satTrackData);
         } else if (result.error) {
@@ -3822,6 +3843,23 @@ function fetchSatTrackData() {
         console.error('Error fetching S.A.T tracking data:', error);
     });
 }
+
+// Add this function to initialize CSN tracking when app loads
+function initializeCsnTracking() {
+    if (enableCsnSat && csnSatAddress) {
+        checkSATAPIAvailability()
+            .then(available => {
+                if (available) {
+                    // First track data fetch - might contain an already selected satellite
+                    fetchSatTrackData();
+                    
+                    // Reset the highlight flag when initializing
+                    window.satHighlightedFromCSN = false;
+                }
+            });
+    }
+}
+
 
 // Update the rotator display with current azimuth and elevation
 function updateSatRotatorDisplay() {
@@ -4122,4 +4160,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+});
+
+// Add this to your document ready event listener
+document.addEventListener('DOMContentLoaded', () => {    
+    // Initialize CSN tracking to check for already selected satellites
+    setTimeout(initializeCsnTracking, 1000); // Small delay to ensure everything is loaded
 });
