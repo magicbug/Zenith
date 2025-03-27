@@ -886,6 +886,7 @@ function updateSatelliteInfoDisplay(satName) {
     
     const lookAngles = calculateLookAngles(satName);
     const position = getSatellitePosition(satName);
+    const inEclipse = isInEclipse(satName);
     
     if (!position || !lookAngles) {
         console.error('Unable to get satellite position or look angles');
@@ -908,6 +909,9 @@ function updateSatelliteInfoDisplay(satName) {
                 <div>Latitude:</div><div>${position.latitude.toFixed(2)}°</div>
                 <div>Longitude:</div><div>${position.longitude.toFixed(2)}°</div>
                 <div>Altitude:</div><div>${(position.altitude * 1000).toFixed(0)} m</div>
+                <div>Eclipse:</div><div>${inEclipse ? 
+                    '<span class="eclipse-indicator">In Earth\'s Shadow</span>' : 
+                    '<span class="sunlight-indicator">In Sunlight</span>'}</div>
             </div>
         </div>
         
@@ -1562,6 +1566,47 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     `;
     document.head.appendChild(style);
+    
+    // Add CSS for eclipse and sunlight indicators
+    const eclipseStyle = document.createElement('style');
+    eclipseStyle.textContent = `
+        .eclipse-indicator {
+            background-color: #3c3c3c;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        
+        .sunlight-indicator {
+            background-color: #ffc107;
+            color: #333;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        
+        .visible-indicator {
+            background-color: #4CAF50;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        
+        .not-visible-indicator {
+            background-color: #f44336;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            display: inline-block;
+        }
+    `;
+    document.head.appendChild(eclipseStyle);
 });
 
 function updateUpcomingPasses() {
@@ -3912,4 +3957,131 @@ function updateSatButtonStates() {
             lockVfoBtn.classList.add('sat-disabled');
         }
     }
+}
+
+// Calculate if satellite is in eclipse (Earth's shadow)
+function isInEclipse(satName) {
+    if (!window.tleData[satName]) return false;
+    
+    const now = new Date();
+    const sat = window.tleData[satName];
+    
+    try {
+        const satrec = satellite.twoline2satrec(sat.tle1, sat.tle2);
+        const positionAndVelocity = satellite.propagate(satrec, now);
+        
+        if (!positionAndVelocity.position) return false;
+        
+        // Get satellite position vector in ECI coordinates
+        const satPos = positionAndVelocity.position;
+        
+        // Get Sun position vector in ECI coordinates (simplified model)
+        const sunPos = getSunPositionEci(now);
+        
+        // Calculate Earth-Satellite vector
+        const earthSatVector = {
+            x: satPos.x,
+            y: satPos.y,
+            z: satPos.z
+        };
+        
+        // Calculate Earth-Sun vector
+        const earthSunVector = {
+            x: sunPos.x,
+            y: sunPos.y,
+            z: sunPos.z
+        };
+        
+        // Calculate the satellite orbit radius (distance from Earth center to satellite)
+        const satOrbitRadius = Math.sqrt(
+            Math.pow(earthSatVector.x, 2) + 
+            Math.pow(earthSatVector.y, 2) + 
+            Math.pow(earthSatVector.z, 2)
+        );
+        
+        // Calculate the angle between Earth-Satellite and Earth-Sun vectors
+        const dotProduct = earthSatVector.x * earthSunVector.x + 
+                           earthSatVector.y * earthSunVector.y + 
+                           earthSatVector.z * earthSunVector.z;
+        
+        const earthSatMagnitude = Math.sqrt(
+            Math.pow(earthSatVector.x, 2) + 
+            Math.pow(earthSatVector.y, 2) + 
+            Math.pow(earthSatVector.z, 2)
+        );
+        
+        const earthSunMagnitude = Math.sqrt(
+            Math.pow(earthSunVector.x, 2) + 
+            Math.pow(earthSunVector.y, 2) + 
+            Math.pow(earthSunVector.z, 2)
+        );
+        
+        const angle = Math.acos(dotProduct / (earthSatMagnitude * earthSunMagnitude));
+        
+        // Earth's radius in km
+        const earthRadius = 6371;
+        
+        // Calculate the shadow's width at the satellite's orbit
+        // Using simple geometry, the shadow forms a cone
+        const shadowRadius = earthRadius;
+        
+        // If the angle is close to 180 degrees (π radians) and the distance from Earth's
+        // shadow axis is less than Earth's radius, the satellite is in eclipse
+        if (angle > Math.PI / 2) {
+            // Calculate the perpendicular distance from the satellite to the Earth-Sun line
+            const distance = earthSatMagnitude * Math.sin(Math.PI - angle);
+            
+            // Simplified eclipse check: satellite is in eclipse if it's in the shadow cone
+            // and on the opposite side of Earth from the Sun
+            return distance < shadowRadius;
+        }
+        
+        return false;
+    } catch (error) {
+        console.error(`Error calculating eclipse for ${satName}:`, error);
+        return false;
+    }
+}
+
+// Calculate simplified Sun position in ECI coordinates
+function getSunPositionEci(date) {
+    // This is a simplified model of the Sun's position
+    // For more accurate calculations, a full astronomical model would be needed
+    
+    // Get days since J2000 epoch
+    const julianDate = (date.getTime() / 86400000) + 2440587.5;
+    const t = (julianDate - 2451545.0) / 36525; // Julian centuries since J2000
+    
+    // Calculate Sun's mean longitude and mean anomaly
+    let L0 = 280.46646 + 36000.76983 * t + 0.0003032 * t * t;
+    L0 = (L0 % 360 + 360) % 360; // Normalize to 0-360
+    
+    let M = 357.52911 + 35999.05029 * t - 0.0001537 * t * t;
+    M = (M % 360 + 360) % 360; // Normalize to 0-360
+    
+    // Convert to radians
+    const Mrad = M * (Math.PI / 180);
+    
+    // Calculate Sun's ecliptic longitude
+    let lambda = L0 + 1.914666471 * Math.sin(Mrad) + 0.019994643 * Math.sin(2 * Mrad);
+    lambda = lambda % 360;
+    const lambdaRad = lambda * (Math.PI / 180);
+    
+    // Mean distance to Sun in km (1 AU)
+    const r = 149597870.7;
+    
+    // Simplified model - Sun in ecliptic plane
+    // We need to transform to ECI coordinates
+    
+    // Get GMST (Greenwich Mean Sidereal Time)
+    const gmst = satellite.gstime(date);
+    
+    // Calculate position in ECI coordinates
+    const sunPos = {
+        x: r * Math.cos(lambdaRad),
+        y: r * Math.sin(lambdaRad) * Math.cos(23.43929111 * (Math.PI / 180)), // 23.4 degrees is Earth's axial tilt
+        z: r * Math.sin(lambdaRad) * Math.sin(23.43929111 * (Math.PI / 180))
+    };
+    
+    return sunPos;
 }
