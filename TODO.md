@@ -13,7 +13,7 @@
 [] Show the CSN Transponders List as a dropdown and make it change the transponder when its changed.
 [X] Need a button at the top of the index.html page to open the CSN panel if its closed
 [x] Add ability to show if the satellite is in darkness or sunlight
-[] Upcoming Roves needs to show the date before the time on the same row
+[x] Upcoming Roves needs to show the date before the time on the same row
 [] Ability to store and retreive the users "Callsign" needs an input box under the general tab in the options modal and store it in localstorage
 
 ## Important but can wait

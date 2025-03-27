@@ -209,7 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Initialize the Leaflet map
 function initMap() {
     // Initialize map with the observer location loaded from localStorage
-    map = L.map('satellite-map').setView([observer.latitude, observer.longitude], 3);
+    map = L.map('satellite-map').setView([observer.latitude, observer.longitude], 2);
     
     // Create a custom pane for satellite footprints that sits below markers
     map.createPane('footprints');
@@ -1774,7 +1774,8 @@ function displayUpcomingRoves() {
         
         const time = document.createElement('span');
         time.className = 'rove-time';
-        time.textContent = `${formatDate(aosDate)} - ${formatDate(losDate)}`;
+        // Use formatDateTimeWithDate instead of formatDate to show full date and time
+        time.textContent = `${formatDateTimeWithDate(aosDate)} - ${formatDateTimeWithDate(losDate)}`;
         
         const satellite = document.createElement('span');
         satellite.className = 'rove-satellite';
