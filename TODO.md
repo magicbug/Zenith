@@ -4,7 +4,7 @@
 [x] In Scheduled Passes the degree sign isnt html
 [] In Scheduled Passes add the ability to load polar map
 [] Make all js files local.
-[] Stop map zooming in when clicking on satellites its annoying
+[x] Stop map zooming in when clicking on satellites its annoying
 [x] Implimented Sked Schedule.
 [x] Added Pass HTML5 notifications
 [x] Create a General Tab in options

@@ -1223,7 +1223,6 @@ function calculateUpcomingPasses() {
             // Get current position
             const position = getSatellitePosition(satName);
             if (position) {
-                map.setView([position.latitude, position.longitude], Math.max(map.getZoom(), 4));
                 showSatelliteInfo(satName);
                 showPolarRadarForPass(pass);
             } else {
@@ -2175,7 +2174,6 @@ function filterScheduleTable() {
             const satName = pass.satellite;
             const position = getSatellitePosition(satName);
             if (position) {
-                map.setView([position.latitude, position.longitude], Math.max(map.getZoom(), 4));
                 showSatelliteInfo(satName);
                 showPolarRadarForPass(pass);
             }
@@ -2643,7 +2641,6 @@ function filterScheduleTable() {
             const satName = pass.satellite;
             const position = getSatellitePosition(satName);
             if (position) {
-                map.setView([position.latitude, position.longitude], Math.max(map.getZoom(), 4));
                 showSatelliteInfo(satName);
             }
             
@@ -3089,7 +3086,6 @@ function filterSkedPlanningTable() {
             const satName = pass.satellite;
             const position = getSatellitePosition(satName);
             if (position) {
-                map.setView([position.latitude, position.longitude], Math.max(map.getZoom(), 4));
                 showSatelliteInfo(satName);
             }
             
