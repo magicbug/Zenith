@@ -6,7 +6,8 @@ let selectedSatellites = [];
 let observer = {
     latitude: 51.5074,
     longitude: -0.1278,
-    elevation: 0
+    elevation: 0,
+    callsign: ''  // Add callsign to observer object
 };
 let observer2 = {
     latitude: 0,
@@ -1392,18 +1393,14 @@ function saveObserverToLocalStorage() {
 
 // Load observer location from local storage
 function loadObserverFromLocalStorage() {
-    const saved = localStorage.getItem('observer');
-    if (saved) {
-        try {
-            const parsed = JSON.parse(saved);
-            if (parsed && typeof parsed === 'object') {
-                observer.latitude = parsed.latitude || observer.latitude;
-                observer.longitude = parsed.longitude || observer.longitude;
-                observer.elevation = parsed.elevation || observer.elevation;
-            }
-        } catch (error) {
-            console.error('Error loading observer from local storage:', error);
-        }
+    const savedObserver = localStorage.getItem('observer');
+    if (savedObserver) {
+        observer = JSON.parse(savedObserver);
+        // Set the form values
+        document.getElementById('latitude').value = observer.latitude;
+        document.getElementById('longitude').value = observer.longitude;
+        document.getElementById('elevation').value = observer.elevation;
+        document.getElementById('callsign').value = observer.callsign || '';
     }
 }
 
@@ -4233,4 +4230,17 @@ document.addEventListener('DOMContentLoaded', () => {
         transponderDesc.parentNode.replaceChild(transponderSelectContainer, transponderDesc);
     }
     
+});
+
+// Add event listener for callsign input
+document.addEventListener('DOMContentLoaded', () => {
+    // ... existing code ...
+    
+    // Add event listener for callsign input
+    document.getElementById('callsign').addEventListener('input', function() {
+        observer.callsign = this.value.trim();
+        saveObserverToLocalStorage();
+    });
+    
+    // ... existing code ...
 });
