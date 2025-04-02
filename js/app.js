@@ -3137,6 +3137,12 @@ function initNotifications() {
         return;
     }
 
+    // Initialize notifiedPasses from localStorage if it exists
+    const savedNotifiedPasses = localStorage.getItem('notifiedPasses');
+    if (savedNotifiedPasses) {
+        notifiedPasses = new Set(JSON.parse(savedNotifiedPasses));
+    }
+
     // Check if permission is already granted
     if (Notification.permission === "granted") {
         notificationsEnabled = true;
@@ -3202,12 +3208,11 @@ function checkUpcomingPassesForNotifications() {
         // Calculate minutes until the pass
         const minutesUntilPass = (startTime - now) / (60 * 1000);
         
-        // Check if we're within the notification threshold
-        if (minutesUntilPass > 0 && minutesUntilPass <= NOTIFICATION_THRESHOLD_MINUTES) {
+        // Check if we're within the notification threshold (15 minutes)
+        if (minutesUntilPass > 0 && minutesUntilPass <= 15) {
             // Create a unique ID for this pass that includes the date to avoid duplicates
-            // across multiple days at the same time
-            const dateStr = startTime.toDateString();
-            const passId = `${satelliteName}-${dateStr}-${startTimeStr}-${endTimeStr}`;
+            const dateStr = startTime.toISOString().split('T')[0]; // Use ISO date format
+            const passId = `${satelliteName}-${dateStr}-${startTimeStr}`;
             
             // Check if we've already notified for this pass
             if (!notifiedPasses.has(passId)) {
@@ -3217,19 +3222,33 @@ function checkUpcomingPassesForNotifications() {
                 showPassNotification(satelliteName, startTimeStr, endTimeStr, detailsText, passId, startTime);
                 
                 // Mark this pass as notified
-                notifiedPasses.set(passId, {
-                    satellite: satelliteName,
-                    startTime: startTime,
-                    notification: null  // Will be set in showPassNotification
-                });
-            } else {
-                console.log(`Already notified for pass: ${passId}`);
+                notifiedPasses.add(passId);
+                
+                // Save to localStorage
+                localStorage.setItem('notifiedPasses', JSON.stringify([...notifiedPasses]));
             }
         }
     });
     
-    // Clean up old notified passes
+    // Clean up old notifications
     cleanupOldNotifications();
+}
+
+// Clean up old notification entries
+function cleanupOldNotifications() {
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    
+    // Remove notifications older than today
+    for (const passId of notifiedPasses) {
+        const [_, dateStr] = passId.split('-');
+        if (dateStr < today) {
+            notifiedPasses.delete(passId);
+        }
+    }
+    
+    // Save updated set to localStorage
+    localStorage.setItem('notifiedPasses', JSON.stringify([...notifiedPasses]));
 }
 
 // Show a notification for an upcoming pass
@@ -3296,27 +3315,6 @@ function showPassNotification(satellite, startTime, endTime, details, passId, ac
                 notifiedPasses.delete(passId);
             }
         }, endTimeDate - now);
-    }
-}
-
-// Clean up old notification entries
-function cleanupOldNotifications() {
-    const now = new Date();
-    
-    // Go through all notifications and remove the old ones
-    for (const [passId, passInfo] of notifiedPasses.entries()) {
-        const startTime = passInfo.startTime;
-        
-        // If the pass started more than 3 hours ago, remove it from the list
-        if ((now - startTime) > 3 * 60 * 60 * 1000) {
-            // Close notification if it exists
-            if (passInfo.notification) {
-                passInfo.notification.close();
-            }
-            
-            // Remove from the map
-            notifiedPasses.delete(passId);
-        }
     }
 }
 
