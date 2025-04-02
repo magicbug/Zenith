@@ -3615,14 +3615,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// Add these functions for the S.A.T panel buttons
-document.addEventListener('DOMContentLoaded', () => {
-    // ...existing code...
-    
-    // Initialize S.A.T control buttons
-    initSatControlButtons();
-});
-
 // Initialize S.A.T control buttons with event listeners
 function initSatControlButtons() {
     // Radio toggle button
