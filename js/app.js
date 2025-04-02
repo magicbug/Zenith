@@ -7,7 +7,8 @@ let observer = {
     latitude: 51.5074,
     longitude: -0.1278,
     elevation: 0,
-    callsign: ''  // Add callsign to observer object
+    callsign: '',  // Add callsign to observer object
+    minElevation: 0  // Add minimum elevation to observer object
 };
 let observer2 = {
     latitude: 0,
@@ -607,6 +608,7 @@ function updateObserverLocation() {
     const lat = parseFloat(document.getElementById('latitude').value);
     const lon = parseFloat(document.getElementById('longitude').value);
     const elev = parseFloat(document.getElementById('elevation').value);
+    const minElev = parseFloat(document.getElementById('min-elevation').value);
     
     // Validate input values
     if (isNaN(lat) || lat < -90 || lat > 90) {
@@ -624,10 +626,16 @@ function updateObserverLocation() {
         return;
     }
     
+    if (isNaN(minElev) || minElev < 0 || minElev > 90) {
+        alert('Minimum elevation must be between 0 and 90 degrees');
+        return;
+    }
+    
     // Update observer data
     observer.latitude = lat;
     observer.longitude = lon;
     observer.elevation = elev;
+    observer.minElevation = minElev;
     
     // Update the observer marker on the map
     addObserverMarker();
@@ -1173,7 +1181,7 @@ function calculateUpcomingPasses() {
     
     // Display passes
     if (passes.length === 0) {
-        passesContainer.innerHTML = '<p>No passes found in the next 24 hours</p>';
+        passesContainer.innerHTML = `<p>No passes found in the next ${PASS_PREDICTION_HOURS} hours above ${observer.minElevation}° elevation</p>`;
         return;
     }
     
@@ -1330,8 +1338,8 @@ function predictPasses(satrec, observer, startTime, endTime) {
             // Convert elevation to degrees
             const elevationDeg = lookAngles.elevation * 180 / Math.PI;
             
-            // Check if satellite is visible (elevation > 0)
-            if (elevationDeg > 0) {
+            // Check if satellite is visible above minimum elevation
+            if (elevationDeg >= observer.minElevation) {
                 if (!currentPass) {
                     // Start of a new pass
                     currentPass = {
@@ -1353,7 +1361,7 @@ function predictPasses(satrec, observer, startTime, endTime) {
         }
     }
     
-    // Handle a pass that might be ongoing at the end of the prediction period
+    // If we have an ongoing pass at the end time, add it
     if (currentPass) {
         currentPass.end = new Date(endTime);
         passes.push(currentPass);
@@ -1401,6 +1409,7 @@ function loadObserverFromLocalStorage() {
         document.getElementById('longitude').value = observer.longitude;
         document.getElementById('elevation').value = observer.elevation;
         document.getElementById('callsign').value = observer.callsign || '';
+        document.getElementById('min-elevation').value = observer.minElevation || 0;
     }
 }
 
@@ -1409,6 +1418,7 @@ function updateObserverDisplay() {
     document.getElementById('latitude').value = observer.latitude;
     document.getElementById('longitude').value = observer.longitude;
     document.getElementById('elevation').value = observer.elevation;
+    document.getElementById('min-elevation').value = observer.minElevation || 0;
 }
 
 // Show loading message

@@ -199,6 +199,11 @@
                                     <label for="elevation">Elevation (m):</label>
                                     <input type="number" id="elevation" value="0">
                                 </div>
+                                <div class="form-group">
+                                    <label for="min-elevation">Minimum Elevation (°):</label>
+                                    <input type="number" id="min-elevation" value="0" min="0" max="90">
+                                    <p class="help-text">Only show passes above this elevation angle</p>
+                                </div>
                                 <div class="location-actions">
                                     <button id="use-geolocation" title="Use your current location">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
