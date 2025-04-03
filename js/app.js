@@ -3911,6 +3911,8 @@ function updateTransponderInfo() {
     const downlinkFreq = document.getElementById('sat-downlink-freq');
     const uplinkMode = document.getElementById('sat-uplink-mode');
     const downlinkMode = document.getElementById('sat-downlink-mode');
+    const ctcssContainer = document.getElementById('sat-ctcss-container');
+    const ctcssSelect = document.getElementById('sat-ctcss-select');
     
     // Check if we have frequency data to display
     if (!satTrackData.freq || !Array.isArray(satTrackData.freq)) {
@@ -3950,17 +3952,28 @@ function updateTransponderInfo() {
         transponderSelect.appendChild(option);
     });
     
-    // Set the onChange handler (only once)
-    if (!currentOnChangeHandler) {
-        transponderSelect.onchange = function() {
-            const selectedUid = this.value;
-            if (selectedUid) {
-                // Send command to change transponder
-                sendSatCommand(`A|${selectedUid}`);
-                console.log(`Changing transponder to UID: ${selectedUid}`);
+    // Show/hide CTCSS selector based on uplink mode
+    if (activeFreqId) {
+        const activeFreq = satTrackData.freq.find(f => f.uid === activeFreqId);
+        if (activeFreq && activeFreq.upMode.trim() === 'FM') {
+            ctcssContainer.style.display = 'block';
+            // Set the CTCSS value from track data if available
+            if (satTrackData.pl_0 !== undefined) {
+                ctcssSelect.value = satTrackData.pl_0.toString();
             }
-        };
+        } else {
+            ctcssContainer.style.display = 'none';
+        }
     }
+
+    // Add event listener for CTCSS changes
+    ctcssSelect.onchange = function() {
+        const selectedValue = this.value;
+        sendSatCommand(`h|${selectedValue}`);
+    };
+
+    // Restore the original onchange handler
+    transponderSelect.onchange = currentOnChangeHandler;
     
     // Display frequencies for the active transponder
     const activeFreq = satTrackData.freq.find(f => f.uid === activeFreqId);
