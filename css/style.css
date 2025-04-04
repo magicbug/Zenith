@@ -194,7 +194,7 @@ header h1 {
 }
 
 h2 {
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
     color: #2c3e50;
     border-bottom: 1px solid #eee;
     padding-bottom: 0.5rem;
@@ -270,7 +270,6 @@ button:hover {
 }
 
 #upcoming-passes, #upcoming-roves {
-    margin-top: 10px;
     overflow-y: auto;
     max-height: calc(100% - 40px); /* Account for heading */
 }

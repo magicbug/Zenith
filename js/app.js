@@ -3150,7 +3150,8 @@ function initNotifications() {
     // Initialize notifiedPasses from localStorage if it exists
     const savedNotifiedPasses = localStorage.getItem('notifiedPasses');
     if (savedNotifiedPasses) {
-        notifiedPasses = new Set(JSON.parse(savedNotifiedPasses));
+        const parsedPasses = JSON.parse(savedNotifiedPasses);
+        notifiedPasses = new Map(parsedPasses.map(pass => [pass.id, pass]));
     }
 
     // Check if permission is already granted
@@ -3232,10 +3233,17 @@ function checkUpcomingPassesForNotifications() {
                 showPassNotification(satelliteName, startTimeStr, endTimeStr, detailsText, passId, startTime);
                 
                 // Mark this pass as notified
-                notifiedPasses.add(passId);
+                notifiedPasses.set(passId, {
+                    id: passId,
+                    satellite: satelliteName,
+                    startTime: startTimeStr,
+                    endTime: endTimeStr,
+                    details: detailsText,
+                    timestamp: now.getTime()
+                });
                 
                 // Save to localStorage
-                localStorage.setItem('notifiedPasses', JSON.stringify([...notifiedPasses]));
+                localStorage.setItem('notifiedPasses', JSON.stringify([...notifiedPasses.values()]));
             }
         }
     });
@@ -3250,7 +3258,7 @@ function cleanupOldNotifications() {
     const today = now.toISOString().split('T')[0];
     
     // Remove notifications older than today
-    for (const passId of notifiedPasses) {
+    for (const [passId, passData] of notifiedPasses) {
         const [_, dateStr] = passId.split('-');
         if (dateStr < today) {
             notifiedPasses.delete(passId);
@@ -3258,7 +3266,7 @@ function cleanupOldNotifications() {
     }
     
     // Save updated set to localStorage
-    localStorage.setItem('notifiedPasses', JSON.stringify([...notifiedPasses]));
+    localStorage.setItem('notifiedPasses', JSON.stringify([...notifiedPasses.values()]));
 }
 
 // Show a notification for an upcoming pass
@@ -3289,11 +3297,6 @@ function showPassNotification(satellite, startTime, endTime, details, passId, ac
     
     const notification = new Notification(`Upcoming Pass: ${satellite}`, options);
     
-    // Store the notification so we can close it later
-    if (notifiedPasses.has(passId)) {
-        notifiedPasses.get(passId).notification = notification;
-    }
-    
     // Add click handler to focus the app
     notification.onclick = function() {
         window.focus();
@@ -3323,6 +3326,7 @@ function showPassNotification(satellite, startTime, endTime, details, passId, ac
             // Remove from notified passes
             if (notifiedPasses.has(passId)) {
                 notifiedPasses.delete(passId);
+                localStorage.setItem('notifiedPasses', JSON.stringify([...notifiedPasses.values()]));
             }
         }, endTimeDate - now);
     }
