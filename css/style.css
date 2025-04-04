@@ -673,10 +673,11 @@ close-info-btn:hover {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px;
+    padding: 10px 15px;
+    border-bottom: 1px solid #e0e0e0;
     background-color: #2c3e50;
     color: white;
-    border-radius: 5px 5px 0 0;
+    border-radius: 8px 8px 0 0;
 }
 
 .info-header h3 {
@@ -1499,4 +1500,38 @@ close-info-btn:hover {
     padding-top: 5px;
     padding-bottom: 5px;
     margin-bottom: 10px;
+}
+
+.panel-controls {
+    display: flex;
+    gap: 4px;
+}
+
+.minimize-button {
+    background: none;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 2px 6px;
+    color: white;
+}
+
+.minimize-button:hover {
+    color: #ddd;
+}
+
+.satellite-info-panel.minimized,
+.sat-panel.minimized {
+    height: auto;
+}
+
+.satellite-info-panel.minimized .info-content,
+.sat-panel.minimized .sat-panel-content,
+.sat-panel.minimized .sat-panel-buttons {
+    display: none;
+}
+
+.satellite-info-panel.minimized .minimize-button,
+.sat-panel.minimized .minimize-button {
+    transform: rotate(180deg);
 }

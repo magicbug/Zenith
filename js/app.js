@@ -4269,3 +4269,72 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // ... existing code ...
 });
+
+// Panel minimize/maximize functionality
+document.getElementById('minimize-satellite-info').addEventListener('click', function() {
+    document.getElementById('satellite-info-panel').classList.toggle('minimized');
+});
+
+document.getElementById('minimize-sat-panel').addEventListener('click', function() {
+    document.getElementById('sat-panel').classList.toggle('minimized');
+});
+
+// Make panels draggable
+function makeDraggable(element) {
+    const header = element.querySelector('.info-header');
+    let isDragging = false;
+    let currentX;
+    let currentY;
+    let initialX;
+    let initialY;
+    let xOffset = 0;
+    let yOffset = 0;
+
+    header.addEventListener('mousedown', dragStart);
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('mouseup', dragEnd);
+
+    function dragStart(e) {
+        initialX = e.clientX - xOffset;
+        initialY = e.clientY - yOffset;
+
+        if (e.target === header || e.target.parentNode === header) {
+            isDragging = true;
+        }
+    }
+
+    function drag(e) {
+        if (isDragging) {
+            e.preventDefault();
+            currentX = e.clientX - initialX;
+            currentY = e.clientY - initialY;
+
+            xOffset = currentX;
+            yOffset = currentY;
+
+            setTranslate(currentX, currentY, element);
+        }
+    }
+
+    function dragEnd(e) {
+        initialX = currentX;
+        initialY = currentY;
+        isDragging = false;
+    }
+
+    function setTranslate(xPos, yPos, el) {
+        el.style.transform = `translate3d(${xPos}px, ${yPos}px, 0)`;
+    }
+}
+
+// Make panels draggable
+const panels = [
+    document.getElementById('satellite-info-panel'),
+    document.getElementById('sat-panel')
+];
+
+panels.forEach(panel => {
+    if (panel) {
+        makeDraggable(panel);
+    }
+});
