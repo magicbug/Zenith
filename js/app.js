@@ -3147,6 +3147,12 @@ function initNotifications() {
         return;
     }
 
+    // Clear any existing interval to prevent duplicates
+    if (notificationCheckInterval) {
+        clearInterval(notificationCheckInterval);
+        notificationCheckInterval = null;
+    }
+
     // Initialize notifiedPasses from localStorage if it exists
     const savedNotifiedPasses = localStorage.getItem('notifiedPasses');
     if (savedNotifiedPasses) {
