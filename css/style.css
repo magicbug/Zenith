@@ -1535,3 +1535,76 @@ close-info-btn:hover {
 .sat-panel.minimized .minimize-button {
     transform: rotate(180deg);
 }
+
+/* AMSAT Status Button */
+#amsat-status-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 4px;
+    padding: 8px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+}
+
+#amsat-status-button:hover {
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+#amsat-status-button svg {
+    display: block;
+    width: 24px;
+    height: 24px;
+}
+
+/* AMSAT Status Dialog */
+#amsat-status-dialog .modal-content {
+    max-width: 400px;
+}
+
+#amsat-status-dialog .form-group {
+    margin-bottom: 15px;
+}
+
+#amsat-status-dialog label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+#amsat-status-dialog input[type="text"],
+#amsat-status-dialog select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+#amsat-status-dialog #amsat-satellite-name,
+#amsat-status-dialog #amsat-gridsquare,
+#amsat-status-dialog #amsat-time {
+    padding: 8px;
+    background: #f5f5f5;
+    border-radius: 4px;
+}
+
+#amsat-status-message {
+    margin-top: 15px;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+#amsat-status-message.success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+#amsat-status-message.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}

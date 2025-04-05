@@ -44,7 +44,52 @@
             </div>
 
             <div class="map-container">
-                <div id="satellite-map"></div>
+                <div id="satellite-map">
+                <!-- Add AMSAT status button -->
+                <div id="amsat-status-button" class="map-control-button" title="Report Satellite Status to AMSAT">
+                    Report Status
+                </div>
+
+                </div>
+
+                <!-- Add AMSAT status dialog -->
+                <div id="amsat-status-dialog" class="modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2>Report Satellite Status to AMSAT</h2>
+                            <span class="close amsat-close">&times;</span>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label>Satellite:</label>
+                                <div id="amsat-satellite-name">--</div>
+                            </div>
+                            <div class="form-group">
+                                <label>Status:</label>
+                                <select id="amsat-status-select">
+                                    <option value="Heard">Heard</option>
+                                    <option value="Not Heard">Not Heard</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Callsign:</label>
+                                <input type="text" id="amsat-callsign" placeholder="Enter your callsign">
+                            </div>
+                            <div class="form-group">
+                                <label>Grid Square:</label>
+                                <div id="amsat-gridsquare">--</div>
+                            </div>
+                            <div class="form-group">
+                                <label>Time:</label>
+                                <div id="amsat-time">--</div>
+                            </div>
+                            <div id="amsat-status-message" class="status-message"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button id="submit-amsat-status">Submit Report</button>
+                        </div>
+                    </div>
+                </div>
                 <!-- Add before the satellite info panel -->
                 <div id="polar-radar-panel" class="polar-radar-panel">
                     <div class="info-header">
