@@ -3937,9 +3937,6 @@ function updateTransponderInfo() {
     // Find the active frequency ID
     const activeFreqId = satTrackData.afreq;
     
-    // Save current onchange handler to avoid adding multiple handlers
-    const currentOnChangeHandler = transponderSelect.onchange;
-    
     // Clear and rebuild the dropdown
     transponderSelect.innerHTML = '';
     transponderSelect.disabled = false;
@@ -3976,18 +3973,23 @@ function updateTransponderInfo() {
         }
     }
 
+    // Add event listener for transponder selection changes
+    transponderSelect.onchange = function() {
+        const selectedValue = this.value;
+        if (selectedValue) {
+            // Send the transponder selection command to the API
+            sendSatCommand(`A|${selectedValue}`);
+        }
+    };
+
     // Add event listener for CTCSS changes
     ctcssSelect.onchange = function() {
         const selectedValue = this.value;
         sendSatCommand(`h|${selectedValue}`);
     };
-
-    // Restore the original onchange handler
-    transponderSelect.onchange = currentOnChangeHandler;
     
     // Display frequencies for the active transponder
     const activeFreq = satTrackData.freq.find(f => f.uid === activeFreqId);
-    
     if (activeFreq) {
         // Calculate and format uplink frequency with offset and Doppler in MHz
         if (activeFreq.upFreq > 0) {
