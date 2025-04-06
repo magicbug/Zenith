@@ -31,7 +31,7 @@ const NOTIFICATION_THRESHOLD_MINUTES = 15; // Minutes before pass to show notifi
 window.tleData = {};
 
 // Constants
-const TLE_URL = 'fetch_tle.php';  // Changed to use our PHP proxy script
+const TLE_URL = 'api/fetch_tle.php';  // Changed to use our PHP proxy script
 const UPDATE_INTERVAL_MS = 5000; // Update satellite positions every 5 seconds
 const PASS_UPDATE_INTERVAL_MS = 60000; // Update passes every minute
 const PASS_PREDICTION_HOURS = 24; // Predict passes for the next 24 hours
