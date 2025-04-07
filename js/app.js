@@ -4809,19 +4809,22 @@ function updateCloudlogData() {
     const downlinkFreq = document.getElementById('sat-downlink-freq')?.textContent;
     const uplinkMode = document.getElementById('sat-uplink-mode')?.textContent;
     const downlinkMode = document.getElementById('sat-downlink-mode')?.textContent;
+    const satelliteName = document.getElementById('info-satellite-name')?.textContent;
 
     console.log('Raw frequency values:', {
         uplinkFreq,
         downlinkFreq,
         uplinkMode,
-        downlinkMode
+        downlinkMode,
+        satelliteName
     });
 
     // Validate frequencies and modes
-    if (!uplinkFreq || !downlinkFreq || !uplinkMode || !downlinkMode ||
+    if (!uplinkFreq || !downlinkFreq || !uplinkMode || !downlinkMode || !satelliteName ||
         uplinkFreq === '---' || downlinkFreq === '---' ||
-        uplinkMode === '---' || downlinkMode === '---') {
-        console.log('Invalid frequency or mode data, skipping Cloudlog update');
+        uplinkMode === '---' || downlinkMode === '---' ||
+        satelliteName === 'Satellite Info') {
+        console.log('Invalid frequency, mode, or satellite data, skipping Cloudlog update');
         return;
     }
 
@@ -4855,7 +4858,7 @@ function updateCloudlogData() {
     
     // Define frequency band boundaries in Hz
     const VHF_MAX = 300000000;  // 300 MHz
-    const UHF_MAX = 1000000000; // 1 GHz
+    const UHF_MAX = 1000000000;
     const L_BAND_MAX = 2000000000; // 2 GHz
     const S_BAND_MAX = 4000000000; // 4 GHz
     const C_BAND_MAX = 8000000000; // 8 GHz
@@ -4912,6 +4915,7 @@ function updateCloudlogData() {
         uplink_mode: uplinkMode,
         downlink_mode: downlinkMode,
         satmode: satmode,
+        satname: satelliteName,
         timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19)
     };
 

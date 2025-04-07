@@ -38,7 +38,7 @@ file_put_contents($logFile, $logMessage, FILE_APPEND);
 if (!isset($data['key']) || !isset($data['radio']) || !isset($data['uplink_freq']) || 
     !isset($data['downlink_freq']) || !isset($data['uplink_mode']) || 
     !isset($data['downlink_mode']) || !isset($data['satmode']) || 
-    !isset($data['timestamp'])) {
+    !isset($data['satname']) || !isset($data['timestamp'])) {
     $error = 'Missing required fields';
     $logMessage = date('Y-m-d H:i:s') . " - Error: " . $error . "\n";
     file_put_contents($logFile, $logMessage, FILE_APPEND);
