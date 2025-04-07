@@ -54,6 +54,11 @@ let csnSatAddress = '';
 let satAPIAvailable = false;
 let currentSelectedSatelliteForSAT = '';
 
+// Cloudlog API settings
+let enableCloudlog = false;
+let cloudlogUrl = '';
+let cloudlogApiKey = '';
+
 // Initialize the application when the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
     // Load settings from local storage first, before map initialization
@@ -61,6 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadSelectedSatellitesFromLocalStorage();
     loadHamsAtSettingsFromLocalStorage();
     loadCsnSatSettingsFromLocalStorage();
+    loadCloudlogSettingsFromLocalStorage();
     
     // Check S.A.T API availability
     if (enableCsnSat && csnSatAddress) {
@@ -206,6 +212,34 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Tab switching functionality
+
+    // Load Cloudlog settings
+    loadCloudlogSettingsFromLocalStorage();
+
+    // Add event listeners for Cloudlog settings
+    document.getElementById('enable-cloudlog').addEventListener('change', function() {
+        enableCloudlog = this.checked;
+        saveCloudlogSettingsToLocalStorage();
+    });
+
+    document.getElementById('cloudlog-url').addEventListener('input', function() {
+        cloudlogUrl = this.value.trim();
+        saveCloudlogSettingsToLocalStorage();
+    });
+
+    document.getElementById('cloudlog-api-key').addEventListener('input', function() {
+        cloudlogApiKey = this.value.trim();
+        saveCloudlogSettingsToLocalStorage();
+    });
+
+    // Add event listeners for frequency and mode changes
+    const frequencyInputs = ['uplink-freq', 'downlink-freq', 'uplink-mode', 'downlink-mode'];
+    frequencyInputs.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('change', updateCloudlogData);
+        }
+    });
 });
 
 // Initialize the Leaflet map
@@ -4693,3 +4727,247 @@ function initAmsatStatusReporting() {
             });
     });
 }
+
+// Load Cloudlog settings from local storage
+function loadCloudlogSettingsFromLocalStorage() {
+    const enabledSetting = localStorage.getItem('enableCloudlog');
+    if (enabledSetting !== null) {
+        enableCloudlog = enabledSetting === 'true';
+        document.getElementById('enable-cloudlog').checked = enableCloudlog;
+    }
+
+    const url = localStorage.getItem('cloudlogUrl');
+    if (url) {
+        cloudlogUrl = url;
+        document.getElementById('cloudlog-url').value = cloudlogUrl;
+    }
+
+    const apiKey = localStorage.getItem('cloudlogApiKey');
+    if (apiKey) {
+        cloudlogApiKey = apiKey;
+        document.getElementById('cloudlog-api-key').value = cloudlogApiKey;
+    }
+}
+
+// Save Cloudlog settings to local storage
+function saveCloudlogSettingsToLocalStorage() {
+    localStorage.setItem('enableCloudlog', enableCloudlog.toString());
+    localStorage.setItem('cloudlogUrl', cloudlogUrl);
+    localStorage.setItem('cloudlogApiKey', cloudlogApiKey);
+}
+
+// Send data to Cloudlog API
+async function sendToCloudlog(data) {
+    if (!enableCloudlog || !cloudlogUrl || !cloudlogApiKey) {
+        console.log('Cloudlog API is not configured');
+        return;
+    }
+
+    const proxyUrl = '/api/cloudlog_proxy.php';
+    console.log('Sending request to proxy:', proxyUrl);
+    console.log('Request data:', {
+        key: cloudlogApiKey,
+        radio: "Zenith Satellite Tracker",
+        ...data,
+        cloudlog_url: cloudlogUrl
+    });
+
+    try {
+        const response = await fetch(proxyUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                key: cloudlogApiKey,
+                radio: "Zenith Satellite Tracker",
+                ...data,
+                cloudlog_url: cloudlogUrl
+            })
+        });
+
+        console.log('Response status:', response.status);
+        const responseText = await response.text();
+        console.log('Response text:', responseText);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = JSON.parse(responseText);
+        console.log('Cloudlog API response:', result);
+    } catch (error) {
+        console.error('Error sending data to Cloudlog:', error);
+    }
+}
+
+// Update Cloudlog when frequencies or modes change
+function updateCloudlogData() {
+    if (!enableCloudlog) return;
+
+    const uplinkFreq = document.getElementById('sat-uplink-freq')?.textContent;
+    const downlinkFreq = document.getElementById('sat-downlink-freq')?.textContent;
+    const uplinkMode = document.getElementById('sat-uplink-mode')?.textContent;
+    const downlinkMode = document.getElementById('sat-downlink-mode')?.textContent;
+
+    console.log('Raw frequency values:', {
+        uplinkFreq,
+        downlinkFreq,
+        uplinkMode,
+        downlinkMode
+    });
+
+    // Validate frequencies and modes
+    if (!uplinkFreq || !downlinkFreq || !uplinkMode || !downlinkMode ||
+        uplinkFreq === '---' || downlinkFreq === '---' ||
+        uplinkMode === '---' || downlinkMode === '---') {
+        console.log('Invalid frequency or mode data, skipping Cloudlog update');
+        return;
+    }
+
+    // Convert MHz to Hz
+    // Remove MHz suffix and any spaces, then convert to number
+    const uplinkFreqMHz = parseFloat(uplinkFreq.replace('MHz', '').trim());
+    const downlinkFreqMHz = parseFloat(downlinkFreq.replace('MHz', '').trim());
+
+    console.log('Parsed frequency values (MHz):', {
+        uplinkFreqMHz,
+        downlinkFreqMHz
+    });
+
+    // Convert MHz to Hz (multiply by 1,000,000)
+    const uplinkFreqHz = Math.round(uplinkFreqMHz * 1000000);
+    const downlinkFreqHz = Math.round(downlinkFreqMHz * 1000000);
+
+    console.log('Converted frequency values (Hz):', {
+        uplinkFreqHz,
+        downlinkFreqHz
+    });
+
+    // Validate frequency conversion
+    if (isNaN(uplinkFreqHz) || isNaN(downlinkFreqHz)) {
+        console.log('Invalid frequency values, skipping Cloudlog update');
+        return;
+    }
+
+    // Calculate satmode based on frequency bands
+    let satmode = '';
+    
+    // Define frequency band boundaries in Hz
+    const VHF_MAX = 300000000;  // 300 MHz
+    const UHF_MAX = 1000000000; // 1 GHz
+    const L_BAND_MAX = 2000000000; // 2 GHz
+    const S_BAND_MAX = 4000000000; // 4 GHz
+    const C_BAND_MAX = 8000000000; // 8 GHz
+    const X_BAND_MAX = 12000000000; // 12 GHz
+
+    // Determine uplink band
+    let uplinkBand = '';
+    if (uplinkFreqHz <= VHF_MAX) {
+        uplinkBand = 'V';
+    } else if (uplinkFreqHz <= UHF_MAX) {
+        uplinkBand = 'U';
+    } else if (uplinkFreqHz <= L_BAND_MAX) {
+        uplinkBand = 'L';
+    } else if (uplinkFreqHz <= S_BAND_MAX) {
+        uplinkBand = 'S';
+    } else if (uplinkFreqHz <= C_BAND_MAX) {
+        uplinkBand = 'C';
+    } else if (uplinkFreqHz <= X_BAND_MAX) {
+        uplinkBand = 'X';
+    } else {
+        uplinkBand = 'K';
+    }
+
+    // Determine downlink band
+    let downlinkBand = '';
+    if (downlinkFreqHz <= VHF_MAX) {
+        downlinkBand = 'V';
+    } else if (downlinkFreqHz <= UHF_MAX) {
+        downlinkBand = 'U';
+    } else if (downlinkFreqHz <= L_BAND_MAX) {
+        downlinkBand = 'L';
+    } else if (downlinkFreqHz <= S_BAND_MAX) {
+        downlinkBand = 'S';
+    } else if (downlinkFreqHz <= C_BAND_MAX) {
+        downlinkBand = 'C';
+    } else if (downlinkFreqHz <= X_BAND_MAX) {
+        downlinkBand = 'X';
+    } else {
+        downlinkBand = 'K';
+    }
+
+    // Combine bands for satmode
+    satmode = `${uplinkBand}/${downlinkBand}`;
+
+    console.log('Calculated satmode:', {
+        uplinkBand,
+        downlinkBand,
+        satmode
+    });
+
+    const data = {
+        uplink_freq: uplinkFreqHz.toString(),
+        downlink_freq: downlinkFreqHz.toString(),
+        uplink_mode: uplinkMode,
+        downlink_mode: downlinkMode,
+        satmode: satmode,
+        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19)
+    };
+
+    console.log('Final data being sent to Cloudlog:', data);
+    sendToCloudlog(data);
+}
+
+// Add Cloudlog event listeners
+document.addEventListener('DOMContentLoaded', () => {
+    // ... existing code ...
+
+    // Load Cloudlog settings
+    loadCloudlogSettingsFromLocalStorage();
+
+    // Add event listeners for Cloudlog settings
+    document.getElementById('enable-cloudlog').addEventListener('change', function() {
+        enableCloudlog = this.checked;
+        saveCloudlogSettingsToLocalStorage();
+    });
+
+    document.getElementById('cloudlog-url').addEventListener('input', function() {
+        cloudlogUrl = this.value.trim();
+        saveCloudlogSettingsToLocalStorage();
+    });
+
+    document.getElementById('cloudlog-api-key').addEventListener('input', function() {
+        cloudlogApiKey = this.value.trim();
+        saveCloudlogSettingsToLocalStorage();
+    });
+
+    // Add event listeners for CSN S.A.T panel updates
+    const satPanelContent = document.getElementById('sat-panel-content');
+    if (satPanelContent) {
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'childList' || mutation.type === 'characterData') {
+                    // Check if the change was in frequency or mode elements
+                    const target = mutation.target;
+                    if (target.id && (
+                        target.id === 'sat-uplink-freq' ||
+                        target.id === 'sat-downlink-freq' ||
+                        target.id === 'sat-uplink-mode' ||
+                        target.id === 'sat-downlink-mode'
+                    )) {
+                        updateCloudlogData();
+                    }
+                }
+            });
+        });
+
+        observer.observe(satPanelContent, {
+            childList: true,
+            subtree: true,
+            characterData: true
+        });
+    }
+});
+
+// ... existing code ...
