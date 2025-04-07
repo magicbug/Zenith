@@ -283,7 +283,7 @@ function addObserverMarker() {
 function setupEventListeners() {
     const modal = document.getElementById('options-modal');
     const openModalBtn = document.getElementById('open-options');
-    const closeBtn = document.querySelector('.close');
+    const closeBtn = modal.querySelector('.close');  // Changed to specifically target the close button within the options modal
     const saveBtn = document.getElementById('save-options');
     const selectAllBtn = document.getElementById('select-all');
     const deselectAllBtn = document.getElementById('deselect-all');

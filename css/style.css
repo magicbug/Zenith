@@ -375,7 +375,7 @@ button:hover {
     cursor: pointer;
 }
 
-close:hover {
+.close:hover {
     color: #ccc;
 }
 
@@ -563,7 +563,7 @@ close:hover {
     padding: 0 5px;
 }
 
-close-info-btn:hover {
+.close-info-btn:hover {
     color: #ddd;
 }
 
