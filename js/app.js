@@ -211,8 +211,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Tab switching functionality
-
     // Load Cloudlog settings
     loadCloudlogSettingsFromLocalStorage();
 
@@ -1653,7 +1651,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function updateUpcomingPasses() {
-    // ...existing code...
     
     // Clear the current list
     const upcomingPassesElement = document.getElementById('upcoming-passes');
@@ -1703,7 +1700,6 @@ function getPassStatusClass(pass) {
 
 // Add to your existing saveOptions function
 function saveOptions() {
-    // ...existing code...
     
     // Save API settings
     saveApiSettings();
@@ -1868,7 +1864,6 @@ setupRovesAutoRefresh();
 
 // Update the fetchUpcomingRoves function with better error handling and debugging
 function fetchUpcomingRoves() {
-    // ...existing code...
     
     const rovesContainer = document.getElementById('upcoming-roves');
     rovesContainer.innerHTML = '<div class="loading">Loading roves data...</div>';
@@ -1939,7 +1934,6 @@ document.getElementById('close-info-panel').addEventListener('click', function()
 
 // Find the function that displays the satellite info and modify it
 function updateSatelliteInfo(satellite) {
-    // ...existing code...
     
     // Check if panel was manually closed before showing
     if (window.satelliteInfoPanelClosed) {
@@ -1950,7 +1944,6 @@ function updateSatelliteInfo(satellite) {
     const infoPanel = document.getElementById('satellite-info-panel');
     infoPanel.style.display = 'block';
     
-    // ...existing code...
 }
 
 // Add a reset for the closed flag when a satellite is clicked
@@ -1958,7 +1951,6 @@ function onSatelliteMarkerClick(e) {
     // Reset the closed flag when a satellite is manually selected
     window.satelliteInfoPanelClosed = false;
     
-    // ...existing code...
 }
 
 // Update satellite marker creation to ensure proper label positioning
@@ -1973,10 +1965,7 @@ function createSatelliteMarker(satellite, position) {
         iconAnchor: [12, 12]    // Center point of the icon
     });
     
-    // ...existing code...
 }
-
-// ...existing code...
 
 function createSatelliteMarker(satellite, position) {
     const icon = L.divIcon({
@@ -1990,10 +1979,7 @@ function createSatelliteMarker(satellite, position) {
         className: 'satellite-marker-container'  // New container class
     });
     
-    // ...existing code...
 }
-
-// ...existing code...
 
 // Add new function to load Hams.at settings
 function loadHamsAtSettingsFromLocalStorage() {
@@ -2050,7 +2036,6 @@ let SCHEDULE_PREDICTION_DAYS = 1;
 
 // Add event listeners for Schedule modal
 document.addEventListener('DOMContentLoaded', () => {
-    // ...existing code...
 
     // Initialize Schedule Modal
     const scheduleModal = document.getElementById('schedule-modal');
@@ -3377,7 +3362,6 @@ function showPassNotification(satellite, startTime, endTime, details, passId, ac
 
 // Add notification functionality to the document ready function
 document.addEventListener('DOMContentLoaded', () => {
-    // ...existing code...
     
     // Add notification toggle to settings
     const optionsForm = document.querySelector('#options-form');
@@ -3422,7 +3406,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Add an event listener for the test notification button
 document.addEventListener('DOMContentLoaded', () => {
-    // ...existing code...
     
     // Test notification button
     const testNotificationBtn = document.getElementById('test-notification');
@@ -3430,7 +3413,6 @@ document.addEventListener('DOMContentLoaded', () => {
         testNotificationBtn.addEventListener('click', showTestNotification);
     }
     
-    // ...existing code...
 });
 
 // Function to show a test notification
@@ -4284,7 +4266,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Existing code for initializing CSN S.A.T settings and event listeners...
+
     const transponderDesc = document.getElementById('sat-transponder-desc');
     if (transponderDesc) {
         const transponderSelectContainer = document.createElement('div');
@@ -4304,7 +4286,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Add event listener for callsign input
 document.addEventListener('DOMContentLoaded', () => {
-    // ... existing code ...
     
     // Add event listener for callsign input
     document.getElementById('callsign').addEventListener('input', function() {
@@ -4312,7 +4293,6 @@ document.addEventListener('DOMContentLoaded', () => {
         saveObserverToLocalStorage();
     });
     
-    // ... existing code ...
 });
 
 // Panel minimize/maximize functionality
@@ -4929,7 +4909,6 @@ function updateCloudlogData() {
 
 // Add Cloudlog event listeners
 document.addEventListener('DOMContentLoaded', () => {
-    // ... existing code ...
 
     // Load Cloudlog settings
     loadCloudlogSettingsFromLocalStorage();
@@ -4978,8 +4957,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// ... existing code ...
-
 // Add this function to handle observer location updates
 function updateObserverLocation(location) {
     // Convert lat/long to grid square
@@ -5023,7 +5000,6 @@ function latLonToGridSquare(lat, lon) {
 
 // Update the location form submission handler
 document.getElementById('save-options').addEventListener('click', function() {
-    // ... existing code ...
     
     const location = {
         latitude: parseFloat(document.getElementById('latitude').value),
@@ -5033,7 +5009,6 @@ document.getElementById('save-options').addEventListener('click', function() {
     
     updateObserverLocation(location);
     
-    // ... rest of existing code ...
 });
 
 // Update the geolocation handler
@@ -5054,5 +5029,3 @@ document.getElementById('use-geolocation').addEventListener('click', function() 
         });
     }
 });
-
-// ... rest of existing code ...
