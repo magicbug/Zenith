@@ -898,6 +898,9 @@ function showSatelliteInfo(satName) {
     // First update immediately
     updateSatelliteInfoDisplay(satName);
     
+    // Update Cloudlog data with the new satellite
+    updateCloudlogData();
+    
     // Ensure the panel is visible
     infoPanel.style.display = 'block';
     
@@ -4910,13 +4913,14 @@ function updateCloudlogData() {
     });
 
     const data = {
-        uplink_freq: uplinkFreqHz.toString(),
-        downlink_freq: downlinkFreqHz.toString(),
-        uplink_mode: uplinkMode,
-        downlink_mode: downlinkMode,
-        satmode: satmode,
-        satname: satelliteName,
-        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19)
+        key: cloudlogApiKey,
+        radio: "Zenith Satellite Tracker",
+        frequency: uplinkFreqHz.toString(),
+        mode: uplinkMode,
+        frequency_rx: downlinkFreqHz.toString(),
+        mode_rx: downlinkMode,
+        prop_mode: "SAT",
+        sat_name: satelliteName
     };
 
     console.log('Final data being sent to Cloudlog:', data);
