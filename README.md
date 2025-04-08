@@ -185,7 +185,17 @@ Remember that Zenith is maintained by a single developer in their spare time. Yo
 
 ## License
 
-[Add your license information here]
+Zenith Satellite Tracker is licensed under the GNU Affero General Public License (AGPL) v3. This means:
+
+- You are free to use, modify, and distribute the software
+- Any modifications must be shared under the same license
+- If you host a modified version as a service, you must make the source code available
+- Commercial use is allowed but the source must remain open
+- You cannot take this code and sell it as a proprietary product
+
+This license protects the project from being taken private or sold commercially while still allowing community contributions and improvements.
+
+For more information, see the [full license text](LICENSE) or visit [gnu.org/licenses/agpl-3.0](https://www.gnu.org/licenses/agpl-3.0).
 
 ## Acknowledgments
 
