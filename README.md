@@ -39,14 +39,32 @@ A modern web-based satellite tracking application designed for amateur radio ope
   - Upcoming roves display
   - Direct links to Hams.at for detailed information
 
+## Requirements
+
+- **Web Server**
+  - PHP 7.4 or higher
+  - SSL/TLS certificate (required for geolocation and notifications)
+  - Web server (Apache, Nginx, etc.)
+
+- **Client-side**
+  - Modern web browser with JavaScript enabled
+  - SSL/TLS connection (required for geolocation and notifications)
+
 ## Getting Started
 
-1. **Installation**
-   - Clone the repository
-   - Open `index.html` in a modern web browser
-   - No server setup required - runs entirely client-side
+1. **Server Setup**
+   - Install a web server (Apache, Nginx, etc.)
+   - Install PHP 7.4 or higher
+   - Configure SSL/TLS certificate
+   - Place the application files in your web server's document root
+   - Ensure PHP has write permissions for any data directories
 
-2. **Configuration**
+2. **Installation**
+   - Clone the repository to your web server
+   - Configure your web server to serve the application over HTTPS
+   - Access the application through your web browser using HTTPS
+
+3. **Configuration**
    - Click the "Options" button to configure:
      - Your location (latitude/longitude or grid square)
      - Satellite selection
@@ -54,7 +72,7 @@ A modern web-based satellite tracking application designed for amateur radio ope
      - API keys (Hams.at, Cloudlog)
      - Notification preferences
 
-3. **Basic Usage**
+4. **Basic Usage**
    - Browse the map to see satellite positions
    - View upcoming passes in the sidebar
    - Click on satellites for detailed information
@@ -63,10 +81,15 @@ A modern web-based satellite tracking application designed for amateur radio ope
 
 ## Dependencies
 
-- Leaflet.js (1.9.4) - Interactive maps
-- Satellite.js (4.0.0) - Satellite position calculations
-- jQuery (3.7.1) - DOM manipulation
-- DataTables - Table management
+- **Server-side**
+  - PHP 7.4 or higher
+  - Web server with SSL/TLS support
+
+- **Client-side**
+  - Leaflet.js (1.9.4) - Interactive maps
+  - Satellite.js (4.0.0) - Satellite position calculations
+  - jQuery (3.7.1) - DOM manipulation
+  - DataTables - Table management
 
 ## Browser Support
 
@@ -75,6 +98,8 @@ Zenith is designed to work in modern web browsers including:
 - Firefox (latest)
 - Safari (latest)
 - Edge (latest)
+
+Note: Due to the use of HTML5 features like geolocation and notifications, the application must be served over HTTPS.
 
 ## Contributing
 
