@@ -50,6 +50,22 @@ A modern web-based satellite tracking application designed for amateur radio ope
   - Modern web browser with JavaScript enabled
   - SSL/TLS connection (required for geolocation and notifications)
 
+## Deployment Options
+
+### Local Network Deployment (Recommended for CSN S.A.T Integration)
+- Ideal for use with CSN Technologies S.A.T
+- Can be run on a local server (e.g., Raspberry Pi)
+- Allows direct communication with S.A.T on the local network
+- Recommended setup:
+  - Install on a local server within the same network as your S.A.T
+  - Configure local SSL certificate
+  - Access via local network IP address or hostname
+
+### Internet Deployment
+- Suitable for remote access
+- Requires public SSL certificate
+- May require additional configuration for S.A.T integration
+
 ## Getting Started
 
 1. **Server Setup**
