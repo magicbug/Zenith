@@ -117,6 +117,11 @@ Zenith is designed to work in modern web browsers including:
 
 Note: Due to the use of HTML5 features like geolocation and notifications, the application must be served over HTTPS.
 
+**Device Support:**
+- Currently optimized for desktop/laptop computers
+- Tablet and mobile device support coming in a future update
+- Some features may not work optimally on touch devices at this time
+
 ## Support
 
 Zenith is primarily maintained by a single developer. Please keep this in mind when seeking support:
@@ -125,6 +130,13 @@ Zenith is primarily maintained by a single developer. Please keep this in mind w
   - Should only be used for reporting bugs or code-related issues
   - Server setup and configuration questions should not be posted as issues
   - Feature requests are welcome but may take time to implement
+
+- **GitHub Discussions**
+  - Primary platform for community support
+  - Ask questions about setup and configuration
+  - Share your experiences and solutions
+  - Help other users with their questions
+  - Visit [GitHub Discussions](https://github.com/magicbug/Zenith/discussions) to join the community
 
 - **Limited Support**
   - No guaranteed response time for issues or questions
