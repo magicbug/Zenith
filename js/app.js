@@ -4979,3 +4979,80 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ... existing code ...
+
+// Add this function to handle observer location updates
+function updateObserverLocation(location) {
+    // Convert lat/long to grid square
+    const gridSquare = latLonToGridSquare(location.latitude, location.longitude);
+    
+    // Create location object with grid square
+    const observerLocation = {
+        ...location,
+        gridSquare: gridSquare
+    };
+    
+    // Update APRS panel with observer location
+    if (window.aprsPanel) {
+        window.aprsPanel.setObserverLocation(observerLocation);
+    }
+}
+
+// Add this function to convert lat/long to grid square
+function latLonToGridSquare(lat, lon) {
+    // Implementation of lat/long to grid square conversion
+    // This is a simplified version - you may want to use a more accurate implementation
+    const gridSize = 10; // 10 degrees per grid square
+    const latOffset = 90;
+    const lonOffset = 180;
+    
+    const latGrid = Math.floor((lat + latOffset) / gridSize);
+    const lonGrid = Math.floor((lon + lonOffset) / gridSize);
+    
+    const latRemainder = ((lat + latOffset) % gridSize) / gridSize;
+    const lonRemainder = ((lon + lonOffset) % gridSize) / gridSize;
+    
+    const subLat = Math.floor(latRemainder * 10);
+    const subLon = Math.floor(lonRemainder * 10);
+    
+    const gridSquare = String.fromCharCode(65 + lonGrid) + 
+                      String.fromCharCode(65 + latGrid) + 
+                      subLon + subLat;
+    
+    return gridSquare;
+}
+
+// Update the location form submission handler
+document.getElementById('save-options').addEventListener('click', function() {
+    // ... existing code ...
+    
+    const location = {
+        latitude: parseFloat(document.getElementById('latitude').value),
+        longitude: parseFloat(document.getElementById('longitude').value),
+        elevation: parseFloat(document.getElementById('elevation').value)
+    };
+    
+    updateObserverLocation(location);
+    
+    // ... rest of existing code ...
+});
+
+// Update the geolocation handler
+document.getElementById('use-geolocation').addEventListener('click', function() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            const location = {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                elevation: position.coords.altitude || 0
+            };
+            
+            document.getElementById('latitude').value = location.latitude;
+            document.getElementById('longitude').value = location.longitude;
+            document.getElementById('elevation').value = location.elevation;
+            
+            updateObserverLocation(location);
+        });
+    }
+});
+
+// ... rest of existing code ...

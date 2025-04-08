@@ -546,11 +546,31 @@ button:hover {
     border-radius: 8px 8px 0 0;
 }
 
-.info-header h3 {
+.header-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.header-title h3 {
     margin: 0;
     font-size: 16px;
     font-weight: bold;
     color: white;
+}
+
+.debug-button {
+    padding: 4px 8px;
+    font-size: 12px;
+    height: auto;
+    margin: 0;
+    background-color: #34495e;
+    color: white;
+    border: 1px solid #456789;
+}
+
+.debug-button:hover {
+    background-color: #456789;
 }
 
 .close-info-btn {
@@ -1505,6 +1525,7 @@ button:hover {
 .panel-controls {
     display: flex;
     gap: 4px;
+    align-items: center;
 }
 
 .minimize-button {
@@ -1607,4 +1628,221 @@ button:hover {
     background-color: #f8d7da;
     color: #721c24;
     border: 1px solid #f5c6cb;
+}
+
+/* APRS Panel Styles */
+.aprs-panel {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 800px;
+    max-width: 90%;
+    max-height: 90vh;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    display: none;
+    flex-direction: column;
+}
+
+.aprs-panel .info-header {
+    cursor: move; /* Show move cursor on header */
+}
+
+.aprs-panel.minimized .aprs-panel-content {
+    display: none;
+}
+
+.aprs-panel.minimized {
+    max-height: unset;
+    transform: none;
+}
+
+.aprs-panel-content {
+    padding: 20px;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+.aprs-messages {
+    height: 200px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    margin-bottom: 15px;
+    background-color: #f9f9f9;
+    display: none;
+}
+
+.aprs-message {
+    margin-bottom: 5px;
+    padding: 5px;
+    border-radius: 4px;
+}
+
+.aprs-message.sent {
+    background-color: #e3f2fd;
+}
+
+.aprs-message.received {
+    background-color: #f1f8e9;
+}
+
+.aprs-message.error {
+    background-color: #ffebee;
+    color: #c62828;
+}
+
+.aprs-macros {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.aprs-macros .aprs-button {
+    flex: 1;
+    padding: 12px 20px;
+    font-size: 1.1em;
+    font-weight: bold;
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 120px;
+    text-align: center;
+}
+
+.aprs-macros .aprs-button:hover {
+    background-color: #357abd;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.aprs-macros .aprs-button:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+.aprs-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    justify-content: flex-end;  /* Align buttons to the right */
+    width: 100%;  /* Ensure the container takes full width */
+    grid-column: 1 / -1;  /* Make it span all columns in the grid */
+}
+
+.aprs-controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+    width: 100%;  /* Ensure full width */
+}
+
+.aprs-table-container {
+    margin-top: 20px;
+    width: 100%;
+    overflow-x: auto;
+}
+
+.aprs-table {
+    width: 100% !important;
+    margin-bottom: 10px;
+}
+
+.aprs-table th,
+.aprs-table td {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+
+.aprs-table th {
+    background-color: #f5f5f5;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.aprs-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.aprs-table tr:hover {
+    background-color: #f1f1f1;
+}
+
+/* DataTables specific styles */
+.dataTables_wrapper {
+    width: 100%;
+}
+
+.dataTables_filter {
+    margin-bottom: 10px;
+}
+
+.dataTables_filter input {
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    width: 200px;
+}
+
+.dataTables_info {
+    margin-top: 10px;
+    color: #666;
+}
+
+.dataTables_paginate {
+    margin-top: 10px;
+    text-align: right;
+}
+
+.dataTables_paginate .paginate_button {
+    padding: 5px 10px;
+    margin: 0 2px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    background: #fff;
+}
+
+.dataTables_paginate .paginate_button.current {
+    background-color: #4a90e2;
+    color: white;
+    border-color: #4a90e2;
+}
+
+.dataTables_empty {
+    padding: 20px;
+    text-align: center;
+    color: #666;
+}
+
+/* Ensure the table container takes full width */
+.aprs-table-container {
+    margin-top: 20px;
+    width: 100%;
+    overflow-x: auto;
+}
+
+/* Force DataTables to respect container width */
+.aprs-table-container .dataTables_wrapper {
+    width: 100% !important;
+}
+
+.aprs-table-container .dataTables_scrollBody {
+    width: 100% !important;
+}
+
+.aprs-table-container table.dataTable {
+    width: 100% !important;
+    margin: 0 !important;
 }

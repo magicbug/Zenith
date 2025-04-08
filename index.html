@@ -21,6 +21,7 @@
                 <button id="open-sat-panel-btn" class="sat-button-header">CSN Panel</button>
                 <button id="open-schedule" class="schedule-button">Schedule</button>
                 <button id="open-sked-planning" class="schedule-button">Sked Planning</button>
+                <button id="open-aprs" class="aprs-button">APRS</button>
                 <button id="open-options" class="options-button">Options</button>
                 <button id="open-help" class="help-button">Help</button>
             </div>
@@ -598,9 +599,64 @@
         </div>
     </div>
 
+    <!-- APRS Panel -->
+    <div id="aprs-panel" class="aprs-panel">
+        <div class="info-header">
+            <h3 id="aprs-panel-title">APRS</h3>
+            <button id="aprs-toggle-debug" class="aprs-button debug-button">Show Debug</button>
+            <div class="panel-controls">
+                <button id="minimize-aprs-panel" class="minimize-button">−</button>
+                <button id="close-aprs-panel" class="close-button">×</button>
+            </div>
+        </div>
+        <div class="aprs-panel-content">
+            <div id="aprs-messages" class="aprs-messages"></div>
+            <div class="aprs-macros">
+                <button id="aprs-cq" class="aprs-button">CQ</button>
+                <button id="aprs-call-rpt" class="aprs-button">CALL RPT & GRID</button>
+                <button id="aprs-tu73" class="aprs-button">TU 73</button>
+            </div>
+            <div class="aprs-controls">
+                <div class="form-group">
+                    <label for="aprs-to">To callsign:</label>
+                    <input type="text" id="aprs-to" placeholder="To callsign" value="CQ">
+                </div>
+                <div class="form-group">
+                    <label for="aprs-via">Via path:</label>
+                    <input type="text" id="aprs-via" placeholder="Via path" value="WIDE1-1,WIDE2-1">
+                </div>
+                <div class="form-group">
+                    <label for="aprs-message">Message:</label>
+                    <input type="text" id="aprs-message" placeholder="Message text">
+                </div>
+                <div class="aprs-buttons">
+                    <button id="aprs-send-message" class="aprs-button">Send Message</button>
+                    <button id="aprs-send-position" class="aprs-button">Send Position</button>
+                </div>
+            </div>
+            <div class="aprs-table-container">
+                <table id="aprs-packets-table" class="aprs-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>From</th>
+                            <th>To</th>
+                            <th>Message</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <!-- Load Scripts -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/4.0.0/satellite.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.js"></script>
+    <script src="js/aprs.js"></script>
     <script src="js/app.js"></script>
 </body>
 
