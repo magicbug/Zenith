@@ -150,7 +150,38 @@ Zenith is primarily maintained by a single developer. Please keep this in mind w
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome, but please follow these guidelines to help manage the project effectively:
+
+- **Before Starting Work**
+  - Open a discussion to discuss your proposed changes
+  - Wait for confirmation before starting significant work
+  - Check if similar work is already in progress
+
+- **Pull Request Guidelines**
+  - Keep PRs focused and limited to one feature/fix
+  - Include clear descriptions of changes
+  - Update documentation as needed
+  - Ensure code follows existing style and patterns
+  - Test changes thoroughly before submitting
+
+- **Response Time**
+  - No guaranteed response time for PR reviews
+  - Complex PRs may take longer to review
+  - Be prepared to make requested changes
+
+- **Scope Limitations**
+  - Major architectural changes require prior discussion
+  - New dependencies must be justified
+  - Backward compatibility should be maintained
+  - Mobile/tablet support is planned for future updates
+
+- **Code Quality**
+  - Follow existing code style
+  - Include comments for complex logic
+  - Write clear commit messages
+  - Ensure all tests pass
+
+Remember that Zenith is maintained by a single developer in their spare time. Your patience and understanding are appreciated.
 
 ## License
 
