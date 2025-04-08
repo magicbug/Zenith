@@ -23,7 +23,7 @@ A modern web-based satellite tracking application designed for amateur radio ope
   - Detailed pass information for both stations
 
 - **Radio Integration**
-  - CSN Technologies S.A.T integration for automatic antenna tracking
+  - [CSN Technologies S.A.T](http://www.csntechnologies.net/sat) integration for automatic antenna tracking
   - Radio control panel with VFO management
   - Transponder information display
   - CTCSS tone selection
@@ -35,7 +35,7 @@ A modern web-based satellite tracking application designed for amateur radio ope
   - Message history tracking
 
 - **Roves Integration**
-  - Hams.at API integration for rover activations
+  - [Hams.at](https://hams.at/) API integration for rover activations
   - Upcoming roves display
   - Direct links to Hams.at for detailed information
 
@@ -53,7 +53,7 @@ A modern web-based satellite tracking application designed for amateur radio ope
 ## Deployment Options
 
 ### Local Network Deployment (Recommended for CSN S.A.T Integration)
-- Ideal for use with CSN Technologies S.A.T
+- Ideal for use with [CSN Technologies S.A.T](http://www.csntechnologies.net/sat)
 - Can be run on a local server (e.g., Raspberry Pi)
 - Allows direct communication with S.A.T on the local network
 - Recommended setup:
@@ -85,7 +85,7 @@ A modern web-based satellite tracking application designed for amateur radio ope
      - Your location (latitude/longitude or grid square)
      - Satellite selection
      - Radio settings
-     - API keys (Hams.at, Cloudlog)
+     - API keys ([Hams.at](https://hams.at/), Cloudlog)
      - Notification preferences
 
 4. **Basic Usage**
@@ -147,6 +147,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## Acknowledgments
 
 - AMSAT for satellite information
-- Hams.at for rover data
-- CSN Technologies for S.A.T integration
+- [Hams.at](https://hams.at/) for rover data
+- [CSN Technologies](http://www.csntechnologies.net/sat) for S.A.T integration
 - All contributors and users of the project
