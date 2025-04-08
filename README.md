@@ -193,8 +193,6 @@ Zenith Satellite Tracker is licensed under the GNU Affero General Public License
 - Commercial use is allowed but the source must remain open
 - You cannot take this code and sell it as a proprietary product
 
-This license protects the project from being taken private or sold commercially while still allowing community contributions and improvements.
-
 For more information, see the [full license text](LICENSE) or visit [gnu.org/licenses/agpl-3.0](https://www.gnu.org/licenses/agpl-3.0).
 
 ## Acknowledgments
