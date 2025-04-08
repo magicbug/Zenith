@@ -117,6 +117,25 @@ Zenith is designed to work in modern web browsers including:
 
 Note: Due to the use of HTML5 features like geolocation and notifications, the application must be served over HTTPS.
 
+## Support
+
+Zenith is primarily maintained by a single developer. Please keep this in mind when seeking support:
+
+- **GitHub Issues**
+  - Should only be used for reporting bugs or code-related issues
+  - Server setup and configuration questions should not be posted as issues
+  - Feature requests are welcome but may take time to implement
+
+- **Limited Support**
+  - No guaranteed response time for issues or questions
+  - Server setup and configuration support is limited
+  - Users are encouraged to help each other in the community
+
+- **Community Support**
+  - Consider asking for help in amateur radio forums or communities
+  - Share your setup experiences with other users
+  - Document and share solutions you discover
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
