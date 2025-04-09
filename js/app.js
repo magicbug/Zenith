@@ -1711,8 +1711,31 @@ function getPassStatusClass(pass) {
 
 // Add to your existing saveOptions function
 function saveOptions() {
-    // Update observer location using the dedicated function
-    updateObserverLocation();
+    // Get values from form
+    const lat = parseFloat(document.getElementById('latitude').value);
+    const lon = parseFloat(document.getElementById('longitude').value);
+    const elev = parseFloat(document.getElementById('elevation').value);
+    const minElev = parseFloat(document.getElementById('min-elevation').value);
+    const callsign = document.getElementById('callsign').value;
+    
+    // Update observer data
+    observer.latitude = lat;
+    observer.longitude = lon;
+    observer.elevation = elev;
+    observer.minElevation = minElev;
+    observer.callsign = callsign;
+    
+    // Save to local storage
+    saveObserverToLocalStorage();
+    
+    // Update the observer marker on the map
+    addObserverMarker();
+    
+    // Update map center
+    map.setView([observer.latitude, observer.longitude], map.getZoom());
+    
+    // Recalculate passes with new location
+    calculateUpcomingPasses();
     
     // Save API settings
     saveApiSettings();
@@ -5070,4 +5093,20 @@ function saveAPRSSettingsToLocalStorage() {
         aprsPort: aprsPort
     };
     localStorage.setItem('aprsSettings', JSON.stringify(settings));
+}
+
+function updateAPRSObserverLocation(location) {
+    // Convert lat/long to grid square
+    const gridSquare = latLonToGridSquare(location.latitude, location.longitude);
+    
+    // Create location object with grid square
+    const observerLocation = {
+        ...location,
+        gridSquare: gridSquare
+    };
+    
+    // Update APRS panel with observer location
+    if (window.aprsPanel) {
+        window.aprsPanel.setObserverLocation(observerLocation);
+    }
 }
