@@ -1711,6 +1711,12 @@ function saveOptions() {
     // Update the map with new observer location
     updateObserverLocation(observer);
     
+    // Refresh satellite display and footprints
+    updateSatelliteDisplay();
+    
+    // Recalculate upcoming passes
+    calculateUpcomingPasses();
+    
     // Save API settings
     saveApiSettings();
     
