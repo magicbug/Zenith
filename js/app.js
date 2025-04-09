@@ -314,7 +314,12 @@ function setupEventListeners() {
     });
 
     saveBtn.addEventListener('click', () => {
-        updateObserverLocation();
+        const location = {
+            latitude: parseFloat(document.getElementById('latitude').value),
+            longitude: parseFloat(document.getElementById('longitude').value),
+            elevation: parseFloat(document.getElementById('elevation').value)
+        };
+        updateObserverLocation(location);
         updateSelectedSatellites();
         
         // Save notification preferences when closing the modal
@@ -636,7 +641,7 @@ function updateSelectedSatellites() {
 }
 
 // Update the observer location
-function updateObserverLocation() {
+function updateObserverLocation(location) {
     const lat = parseFloat(document.getElementById('latitude').value);
     const lon = parseFloat(document.getElementById('longitude').value);
     const elev = parseFloat(document.getElementById('elevation').value);
