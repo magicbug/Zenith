@@ -635,6 +635,7 @@ function updateObserverLocation(location) {
     const lon = parseFloat(document.getElementById('longitude').value);
     const elev = parseFloat(document.getElementById('elevation').value);
     const minElev = parseFloat(document.getElementById('min-elevation').value);
+    const callsign = document.getElementById('callsign').value;
     
     // Validate input values
     if (isNaN(lat) || lat < -90 || lat > 90) {
@@ -662,6 +663,7 @@ function updateObserverLocation(location) {
     observer.longitude = lon;
     observer.elevation = elev;
     observer.minElevation = minElev;
+    observer.callsign = callsign;
     
     // Update the observer marker on the map
     addObserverMarker();
