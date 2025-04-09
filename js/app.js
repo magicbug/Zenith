@@ -343,49 +343,8 @@ function setupEventListeners() {
         modal.style.display = 'none';
     });
 
-    saveBtn.addEventListener('click', () => {
-        const location = {
-            latitude: parseFloat(document.getElementById('latitude').value),
-            longitude: parseFloat(document.getElementById('longitude').value),
-            elevation: parseFloat(document.getElementById('elevation').value)
-        };
-        updateObserverLocation(location);
-        updateSelectedSatellites();
-        
-        // Save notification preferences when closing the modal
-        const notificationsEnabled = document.getElementById('enable-notifications').checked;
-        localStorage.setItem('notificationsEnabled', notificationsEnabled.toString());
-        
-        if (notificationsEnabled) {
-            initNotifications();
-        } else {
-            if (notificationCheckInterval) {
-                clearInterval(notificationCheckInterval);
-                notificationCheckInterval = null;
-            }
-        }
-        
-        // Save API settings
-        saveApiSettings();
-        
-        // Save CSN SAT settings
-        saveCsnSatSettingsToLocalStorage();
-        
-        // Check the S.A.T API availability after saving settings
-        if (enableCsnSat && csnSatAddress) {
-            checkSATAPIAvailability();
-        }
-        
-        // Update roves if enabled
-        if (enableRoves && hamsAtApiKey) {
-            fetchUpcomingRoves();
-        } else {
-            document.getElementById('upcoming-roves').innerHTML = 
-                '<div class="rove-item">Roves display is disabled or API key is missing.</div>';
-        }
-        
-        modal.style.display = 'none';
-    });
+    // Update save button to use saveOptions function
+    saveBtn.addEventListener('click', saveOptions);
 
     // Close modal if clicked outside
     window.addEventListener('click', (e) => {
