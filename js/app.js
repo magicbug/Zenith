@@ -1700,22 +1700,8 @@ function getPassStatusClass(pass) {
 
 // Add to your existing saveOptions function
 function saveOptions() {
-    // Save observer location
-    observer.latitude = parseFloat(document.getElementById('latitude').value);
-    observer.longitude = parseFloat(document.getElementById('longitude').value);
-    observer.elevation = parseFloat(document.getElementById('elevation').value);
-    observer.callsign = document.getElementById('callsign').value;
-    observer.minElevation = parseFloat(document.getElementById('min-elevation').value);
-    saveObserverToLocalStorage();
-    
-    // Update the map with new observer location
-    updateObserverLocation(observer);
-    
-    // Refresh satellite display and footprints
-    updateSatelliteDisplay();
-    
-    // Recalculate upcoming passes
-    calculateUpcomingPasses();
+    // Update observer location using the dedicated function
+    updateObserverLocation();
     
     // Save API settings
     saveApiSettings();
