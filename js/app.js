@@ -1735,6 +1735,13 @@ function getPassStatusClass(pass) {
 
 // Add to your existing saveOptions function
 function saveOptions() {
+    // Save observer location
+    observer.latitude = parseFloat(document.getElementById('latitude').value);
+    observer.longitude = parseFloat(document.getElementById('longitude').value);
+    observer.elevation = parseFloat(document.getElementById('elevation').value);
+    observer.callsign = document.getElementById('callsign').value;
+    observer.minElevation = parseFloat(document.getElementById('min-elevation').value);
+    saveObserverToLocalStorage();
     
     // Save API settings
     saveApiSettings();
