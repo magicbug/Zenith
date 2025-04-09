@@ -1441,6 +1441,15 @@ function loadObserverFromLocalStorage() {
         observer.elevation = parsedObserver.elevation;
         observer.callsign = parsedObserver.callsign || '';
         observer.minElevation = parsedObserver.minElevation || 0;
+    } else {
+        // Initialize with default values if no saved data exists
+        observer = {
+            latitude: 51.5074,
+            longitude: -0.1278,
+            elevation: 0,
+            callsign: '',
+            minElevation: 0
+        };
     }
     // Always set the form values to match the current observer object
     document.getElementById('latitude').value = observer.latitude;
