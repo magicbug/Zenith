@@ -19,10 +19,25 @@ class APRSPanel {
         const savedObserver = localStorage.getItem('observer');
         this.observerLocation = savedObserver ? JSON.parse(savedObserver) : null;
 
+        // Load APRS settings from localStorage
+        const savedAPRSSettings = localStorage.getItem('aprsSettings');
+        this.aprsSettings = savedAPRSSettings ? JSON.parse(savedAPRSSettings) : {
+            enableAPRS: false,
+            aprsServer: 'localhost',
+            aprsPort: 8765
+        };
+
         // Add event listener for storage changes
         window.addEventListener('storage', (e) => {
             if (e.key === 'observer') {
                 this.observerLocation = JSON.parse(e.newValue);
+            } else if (e.key === 'aprsSettings') {
+                this.aprsSettings = JSON.parse(e.newValue);
+                // Reinitialize WebSocket if settings change
+                if (this.ws) {
+                    this.ws.close();
+                }
+                this.initializeWebSocket();
             }
         });
 
@@ -32,10 +47,16 @@ class APRSPanel {
     }
 
     initializeWebSocket() {
-        this.ws = new WebSocket('ws://localhost:8765');
+        if (!this.aprsSettings.enableAPRS) {
+            this.addMessage('APRS is not enabled. Please enable it in the Options menu.', 'error');
+            return;
+        }
+
+        const wsUrl = `ws://${this.aprsSettings.aprsServer}:${this.aprsSettings.aprsPort}`;
+        this.ws = new WebSocket(wsUrl);
         
         this.ws.onopen = () => {
-            this.addMessage('Connected to WebSocket server', 'info');
+            this.addMessage(`Connected to WebSocket server at ${wsUrl}`, 'info');
         };
 
         this.ws.onmessage = (event) => {
@@ -58,7 +79,7 @@ class APRSPanel {
         };
 
         this.ws.onerror = (error) => {
-            this.addMessage(`Error: ${error.message}`, 'error');
+            this.addMessage(`Error connecting to WebSocket server: ${error.message}`, 'error');
         };
 
         this.ws.onclose = () => {

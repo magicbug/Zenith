@@ -197,6 +197,7 @@
                 <button class="tab-button" data-tab="location">Observer Location</button>
                 <button class="tab-button" data-tab="radio">Radio</button>
                 <button class="tab-button" data-tab="hamsat">Hams.at</button>
+                <button class="tab-button" data-tab="aprs">APRS</button>
             </div>
 
             <div class="modal-body">
@@ -352,6 +353,27 @@
                                         Show Unworkable Roves
                                     </label>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- APRS Tab -->
+                    <div class="tab-pane" id="aprs-tab">
+                        <div class="aprs-settings">
+                            <h3>APRS Settings</h3>
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" id="enable-aprs">
+                                    Enable APRS
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label for="aprs-server">WebSocket Server:</label>
+                                <input type="text" id="aprs-server" placeholder="e.g. localhost">
+                            </div>
+                            <div class="form-group">
+                                <label for="aprs-port">WebSocket Port:</label>
+                                <input type="number" id="aprs-port" placeholder="e.g. 8765">
                             </div>
                         </div>
                     </div>

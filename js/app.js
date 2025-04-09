@@ -59,6 +59,11 @@ let enableCloudlog = false;
 let cloudlogUrl = '';
 let cloudlogApiKey = '';
 
+// APRS settings
+let enableAPRS = false;
+let aprsServer = 'localhost';
+let aprsPort = 8765;
+
 // Initialize the application when the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
     // Load settings from local storage first, before map initialization
@@ -67,6 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadHamsAtSettingsFromLocalStorage();
     loadCsnSatSettingsFromLocalStorage();
     loadCloudlogSettingsFromLocalStorage();
+    loadAPRSSettingsFromLocalStorage();
     
     // Check S.A.T API availability
     if (enableCsnSat && csnSatAddress) {
@@ -236,6 +242,30 @@ document.addEventListener('DOMContentLoaded', () => {
         const element = document.getElementById(id);
         if (element) {
             element.addEventListener('change', updateCloudlogData);
+        }
+    });
+
+    // Add event listeners for APRS settings
+    document.getElementById('enable-aprs').addEventListener('change', function() {
+        enableAPRS = this.checked;
+        saveAPRSSettingsToLocalStorage();
+    });
+
+    document.getElementById('aprs-server').addEventListener('input', function() {
+        aprsServer = this.value.trim();
+        saveAPRSSettingsToLocalStorage();
+    });
+
+    document.getElementById('aprs-port').addEventListener('input', function() {
+        aprsPort = parseInt(this.value) || 8765;
+        saveAPRSSettingsToLocalStorage();
+    });
+
+    // Update APRS button state
+    document.getElementById('open-aprs').addEventListener('click', function() {
+        if (!enableAPRS) {
+            alert('APRS is not enabled. Please enable it in the Options menu first.');
+            return;
         }
     });
 });
@@ -5034,3 +5064,28 @@ document.getElementById('use-geolocation').addEventListener('click', function() 
         });
     }
 });
+
+// APRS Settings functions
+function loadAPRSSettingsFromLocalStorage() {
+    const savedSettings = localStorage.getItem('aprsSettings');
+    if (savedSettings) {
+        const settings = JSON.parse(savedSettings);
+        enableAPRS = settings.enableAPRS || false;
+        aprsServer = settings.aprsServer || 'localhost';
+        aprsPort = settings.aprsPort || 8765;
+
+        // Update UI
+        document.getElementById('enable-aprs').checked = enableAPRS;
+        document.getElementById('aprs-server').value = aprsServer;
+        document.getElementById('aprs-port').value = aprsPort;
+    }
+}
+
+function saveAPRSSettingsToLocalStorage() {
+    const settings = {
+        enableAPRS: enableAPRS,
+        aprsServer: aprsServer,
+        aprsPort: aprsPort
+    };
+    localStorage.setItem('aprsSettings', JSON.stringify(settings));
+}
