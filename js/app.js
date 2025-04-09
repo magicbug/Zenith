@@ -1473,14 +1473,20 @@ function saveObserverToLocalStorage() {
 function loadObserverFromLocalStorage() {
     const savedObserver = localStorage.getItem('observer');
     if (savedObserver) {
-        observer = JSON.parse(savedObserver);
-        // Set the form values
-        document.getElementById('latitude').value = observer.latitude;
-        document.getElementById('longitude').value = observer.longitude;
-        document.getElementById('elevation').value = observer.elevation;
-        document.getElementById('callsign').value = observer.callsign || '';
-        document.getElementById('min-elevation').value = observer.minElevation || 0;
+        const parsedObserver = JSON.parse(savedObserver);
+        // Update the global observer object with saved values
+        observer.latitude = parsedObserver.latitude;
+        observer.longitude = parsedObserver.longitude;
+        observer.elevation = parsedObserver.elevation;
+        observer.callsign = parsedObserver.callsign || '';
+        observer.minElevation = parsedObserver.minElevation || 0;
     }
+    // Always set the form values to match the current observer object
+    document.getElementById('latitude').value = observer.latitude;
+    document.getElementById('longitude').value = observer.longitude;
+    document.getElementById('elevation').value = observer.elevation;
+    document.getElementById('callsign').value = observer.callsign;
+    document.getElementById('min-elevation').value = observer.minElevation;
 }
 
 // Update observer display with current values
@@ -1743,6 +1749,9 @@ function saveOptions() {
     observer.minElevation = parseFloat(document.getElementById('min-elevation').value);
     saveObserverToLocalStorage();
     
+    // Update the map with new observer location
+    updateObserverLocation(observer);
+    
     // Save API settings
     saveApiSettings();
     
@@ -1756,6 +1765,9 @@ function saveOptions() {
         document.getElementById('upcoming-roves').innerHTML = 
             '<div class="rove-item">Roves display is disabled or API key is missing.</div>';
     }
+    
+    // Close the modal
+    document.getElementById('options-modal').style.display = 'none';
 }
 
 // Load API settings from local storage
@@ -2714,6 +2726,7 @@ function filterScheduleTable() {
             const position = getSatellitePosition(satName);
             if (position) {
                 showSatelliteInfo(satName);
+                showPolarRadarForPass(pass);
             }
             
             // Close the schedule modal
