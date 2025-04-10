@@ -204,3 +204,11 @@ For more information, see the [full license text](LICENSE) or visit [gnu.org/lic
 - [Hams.at](https://hams.at/) for rover data
 - [CSN Technologies](http://www.csntechnologies.net/sat) for S.A.T integration
 - All contributors and users of the project
+
+## Support the Project
+
+Zenith is completely free and open source, built with passion for the amateur radio community. If you find this project useful and would like to support its continued development, consider sponsoring me on GitHub. Your support helps maintain and improve Zenith, as well as my other open source projects.
+
+[![Sponsor me on GitHub](https://img.shields.io/badge/Sponsor%20me%20on%20GitHub-%23EA4AAA?style=for-the-badge&logo=github)](https://github.com/sponsors/magicbug)
+
+Every contribution, no matter the size, is greatly appreciated and helps ensure the future of Zenith and other open source tools for the amateur radio community.
