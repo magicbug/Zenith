@@ -3,6 +3,7 @@
 
 // Get POST data
 $postData = json_decode(file_get_contents('php://input'), true);
+file_put_contents('debug_log.txt', "=== New Request ===\n", FILE_APPEND);
 file_put_contents('debug_log.txt', "Raw POST data: " . print_r($postData, true) . "\n", FILE_APPEND);
 
 // Map frontend field names to expected field names
@@ -13,7 +14,7 @@ $mappedData = [
     'status' => $postData['status'],
     'gridSquare' => $postData['myGridsquare']
 ];
-file_put_contents('debug_log.txt', "Mapped data: " . print_r($mappedData, true) . "\n", FILE_APPEND);
+file_put_contents('debug_log.txt', "Mapped UTC time: " . $mappedData['date'] . "\n", FILE_APPEND);
 
 // Validate required fields
 $requiredFields = ['date', 'satName', 'callsign', 'status', 'gridSquare'];
@@ -40,13 +41,18 @@ $dateParts = explode('-', $timeParts[0]);
 $timeComponents = explode(':', $timeParts[1]);
 
 file_put_contents('debug_log.txt', "Time parsing steps:\n", FILE_APPEND);
-file_put_contents('debug_log.txt', "1. Original string: " . $mappedData['date'] . "\n", FILE_APPEND);
-file_put_contents('debug_log.txt', "2. After space split: " . print_r($timeParts, true) . "\n", FILE_APPEND);
-file_put_contents('debug_log.txt', "3. Date parts: " . print_r($dateParts, true) . "\n", FILE_APPEND);
+file_put_contents('debug_log.txt', "1. Original UTC string: " . $mappedData['date'] . "\n", FILE_APPEND);
+file_put_contents('debug_log.txt', "2. Split date/time: " . print_r($timeParts, true) . "\n", FILE_APPEND);
+file_put_contents('debug_log.txt', "3. Date components: " . print_r($dateParts, true) . "\n", FILE_APPEND);
 file_put_contents('debug_log.txt', "4. Time components: " . print_r($timeComponents, true) . "\n", FILE_APPEND);
 
+// Calculate period
+$minutes = (int)$timeComponents[1];
+$period = intdiv($minutes - 1, 15);
+file_put_contents('debug_log.txt', "Period calculation: minutes=$minutes, period=$period\n", FILE_APPEND);
+
 // Build the AMSAT status URL
-$url = 'https://amsat.org/status/submit.php?' . http_build_query([
+$urlParams = [
     'SatSubmit' => 'yes',
     'Confirm' => 'yes',
     'SatName' => $mappedData['satName'],
@@ -54,19 +60,21 @@ $url = 'https://amsat.org/status/submit.php?' . http_build_query([
     'SatMonth' => str_pad($dateParts[1], 2, '0', STR_PAD_LEFT),
     'SatDay' => str_pad($dateParts[2], 2, '0', STR_PAD_LEFT),
     'SatHour' => str_pad($timeComponents[0], 2, '0', STR_PAD_LEFT),
-    'SatPeriod' => (intdiv((int)$timeComponents[1] - 1, 15)),
+    'SatPeriod' => $period,
     'SatCall' => $mappedData['callsign'],
     'SatReport' => $mappedData['status'],
     'SatGridSquare' => $mappedData['gridSquare']
-]);
+];
 
-file_put_contents('debug_log.txt', "Final URL components:\n", FILE_APPEND);
-file_put_contents('debug_log.txt', "Year: " . $dateParts[0] . "\n", FILE_APPEND);
-file_put_contents('debug_log.txt', "Month: " . str_pad($dateParts[1], 2, '0', STR_PAD_LEFT) . "\n", FILE_APPEND);
-file_put_contents('debug_log.txt', "Day: " . str_pad($dateParts[2], 2, '0', STR_PAD_LEFT) . "\n", FILE_APPEND);
-file_put_contents('debug_log.txt', "Hour: " . str_pad($timeComponents[0], 2, '0', STR_PAD_LEFT) . "\n", FILE_APPEND);
-file_put_contents('debug_log.txt', "Minute: " . $timeComponents[1] . "\n", FILE_APPEND);
-file_put_contents('debug_log.txt', "Final URL: " . $url . "\n", FILE_APPEND);
+$url = 'https://amsat.org/status/submit.php?' . http_build_query($urlParams);
+
+file_put_contents('debug_log.txt', "=== AMSAT URL Details ===\n", FILE_APPEND);
+file_put_contents('debug_log.txt', "Full URL: " . $url . "\n", FILE_APPEND);
+file_put_contents('debug_log.txt', "URL Parameters:\n", FILE_APPEND);
+foreach ($urlParams as $key => $value) {
+    file_put_contents('debug_log.txt', "$key: $value\n", FILE_APPEND);
+}
+file_put_contents('debug_log.txt', "========================\n", FILE_APPEND);
 
 // Initialize cURL session
 $ch = curl_init($url);
