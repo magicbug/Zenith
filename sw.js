@@ -11,10 +11,10 @@ const STATIC_FILES = [
   '/js/main.js',
   '/js/satellite.js',
   '/js/leaflet.js',
-  '/assets/pwa_icons/windows11/Square44x44Logo.targetsize-96.png',
-  '/assets/pwa_icons/windows11/Square44x44Logo.targetsize-256.png',
-  '/assets/pwa_icons/windows11/Square150x150Logo.scale-400.png',
-  '/assets/pwa_icons/windows11/SplashScreen.scale-100.png'
+  '/assets/pwa_icons/windows/Square44x44Logo.targetsize-96.png',
+  '/assets/pwa_icons/windows/Square44x44Logo.targetsize-256.png',
+  '/assets/pwa_icons/windows/Square150x150Logo.scale-400.png',
+  '/assets/pwa_icons/windows/SplashScreen.scale-100.png'
 ];
 
 // Install event - cache static assets
@@ -42,19 +42,29 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - handle network requests
 self.addEventListener('fetch', (event) => {
+  // Don't cache POST requests
+  if (event.request.method === 'POST') {
+    return;
+  }
+
   // Handle API requests
   if (event.request.url.includes('/api/')) {
     event.respondWith(
       caches.open(DATA_CACHE).then((cache) => {
         return fetch(event.request)
           .then((response) => {
-            // Cache the response
-            cache.put(event.request, response.clone());
+            // Only cache GET requests
+            if (event.request.method === 'GET') {
+              cache.put(event.request, response.clone());
+            }
             return response;
           })
           .catch(() => {
-            // If offline, return cached data
-            return cache.match(event.request);
+            // If offline, return cached data for GET requests
+            if (event.request.method === 'GET') {
+              return cache.match(event.request);
+            }
+            return new Response('Offline - POST requests not supported', { status: 503 });
           });
       })
     );
