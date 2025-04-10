@@ -5,16 +5,16 @@
 $postData = json_decode(file_get_contents('php://input'), true);
 
 // Build the AMSAT status URL
-$datearray = date_parse_from_format("Y-m-d H:i:s", $postData['timeOn']);
+$dateTime = new DateTime($postData['timeOn'], new DateTimeZone('UTC'));
 $url = 'https://amsat.org/status/submit.php?' . http_build_query([
     'SatSubmit' => 'yes',
     'Confirm' => 'yes',
     'SatName' => $postData['satName'],
-    'SatYear' => $datearray['year'],
-    'SatMonth' => str_pad($datearray['month'], 2, '0', STR_PAD_LEFT),
-    'SatDay' => str_pad($datearray['day'], 2, '0', STR_PAD_LEFT),
-    'SatHour' => str_pad($datearray['hour'], 2, '0', STR_PAD_LEFT),
-    'SatPeriod' => (intdiv(($datearray['minute'] - 1), 15)),
+    'SatYear' => $dateTime->format('Y'),
+    'SatMonth' => str_pad($dateTime->format('m'), 2, '0', STR_PAD_LEFT),
+    'SatDay' => str_pad($dateTime->format('d'), 2, '0', STR_PAD_LEFT),
+    'SatHour' => str_pad($dateTime->format('H'), 2, '0', STR_PAD_LEFT),
+    'SatPeriod' => (intdiv((int)$dateTime->format('i') - 1, 15)),
     'SatCall' => $postData['callsign'],
     'SatReport' => $postData['status'],
     'SatGridSquare' => $postData['gridSquare']
