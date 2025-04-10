@@ -3,6 +3,7 @@
 
 // Get POST data
 $postData = json_decode(file_get_contents('php://input'), true);
+file_put_contents('debug_log.txt', "Raw POST data: " . print_r($postData, true) . "\n", FILE_APPEND);
 
 // Map frontend field names to expected field names
 $mappedData = [
@@ -12,6 +13,7 @@ $mappedData = [
     'status' => $postData['status'],
     'gridSquare' => $postData['myGridsquare']
 ];
+file_put_contents('debug_log.txt', "Mapped data: " . print_r($mappedData, true) . "\n", FILE_APPEND);
 
 // Validate required fields
 $requiredFields = ['date', 'satName', 'callsign', 'status', 'gridSquare'];
@@ -32,14 +34,16 @@ if (!empty($missingFields)) {
     exit;
 }
 
-// Parse the UTC time string directly
+// Parse the time string
 $timeParts = explode(' ', $mappedData['date']);
 $dateParts = explode('-', $timeParts[0]);
 $timeComponents = explode(':', $timeParts[1]);
 
-// Debug the time handling
-error_log("Original UTC time from frontend: " . $mappedData['date']);
-error_log("Parsed components - Year: {$dateParts[0]}, Month: {$dateParts[1]}, Day: {$dateParts[2]}, Hour: {$timeComponents[0]}, Minute: {$timeComponents[1]}");
+file_put_contents('debug_log.txt', "Time parsing steps:\n", FILE_APPEND);
+file_put_contents('debug_log.txt', "1. Original string: " . $mappedData['date'] . "\n", FILE_APPEND);
+file_put_contents('debug_log.txt', "2. After space split: " . print_r($timeParts, true) . "\n", FILE_APPEND);
+file_put_contents('debug_log.txt', "3. Date parts: " . print_r($dateParts, true) . "\n", FILE_APPEND);
+file_put_contents('debug_log.txt', "4. Time components: " . print_r($timeComponents, true) . "\n", FILE_APPEND);
 
 // Build the AMSAT status URL
 $url = 'https://amsat.org/status/submit.php?' . http_build_query([
@@ -56,7 +60,13 @@ $url = 'https://amsat.org/status/submit.php?' . http_build_query([
     'SatGridSquare' => $mappedData['gridSquare']
 ]);
 
-error_log("Final URL with time components: " . $url);
+file_put_contents('debug_log.txt', "Final URL components:\n", FILE_APPEND);
+file_put_contents('debug_log.txt', "Year: " . $dateParts[0] . "\n", FILE_APPEND);
+file_put_contents('debug_log.txt', "Month: " . str_pad($dateParts[1], 2, '0', STR_PAD_LEFT) . "\n", FILE_APPEND);
+file_put_contents('debug_log.txt', "Day: " . str_pad($dateParts[2], 2, '0', STR_PAD_LEFT) . "\n", FILE_APPEND);
+file_put_contents('debug_log.txt', "Hour: " . str_pad($timeComponents[0], 2, '0', STR_PAD_LEFT) . "\n", FILE_APPEND);
+file_put_contents('debug_log.txt', "Minute: " . $timeComponents[1] . "\n", FILE_APPEND);
+file_put_contents('debug_log.txt', "Final URL: " . $url . "\n", FILE_APPEND);
 
 // Initialize cURL session
 $ch = curl_init($url);
