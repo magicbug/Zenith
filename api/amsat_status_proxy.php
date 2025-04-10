@@ -5,7 +5,7 @@
 $postData = json_decode(file_get_contents('php://input'), true);
 
 // Validate required fields
-$requiredFields = ['timeOn', 'satName', 'callsign', 'status', 'gridSquare'];
+$requiredFields = ['date', 'satName', 'callsign', 'status', 'gridSquare'];
 $missingFields = [];
 foreach ($requiredFields as $field) {
     if (!isset($postData[$field]) || empty($postData[$field])) {
@@ -24,12 +24,12 @@ if (!empty($missingFields)) {
 }
 
 // Extract time components directly from the frontend time string
-$timeParts = explode(' ', $postData['timeOn']);
+$timeParts = explode(' ', $postData['date']);
 $dateParts = explode('-', $timeParts[0]);
 $timeComponents = explode(':', $timeParts[1]);
 
 // Debug the incoming time
-error_log("Incoming time from frontend: " . $postData['timeOn']);
+error_log("Incoming time from frontend: " . $postData['date']);
 
 // Build the AMSAT status URL
 $url = 'https://amsat.org/status/submit.php?' . http_build_query([
