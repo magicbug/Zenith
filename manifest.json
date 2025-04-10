@@ -1,0 +1,53 @@
+{
+  "name": "Zenith Satellite Tracker",
+  "short_name": "Zenith",
+  "description": "A modern web-based satellite tracking application for amateur radio operators",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#4a90e2",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "assets/pwa_icons/windows11/Square44x44Logo.targetsize-96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/pwa_icons/windows11/Square44x44Logo.targetsize-256.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/pwa_icons/windows11/Square150x150Logo.scale-400.png",
+      "sizes": "600x600",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "View Map",
+      "short_name": "Map",
+      "description": "View satellite positions on the map",
+      "url": "/map",
+      "icons": [{ "src": "assets/pwa_icons/windows11/Square44x44Logo.targetsize-96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Pass Predictions",
+      "short_name": "Passes",
+      "description": "View upcoming satellite passes",
+      "url": "/passes",
+      "icons": [{ "src": "assets/pwa_icons/windows11/Square44x44Logo.targetsize-96.png", "sizes": "96x96" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "assets/pwa_icons/windows11/SplashScreen.scale-100.png",
+      "sizes": "620x300",
+      "type": "image/png"
+    }
+  ]
+} 
