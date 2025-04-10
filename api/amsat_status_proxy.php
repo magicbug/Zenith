@@ -5,14 +5,15 @@
 $postData = json_decode(file_get_contents('php://input'), true);
 
 // Build the AMSAT status URL
+$dateTime = new DateTime($postData['date'], new DateTimeZone('UTC'));
 $url = 'https://amsat.org/status/submit.php?' . http_build_query([
     'SatSubmit' => 'yes',
     'Confirm' => 'yes',
     'SatName' => $postData['satName'],
-    'SatYear' => date('Y', strtotime($postData['date'])),
-    'SatMonth' => date('m', strtotime($postData['date'])),
-    'SatDay' => date('d', strtotime($postData['date'])),
-    'SatHour' => date('H', strtotime($postData['date'])),
+    'SatYear' => $dateTime->format('Y'),
+    'SatMonth' => $dateTime->format('m'),
+    'SatDay' => $dateTime->format('d'),
+    'SatHour' => $dateTime->format('H'),
     'SatPeriod' => $postData['period'],
     'SatCall' => $postData['callsign'],
     'SatReport' => $postData['status'],
