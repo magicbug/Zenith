@@ -36,11 +36,19 @@ $url = 'https://amsat.org/status/submit.php?' . http_build_query([
     'SatSubmit' => 'yes',
     'Confirm' => 'yes',
     'SatName' => $postData['satName'],
+<<<<<<< HEAD
     'SatYear' => $dateParts[0],
     'SatMonth' => str_pad($dateParts[1], 2, '0', STR_PAD_LEFT),
     'SatDay' => str_pad($dateParts[2], 2, '0', STR_PAD_LEFT),
     'SatHour' => str_pad($timeComponents[0], 2, '0', STR_PAD_LEFT),
     'SatPeriod' => (intdiv((int)$timeComponents[1] - 1, 15)),
+=======
+    'SatYear' => date('Y', strtotime($postData['date'])),
+    'SatMonth' => date('m', strtotime($postData['date'])),
+    'SatDay' => date('d', strtotime($postData['date'])),
+    'SatHour' => date('H', strtotime($postData['date'])),
+    'SatPeriod' => $postData['period'],
+>>>>>>> parent of 77609b6 (fix utc reporting time error)
     'SatCall' => $postData['callsign'],
     'SatReport' => $postData['status'],
     'SatGridSquare' => $postData['gridSquare']
