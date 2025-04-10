@@ -32,24 +32,30 @@ if (!empty($missingFields)) {
     exit;
 }
 
-// Extract time components directly from the frontend time string
-$timeParts = explode(' ', $mappedData['date']);
-$dateParts = explode('-', $timeParts[0]);
-$timeComponents = explode(':', $timeParts[1]);
+// Create DateTime object from the input time (already in UTC)
+$dateTime = new DateTime($mappedData['date'], new DateTimeZone('UTC'));
 
-// Debug the incoming time
-error_log("Incoming time from frontend: " . $mappedData['date']);
+// Extract components from the DateTime object
+$year = $dateTime->format('Y');
+$month = $dateTime->format('m');
+$day = $dateTime->format('d');
+$hour = $dateTime->format('H');
+$minute = $dateTime->format('i');
+
+// Debug the time handling
+error_log("Input time (UTC): " . $mappedData['date']);
+error_log("Processed time (UTC): " . $dateTime->format('Y-m-d H:i:s'));
 
 // Build the AMSAT status URL
 $url = 'https://amsat.org/status/submit.php?' . http_build_query([
     'SatSubmit' => 'yes',
     'Confirm' => 'yes',
     'SatName' => $mappedData['satName'],
-    'SatYear' => $dateParts[0],
-    'SatMonth' => str_pad($dateParts[1], 2, '0', STR_PAD_LEFT),
-    'SatDay' => str_pad($dateParts[2], 2, '0', STR_PAD_LEFT),
-    'SatHour' => str_pad($timeComponents[0], 2, '0', STR_PAD_LEFT),
-    'SatPeriod' => (intdiv((int)$timeComponents[1] - 1, 15)),
+    'SatYear' => $year,
+    'SatMonth' => $month,
+    'SatDay' => $day,
+    'SatHour' => $hour,
+    'SatPeriod' => (intdiv((int)$minute - 1, 15)),
     'SatCall' => $mappedData['callsign'],
     'SatReport' => $mappedData['status'],
     'SatGridSquare' => $mappedData['gridSquare']
