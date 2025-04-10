@@ -5,7 +5,7 @@
 $postData = json_decode(file_get_contents('php://input'), true);
 
 // Build the AMSAT status URL
-$dateTime = new DateTime($postData['date'], new DateTimeZone('UTC'));
+$dateTime = new DateTime($postData['timeOn'], new DateTimeZone('UTC'));
 $url = 'https://amsat.org/status/submit.php?' . http_build_query([
     'SatSubmit' => 'yes',
     'Confirm' => 'yes',
