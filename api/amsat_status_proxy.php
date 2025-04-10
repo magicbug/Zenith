@@ -4,6 +4,25 @@
 // Get POST data
 $postData = json_decode(file_get_contents('php://input'), true);
 
+// Validate required fields
+$requiredFields = ['timeOn', 'satName', 'callsign', 'status', 'gridSquare'];
+$missingFields = [];
+foreach ($requiredFields as $field) {
+    if (!isset($postData[$field]) || empty($postData[$field])) {
+        $missingFields[] = $field;
+    }
+}
+
+if (!empty($missingFields)) {
+    http_response_code(400);
+    echo json_encode([
+        'error' => 'Missing required fields',
+        'missing' => $missingFields,
+        'received' => $postData
+    ]);
+    exit;
+}
+
 // Extract time components directly from the frontend time string
 $timeParts = explode(' ', $postData['timeOn']);
 $dateParts = explode('-', $timeParts[0]);
@@ -32,10 +51,18 @@ error_log("Final URL with time components: " . $url);
 // Initialize cURL session
 $ch = curl_init($url);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // For testing only
 $response = curl_exec($ch);
 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+$error = curl_error($ch);
 curl_close($ch);
 
 // Return result to the client
 http_response_code($httpCode);
-echo $response;
+echo json_encode([
+    'status' => $httpCode,
+    'url' => $url,
+    'response' => $response,
+    'error' => $error,
+    'data' => $postData
+]);
