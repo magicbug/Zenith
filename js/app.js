@@ -26,15 +26,15 @@ if ('serviceWorker' in navigator) {
 }
 
 let map;
-let satelliteMarkers = new Map();
-let satelliteFootprints = new Map();
-let selectedSatellites = new Set();
+let satelliteMarkers = {};
+let satelliteFootprints = {};
+let selectedSatellites = [];
 let observer = {
-    latitude: 0,
-    longitude: 0,
+    latitude: 51.5074,
+    longitude: -0.1278,
     elevation: 0,
-    minElevation: 10,
-    callsign: ''
+    callsign: '',  // Add callsign to observer object
+    minElevation: 0  // Add minimum elevation to observer object
 };
 let observer2 = {
     latitude: 0,
@@ -48,7 +48,7 @@ let allSkedPasses = [];
 let SKED_PREDICTION_DAYS = 1;
 let SKED_MIN_ELEVATION = 5;
 // Notification-related variables
-let notifiedPasses = new Map();
+let notifiedPasses = new Map(); // Store IDs of passes we've notified for
 let notificationCheckInterval;
 let notificationsEnabled = false;
 const NOTIFICATION_THRESHOLD_MINUTES = 15; // Minutes before pass to show notification
@@ -362,7 +362,6 @@ function setupEventListeners() {
         if (notificationCheckbox) {
             const savedNotificationsEnabled = localStorage.getItem('notificationsEnabled');
             notificationCheckbox.checked = savedNotificationsEnabled === 'true';
-            notificationsEnabled = savedNotificationsEnabled === 'true';
         }
     });
 
@@ -635,14 +634,14 @@ function loadSelectedSatellitesFromLocalStorage() {
 // Update the list of selected satellites
 function updateSelectedSatellites() {
     // Clear current selection
-    selectedSatellites.clear();
+    selectedSatellites = [];
     
     // Get all checked satellites
     const checkedBoxes = document.querySelectorAll('#satellite-list input[type="checkbox"]:checked');
     checkedBoxes.forEach(checkbox => {
         const satName = checkbox.getAttribute('data-satellite');
         if (satName && window.tleData[satName]) {  // Use window.tleData consistently
-            selectedSatellites.add(satName);
+            selectedSatellites.push(satName);
         }
     });
     
@@ -653,7 +652,7 @@ function updateSelectedSatellites() {
     calculateUpcomingPasses();
     
     // Save selection to local storage
-    localStorage.setItem('selectedSatellites', JSON.stringify([...selectedSatellites]));
+    localStorage.setItem('selectedSatellites', JSON.stringify(selectedSatellites));
 }
 
 // Update the observer location
@@ -709,14 +708,14 @@ function updateObserverLocation(location) {
 function updateSatelliteDisplay() {
     // Clear all existing satellites from map
     Object.keys(satelliteMarkers).forEach(satName => {
-        if (satelliteMarkers.get(satName)) {
-            map.removeLayer(satelliteMarkers.get(satName));
-            satelliteMarkers.delete(satName);
+        if (satelliteMarkers[satName]) {
+            map.removeLayer(satelliteMarkers[satName]);
+            delete satelliteMarkers[satName];
         }
         
-        if (satelliteFootprints.get(satName)) {
-            map.removeLayer(satelliteFootprints.get(satName));
-            satelliteFootprints.delete(satName);
+        if (satelliteFootprints[satName]) {
+            map.removeLayer(satelliteFootprints[satName]);
+            delete satelliteFootprints[satName];
         }
     });
     
@@ -769,15 +768,15 @@ function updateSatellitePositions() {
     
     // Remove markers and footprints for satellites no longer selected
     Object.keys(satelliteMarkers).forEach(satName => {
-        if (!selectedSatellites.has(satName)) {
-            if (satelliteMarkers.get(satName)) {
-                map.removeLayer(satelliteMarkers.get(satName));
-                satelliteMarkers.delete(satName);
+        if (!selectedSatellites.includes(satName)) {
+            if (satelliteMarkers[satName]) {
+                map.removeLayer(satelliteMarkers[satName]);
+                delete satelliteMarkers[satName];
             }
             
-            if (satelliteFootprints.get(satName)) {
-                map.removeLayer(satelliteFootprints.get(satName));
-                satelliteFootprints.delete(satName);
+            if (satelliteFootprints[satName]) {
+                map.removeLayer(satelliteFootprints[satName]);
+                delete satelliteFootprints[satName];
             }
         }
     });
@@ -831,16 +830,16 @@ function updateSatelliteMarker(satName, position) {
     const footprintRadiusMeters = Math.acos(earthRadius / (earthRadius + altitudeMeters)) * earthRadius;
     
     // Create or update footprint and label
-    if (!satelliteFootprints.get(satName)) {
+    if (!satelliteFootprints[satName]) {
         // Create footprint circle with label
-        satelliteFootprints.set(satName, L.circle(latLng, {
+        satelliteFootprints[satName] = L.circle(latLng, {
             radius: footprintRadiusMeters,
             color: getRandomColor(),
             weight: 1,
             opacity: 0.8,
             fillOpacity: 0.2,
             interactive: true // Make circle clickable
-        }).addTo(map));
+        }).addTo(map);
         
         // Add label in center of footprint
         const labelIcon = L.divIcon({
@@ -849,20 +848,20 @@ function updateSatelliteMarker(satName, position) {
             iconSize: [0, 0]
         });
         
-        satelliteFootprints.get(satName).label = L.marker(latLng, {
+        satelliteFootprints[satName].label = L.marker(latLng, {
             icon: labelIcon,
             interactive: false // Make label non-interactive
         }).addTo(map);
         
         // Add click handler to the footprint circle
-        satelliteFootprints.get(satName).on('click', () => {
+        satelliteFootprints[satName].on('click', () => {
             showSatelliteInfo(satName);
         });
     } else {
         // Update positions and radius
-        satelliteFootprints.get(satName).setLatLng(latLng);
-        satelliteFootprints.get(satName).setRadius(footprintRadiusMeters);
-        satelliteFootprints.get(satName).label.setLatLng(latLng);
+        satelliteFootprints[satName].setLatLng(latLng);
+        satelliteFootprints[satName].setRadius(footprintRadiusMeters);
+        satelliteFootprints[satName].label.setLatLng(latLng);
     }
 }
 
@@ -1159,16 +1158,16 @@ function updateSatelliteFootprint(satName, position) {
     const footprintRadiusMeters = Math.acos(earthRadius / (earthRadius + altitudeMeters)) * earthRadius;
     
     // Create or update the footprint circle
-    if (!satelliteFootprints.get(satName)) {
+    if (!satelliteFootprints[satName]) {
         // Create footprint circle
-        satelliteFootprints.set(satName, L.circle([position.latitude, position.longitude], {
+        satelliteFootprints[satName] = L.circle([position.latitude, position.longitude], {
             radius: footprintRadiusMeters,
             color: getRandomColor(),
             weight: 1,
             opacity: 0.8,
             fillOpacity: 0.2,
             pane: 'footprints'  // Use the custom pane we created
-        }).addTo(map));
+        }).addTo(map);
         
         // Add label as a separate marker bound to the circle's center
         const labelIcon = L.divIcon({
@@ -1177,22 +1176,22 @@ function updateSatelliteFootprint(satName, position) {
             iconSize: [0, 0]  // Size of 0 ensures no background
         });
         
-        satelliteFootprints.get(satName).label = L.marker([position.latitude, position.longitude], {
+        satelliteFootprints[satName].label = L.marker([position.latitude, position.longitude], {
             icon: labelIcon,
             zIndexOffset: 500  // Above footprints but below markers
-        }).addTo(map));
+        }).addTo(map);
         
         // Add click handler to the footprint circle
-        satelliteFootprints.get(satName).on('click', () => {
+        satelliteFootprints[satName].on('click', () => {
             const infoPanel = document.getElementById('satellite-info-panel');
             infoPanel.style.display = 'block'; // Show the panel
             showSatelliteInfo(satName);
         });
     } else {
         // Update both footprint and label positions
-        satelliteFootprints.get(satName).setLatLng([position.latitude, position.longitude]);
-        satelliteFootprints.get(satName).setRadius(footprintRadiusMeters);
-        satelliteFootprints.get(satName).label.setLatLng([position.latitude, position.longitude]);
+        satelliteFootprints[satName].setLatLng([position.latitude, position.longitude]);
+        satelliteFootprints[satName].setRadius(footprintRadiusMeters);
+        satelliteFootprints[satName].label.setLatLng([position.latitude, position.longitude]);
     }
 }
 
@@ -1201,7 +1200,7 @@ function calculateUpcomingPasses() {
     const passesContainer = document.getElementById('upcoming-passes');
     passesContainer.innerHTML = '';
     
-    if (selectedSatellites.size === 0) {
+    if (selectedSatellites.length === 0) {
         passesContainer.innerHTML = '<p>No satellites selected</p>';
         return;
     }
@@ -1303,10 +1302,10 @@ function calculateUpcomingPasses() {
 
 // Function to highlight a satellite briefly
 function highlightSatellite(satName) {
-    if (!satelliteMarkers.get(satName)) return;
+    if (!satelliteMarkers[satName]) return;
     
     // Store the original icon
-    const marker = satelliteMarkers.get(satName);
+    const marker = satelliteMarkers[satName];
     const originalIcon = marker.options.icon;
     
     // Create a highlighted icon
@@ -1466,24 +1465,24 @@ function loadObserverFromLocalStorage() {
         observer.latitude = parsedObserver.latitude;
         observer.longitude = parsedObserver.longitude;
         observer.elevation = parsedObserver.elevation;
-        observer.minElevation = parsedObserver.minElevation || 0;
         observer.callsign = parsedObserver.callsign || '';
+        observer.minElevation = parsedObserver.minElevation || 0;
     } else {
         // Initialize with default values if no saved data exists
         observer = {
-            latitude: 0,
-            longitude: 0,
+            latitude: 51.5074,
+            longitude: -0.1278,
             elevation: 0,
-            minElevation: 10,
-            callsign: ''
+            callsign: '',
+            minElevation: 0
         };
     }
     // Always set the form values to match the current observer object
     document.getElementById('latitude').value = observer.latitude;
     document.getElementById('longitude').value = observer.longitude;
     document.getElementById('elevation').value = observer.elevation;
-    document.getElementById('min-elevation').value = observer.minElevation;
     document.getElementById('callsign').value = observer.callsign;
+    document.getElementById('min-elevation').value = observer.minElevation;
 }
 
 // Update observer display with current values
@@ -1769,19 +1768,6 @@ function saveOptions() {
     
     // Save CSN SAT settings
     saveCsnSatSettingsToLocalStorage();
-    
-    // Save notification settings
-    const notificationsEnabled = document.getElementById('enable-notifications').checked;
-    localStorage.setItem('notificationsEnabled', notificationsEnabled.toString());
-    if (notificationsEnabled) {
-        initNotifications();
-    } else {
-        notificationsEnabled = false;
-        if (notificationCheckInterval) {
-            clearInterval(notificationCheckInterval);
-            notificationCheckInterval = null;
-        }
-    }
     
     // Update roves if enabled
     if (enableRoves && hamsAtApiKey) {
@@ -2185,7 +2171,7 @@ function generateScheduleTable() {
     const endTime = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
     allScheduledPasses = [];
     
-    if (selectedSatellites.size === 0) {
+    if (selectedSatellites.length === 0) {
         tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No satellites selected</td></tr>';
         return;
     }
@@ -2985,7 +2971,7 @@ function generateSkedPlanningTable() {
     const endTime = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
     allSkedPasses = [];
     
-    if (selectedSatellites.size === 0) {
+    if (selectedSatellites.length === 0) {
         tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No satellites selected</td></tr>';
         return;
     }
@@ -3273,54 +3259,86 @@ function initNotifications() {
             if (notificationsEnabled) {
                 startNotificationCheck();
             }
-            // Save the permission state
-            localStorage.setItem('notificationsEnabled', notificationsEnabled.toString());
         });
-    } else {
-        notificationsEnabled = false;
-        localStorage.setItem('notificationsEnabled', 'false');
     }
 }
 
-// Start checking for upcoming passes that need notifications
+// Start checking for passes that need notifications
 function startNotificationCheck() {
     // Clear any existing interval
     if (notificationCheckInterval) {
         clearInterval(notificationCheckInterval);
     }
     
-    // Check immediately and then every minute
+    // Check immediately
     checkUpcomingPassesForNotifications();
+    
+    // Then check every minute
     notificationCheckInterval = setInterval(checkUpcomingPassesForNotifications, 60000);
 }
 
-// Check upcoming passes and send notifications if needed
+// Check for passes that need notifications
 function checkUpcomingPassesForNotifications() {
     if (!notificationsEnabled) return;
     
     const now = new Date();
-    const notificationThreshold = new Date(now.getTime() + NOTIFICATION_THRESHOLD_MINUTES * 60000);
     
-    upcomingPasses.forEach(pass => {
-        const passStartTime = new Date(pass.startTime);
+    // Go through all upcoming passes
+    const upcomingPassesElement = document.getElementById('upcoming-passes');
+    const passItems = upcomingPassesElement.querySelectorAll('.pass-item');
+    
+    passItems.forEach(passItem => {
+        // Extract satellite info from the pass item
+        const satelliteName = passItem.querySelector('.pass-satellite-name').textContent;
+        const timeText = passItem.querySelector('.pass-time').textContent;
+        const detailsText = passItem.querySelector('.pass-details').textContent;
         
-        // Check if pass starts within notification threshold and hasn't been notified yet
-        if (passStartTime <= notificationThreshold && 
-            passStartTime > now && 
-            !notifiedPasses.has(pass.id)) {
+        // Extract times (assuming format like "12:30 to 12:45")
+        const timeMatch = timeText.match(/(\d+:\d+)/g);
+        if (!timeMatch || timeMatch.length < 2) return;
+        
+        const startTimeStr = timeMatch[0];
+        const endTimeStr = timeMatch[1];
+        
+        // Create a Date object for the start time
+        const [hours, minutes] = startTimeStr.split(':').map(Number);
+        const startTime = new Date(now);
+        startTime.setHours(hours, minutes, 0, 0);
+        
+        // If the time has already passed today, it might be for tomorrow
+        if (startTime < now && now.getHours() > hours) {
+            startTime.setDate(startTime.getDate() + 1);
+        }
+        
+        // Calculate minutes until the pass
+        const minutesUntilPass = (startTime - now) / (60 * 1000);
+        
+        // Check if we're within the notification threshold (15 minutes)
+        if (minutesUntilPass > 0 && minutesUntilPass <= 15) {
+            // Create a unique ID for this pass that includes the date to avoid duplicates
+            const dateStr = startTime.toISOString().split('T')[0]; // Use ISO date format
+            const passId = `${satelliteName}-${dateStr}-${startTimeStr}`;
             
-            showPassNotification(
-                pass.satellite,
-                formatDateTime(passStartTime),
-                formatDateTime(new Date(pass.endTime)),
-                pass.details,
-                pass.id,
-                passStartTime
-            );
-            
-            // Mark pass as notified
-            notifiedPasses.set(pass.id, pass);
-            localStorage.setItem('notifiedPasses', JSON.stringify([...notifiedPasses.values()]));
+            // Check if we've already notified for this pass
+            if (!notifiedPasses.has(passId)) {
+                console.log(`Showing notification for pass: ${passId}`);
+                
+                // Create notification
+                showPassNotification(satelliteName, startTimeStr, endTimeStr, detailsText, passId, startTime);
+                
+                // Mark this pass as notified
+                notifiedPasses.set(passId, {
+                    id: passId,
+                    satellite: satelliteName,
+                    startTime: startTimeStr,
+                    endTime: endTimeStr,
+                    details: detailsText,
+                    timestamp: now.getTime()
+                });
+                
+                // Save to localStorage
+                localStorage.setItem('notifiedPasses', JSON.stringify([...notifiedPasses.values()]));
+            }
         }
     });
     
@@ -3328,23 +3346,21 @@ function checkUpcomingPassesForNotifications() {
     cleanupOldNotifications();
 }
 
-// Clean up old notifications
+// Clean up old notification entries
 function cleanupOldNotifications() {
     const now = new Date();
-    let needsUpdate = false;
+    const today = now.toISOString().split('T')[0];
     
-    // Remove passes that have already occurred
-    for (const [id, pass] of notifiedPasses) {
-        if (new Date(pass.endTime) < now) {
-            notifiedPasses.delete(id);
-            needsUpdate = true;
+    // Remove notifications older than today
+    for (const [passId, passData] of notifiedPasses) {
+        const [_, dateStr] = passId.split('-');
+        if (dateStr < today) {
+            notifiedPasses.delete(passId);
         }
     }
     
-    // Update localStorage if needed
-    if (needsUpdate) {
-        localStorage.setItem('notifiedPasses', JSON.stringify([...notifiedPasses.values()]));
-    }
+    // Save updated set to localStorage
+    localStorage.setItem('notifiedPasses', JSON.stringify([...notifiedPasses.values()]));
 }
 
 // Show a notification for an upcoming pass
