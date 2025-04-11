@@ -1771,10 +1771,9 @@ function saveOptions() {
     saveCsnSatSettingsToLocalStorage();
     
     // Save notification settings
-    const newNotificationsEnabled = document.getElementById('enable-notifications').checked;
-    localStorage.setItem('notificationsEnabled', newNotificationsEnabled.toString());
-    if (newNotificationsEnabled) {
-        notificationsEnabled = true;
+    const notificationsEnabled = document.getElementById('enable-notifications').checked;
+    localStorage.setItem('notificationsEnabled', notificationsEnabled.toString());
+    if (notificationsEnabled) {
         initNotifications();
     } else {
         notificationsEnabled = false;
