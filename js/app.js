@@ -1769,6 +1769,21 @@ function saveOptions() {
     // Save CSN SAT settings
     saveCsnSatSettingsToLocalStorage();
     
+    // Save notification settings
+    const notificationCheckbox = document.getElementById('enable-notifications');
+    if (notificationCheckbox) {
+        notificationsEnabled = notificationCheckbox.checked;
+        localStorage.setItem('notificationsEnabled', notificationsEnabled.toString());
+        if (notificationsEnabled) {
+            initNotifications();
+        } else {
+            if (notificationCheckInterval) {
+                clearInterval(notificationCheckInterval);
+                notificationCheckInterval = null;
+            }
+        }
+    }
+    
     // Update roves if enabled
     if (enableRoves && hamsAtApiKey) {
         fetchUpcomingRoves();
