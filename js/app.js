@@ -3315,24 +3315,30 @@ function checkUpcomingPassesForNotifications() {
         const startTimeStr = timeMatch[0];
         const endTimeStr = timeMatch[1];
         
-        // Create a Date object for the start time
-        const [hours, minutes] = startTimeStr.split(':').map(Number);
-        const startTime = new Date(now);
-        startTime.setHours(hours, minutes, 0, 0);
+        // Create Date objects for both start and end times
+        const [startHours, startMinutes] = startTimeStr.split(':').map(Number);
+        const [endHours, endMinutes] = endTimeStr.split(':').map(Number);
         
-        // If the time has already passed today, it might be for tomorrow
-        if (startTime < now && now.getHours() > hours) {
+        const startTime = new Date(now);
+        startTime.setHours(startHours, startMinutes, 0, 0);
+        
+        const endTime = new Date(now);
+        endTime.setHours(endHours, endMinutes, 0, 0);
+        
+        // If the times have already passed today, they might be for tomorrow
+        if (startTime < now && now.getHours() > startHours) {
             startTime.setDate(startTime.getDate() + 1);
+            endTime.setDate(endTime.getDate() + 1);
         }
         
         // Calculate minutes until the pass
         const minutesUntilPass = (startTime - now) / (60 * 1000);
         
         // Check if we're within the notification threshold (15 minutes)
-        if (minutesUntilPass > 0 && minutesUntilPass <= 15) {
-            // Create a unique ID for this pass that includes the date to avoid duplicates
-            const dateStr = startTime.toISOString().split('T')[0]; // Use ISO date format
-            const passId = `${satelliteName}-${dateStr}-${startTimeStr}`;
+        if (minutesUntilPass > 0 && minutesUntilPass <= NOTIFICATION_THRESHOLD_MINUTES) {
+            // Create a unique ID for this pass that includes both start and end times
+            const dateStr = startTime.toISOString().split('T')[0];
+            const passId = `${satelliteName}-${dateStr}-${startTimeStr}-${endTimeStr}`;
             
             // Check if we've already notified for this pass
             if (!notifiedPasses.has(passId)) {
@@ -3348,7 +3354,9 @@ function checkUpcomingPassesForNotifications() {
                     startTime: startTimeStr,
                     endTime: endTimeStr,
                     details: detailsText,
-                    timestamp: now.getTime()
+                    timestamp: now.getTime(),
+                    startDateTime: startTime.getTime(),
+                    endDateTime: endTime.getTime()
                 });
                 
                 // Save to localStorage
@@ -3364,12 +3372,10 @@ function checkUpcomingPassesForNotifications() {
 // Clean up old notification entries
 function cleanupOldNotifications() {
     const now = new Date();
-    const today = now.toISOString().split('T')[0];
     
-    // Remove notifications older than today
+    // Remove notifications for passes that have ended
     for (const [passId, passData] of notifiedPasses) {
-        const [_, dateStr] = passId.split('-');
-        if (dateStr < today) {
+        if (now.getTime() > passData.endDateTime) {
             notifiedPasses.delete(passId);
         }
     }
