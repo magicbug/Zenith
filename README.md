@@ -2,7 +2,6 @@
 
 ![zenith_screenshot](https://github.com/user-attachments/assets/fca7284e-7b31-4c34-9f3e-bd54c93e6c06)
 
-
 A modern web-based satellite tracking application designed for amateur radio operators and satellite enthusiasts. Zenith provides real-time satellite tracking, pass predictions, and radio integration features.
 
 ## Features
@@ -26,10 +25,10 @@ A modern web-based satellite tracking application designed for amateur radio ope
   - Detailed pass information for both stations
 
 - **Radio Integration**
-  - [CSN Technologies S.A.T](http://www.csntechnologies.net/sat) integration for automatic antenna tracking
-  - Radio control panel with VFO management
-  - Transponder information display
-  - CTCSS tone selection
+  - [CSN Technologies S.A.T](http://www.csntechnologies.net/sat) integration for automatic radio control & antenna tracking
+      - Radio control panel with VFO management
+      - Transponder information display
+      - CTCSS tone selection
 
 - **APRS Integration**
   - APRS message interface
@@ -42,7 +41,7 @@ A modern web-based satellite tracking application designed for amateur radio ope
 - **Roves Integration**
   - [Hams.at](https://hams.at/) API integration for rover activations
   - Upcoming roves display
-  - Direct links to Hams.at for detailed information
+  - Direct links to [Hams.at](https://hams.at/) for detailed information
 
 ## Requirements
 
@@ -120,7 +119,7 @@ Zenith is designed to work in modern web browsers including:
 - Safari (latest)
 - Edge (latest)
 
-Note: Due to the use of HTML5 features like geolocation and notifications, the application must be served over HTTPS.
+Note: The application must be served over HTTPS due to the use of HTML5 features like geolocation and notifications.
 
 **Device Support:**
 - Currently optimized for desktop/laptop computers
