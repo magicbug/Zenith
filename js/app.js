@@ -428,6 +428,8 @@ function selectAllSatellites() {
     checkboxes.forEach(checkbox => {
         checkbox.checked = true;
     });
+    // Update selected satellites after selecting all
+    updateSelectedSatellites();
 }
 
 // Deselect all satellites
@@ -436,6 +438,8 @@ function deselectAllSatellites() {
     checkboxes.forEach(checkbox => {
         checkbox.checked = false;
     });
+    // Update selected satellites after deselecting all
+    updateSelectedSatellites();
 }
 
 // Filter satellites based on search
@@ -603,6 +607,12 @@ function populateSatelliteList() {
         // Set checkbox state based on selectedSatellites array
         checkbox.checked = selectedSatellites.includes(satName);
         
+        // Add change event listener to update selected satellites
+        checkbox.addEventListener('change', (e) => {
+            console.log('Checkbox changed for satellite:', satName, 'checked:', e.target.checked);
+            updateSelectedSatellites();
+        });
+        
         const label = document.createElement('label');
         label.htmlFor = checkbox.id;
         label.textContent = satName;
@@ -633,26 +643,32 @@ function loadSelectedSatellitesFromLocalStorage() {
 
 // Update the list of selected satellites
 function updateSelectedSatellites() {
+    console.log('updateSelectedSatellites called');
     // Clear current selection
     selectedSatellites = [];
+    console.log('Cleared selectedSatellites array');
     
     // Get all checked satellites
     const checkedBoxes = document.querySelectorAll('#satellite-list input[type="checkbox"]:checked');
+    console.log('Found checked boxes:', checkedBoxes.length);
+    
     checkedBoxes.forEach(checkbox => {
         const satName = checkbox.getAttribute('data-satellite');
+        console.log('Processing checkbox for satellite:', satName);
         if (satName && window.tleData[satName]) {  // Use window.tleData consistently
             selectedSatellites.push(satName);
+            console.log('Added satellite to selection:', satName);
         }
     });
     
+    console.log('Final selected satellites:', selectedSatellites);
+    
+    // Save to localStorage
+    localStorage.setItem('selectedSatellites', JSON.stringify(selectedSatellites));
+    console.log('Saved to localStorage:', localStorage.getItem('selectedSatellites'));
+    
     // Update satellite display on map
     updateSatelliteDisplay();
-    
-    // Update upcoming passes
-    calculateUpcomingPasses();
-    
-    // Save selection to local storage
-    localStorage.setItem('selectedSatellites', JSON.stringify(selectedSatellites));
 }
 
 // Update the observer location
@@ -1791,6 +1807,9 @@ function saveOptions() {
         document.getElementById('upcoming-roves').innerHTML = 
             '<div class="rove-item">Roves display is disabled or API key is missing.</div>';
     }
+    
+    // Update and save selected satellites
+    updateSelectedSatellites();
     
     // Close the modal
     document.getElementById('options-modal').style.display = 'none';
