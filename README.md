@@ -36,6 +36,8 @@ A modern web-based satellite tracking application designed for amateur radio ope
   - Pre-defined message macros
   - Position reporting
   - Message history tracking
+  - Requires [Zenith APRS](https://github.com/magicbug/zenith_aprs) for full functionality
+    - Please refer to the Zenith APRS documentation for setup instructions
 
 - **Roves Integration**
   - [Hams.at](https://hams.at/) API integration for rover activations
