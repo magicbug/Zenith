@@ -6,25 +6,18 @@ $postData = json_decode(file_get_contents('php://input'), true);
 file_put_contents('debug_log.txt', "=== New Request ===\n", FILE_APPEND);
 file_put_contents('debug_log.txt', "Raw POST data: " . print_r($postData, true) . "\n", FILE_APPEND);
 
-// Map frontend field names to expected field names
-$mappedData = [
-    'date' => $postData['timeOn'],
-    'satName' => $postData['satelliteName'],
-    'callsign' => $postData['stationCallsign'],
-    'status' => $postData['status'],
-    'gridSquare' => $postData['myGridsquare']
-];
-file_put_contents('debug_log.txt', "Mapped UTC time: " . $mappedData['date'] . "\n", FILE_APPEND);
+// Define required fields
+$requiredFields = ['satName', 'status', 'date', 'callsign', 'gridSquare'];
 
-// Validate required fields
-$requiredFields = ['date', 'satName', 'callsign', 'status', 'gridSquare'];
+// Check for missing fields
 $missingFields = [];
 foreach ($requiredFields as $field) {
-    if (!isset($mappedData[$field]) || empty($mappedData[$field])) {
+    if (!isset($postData[$field]) || empty($postData[$field])) {
         $missingFields[] = $field;
     }
 }
 
+// Validate required fields
 if (!empty($missingFields)) {
     http_response_code(400);
     echo json_encode([
@@ -36,35 +29,30 @@ if (!empty($missingFields)) {
 }
 
 // Parse the time string
-$timeParts = explode(' ', $mappedData['date']);
+$timeParts = explode(' ', $postData['date']);
 $dateParts = explode('-', $timeParts[0]);
 $timeComponents = explode(':', $timeParts[1]);
-
-file_put_contents('debug_log.txt', "Time parsing steps:\n", FILE_APPEND);
-file_put_contents('debug_log.txt', "1. Original UTC string: " . $mappedData['date'] . "\n", FILE_APPEND);
-file_put_contents('debug_log.txt', "2. Split date/time: " . print_r($timeParts, true) . "\n", FILE_APPEND);
-file_put_contents('debug_log.txt', "3. Date components: " . print_r($dateParts, true) . "\n", FILE_APPEND);
-file_put_contents('debug_log.txt', "4. Time components: " . print_r($timeComponents, true) . "\n", FILE_APPEND);
 
 // Calculate period
 $minutes = (int)$timeComponents[1];
 $period = intdiv($minutes - 1, 15);
-file_put_contents('debug_log.txt', "Period calculation: minutes=$minutes, period=$period\n", FILE_APPEND);
 
 // Build the AMSAT status URL
 $urlParams = [
     'SatSubmit' => 'yes',
     'Confirm' => 'yes',
-    'SatName' => $mappedData['satName'],
+    'SatName' => $postData['satName'],
     'SatYear' => $dateParts[0],
     'SatMonth' => str_pad($dateParts[1], 2, '0', STR_PAD_LEFT),
     'SatDay' => str_pad($dateParts[2], 2, '0', STR_PAD_LEFT),
     'SatHour' => str_pad($timeComponents[0], 2, '0', STR_PAD_LEFT),
     'SatPeriod' => $period,
-    'SatCall' => $mappedData['callsign'],
-    'SatReport' => $mappedData['status'],
-    'SatGridSquare' => $mappedData['gridSquare']
+    'SatCall' => $postData['callsign'],
+    'SatReport' => $postData['status'],
+    'SatGridSquare' => $postData['gridSquare']
 ];
+
+
 
 $url = 'https://amsat.org/status/submit.php?' . http_build_query($urlParams);
 
