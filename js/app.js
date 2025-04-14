@@ -3430,7 +3430,7 @@ function showPassNotification(satellite, startTime, endTime, details, passId, ac
     // Create the notification
     const options = {
         body: `Pass from ${startTime} to ${endTime}\nDuration: ${duration}, Max Elevation: ${maxElevation}`,
-        icon: '/favicon.ico',
+        icon: '/zenith.ico', // Changed icon path
         tag: passId,
         requireInteraction: true  // Keep notification visible until user dismisses it
     };
@@ -3572,7 +3572,7 @@ function createTestNotification() {
     // Notification options
     const options = {
         body: `Pass from ${startTimeStr} to ${endTimeStr}\nDuration: 10 min, Max Elevation: 45°`,
-        icon: '/favicon.ico',
+        icon: '/zenith.ico', // Changed icon path
         requireInteraction: true  // Keep notification visible until user dismisses it
     };
     
