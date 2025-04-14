@@ -100,6 +100,10 @@ document.addEventListener('DOMContentLoaded', () => {
     loadCloudlogSettingsFromLocalStorage();
     loadAPRSSettingsFromLocalStorage();
     
+    // Update button visibility based on loaded settings
+    updateSatPanelButtonVisibility();
+    updateAPRSButtonVisibility(); // Add call for APRS button
+    
     // Check S.A.T API availability
     if (enableCsnSat && csnSatAddress) {
         checkSATAPIAvailability();
@@ -173,6 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('enable-csn-sat').addEventListener('change', function() {
         enableCsnSat = this.checked;
         saveCsnSatSettingsToLocalStorage();
+        updateSatPanelButtonVisibility(); // Update button visibility when setting changes
         
         // Check API availability when enabled
         if (enableCsnSat && csnSatAddress) {
@@ -275,6 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('enable-aprs').addEventListener('change', function() {
         enableAPRS = this.checked;
         saveAPRSSettingsToLocalStorage();
+        updateAPRSButtonVisibility(); // Update button visibility when setting changes
     });
 
     document.getElementById('aprs-server').addEventListener('input', function() {
@@ -2125,8 +2131,8 @@ function loadCsnSatSettingsFromLocalStorage() {
 
 // Save CSN SAT settings to local storage
 function saveCsnSatSettingsToLocalStorage() {
-    localStorage.setItem('enableCsnSat', enableCsnSat.toString());
-    localStorage.setItem('csnSatAddress', csnSatAddress);
+    localStorage.setItem('enableCsnSat', enableCsnSat.toString()); // Reverted key to camelCase and ensure string conversion
+    localStorage.setItem('csnSatAddress', csnSatAddress); // Reverted key to camelCase
 }
 
 // Schedule functionality
@@ -3741,6 +3747,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('enable-csn-sat').addEventListener('change', function() {
         enableCsnSat = this.checked;
         saveCsnSatSettingsToLocalStorage();
+        updateSatPanelButtonVisibility(); // Update button visibility when setting changes
         
         // Check API availability when enabled
         if (enableCsnSat && csnSatAddress) {
@@ -5060,5 +5067,49 @@ function updateAPRSObserverLocation(location) {
     // Update APRS panel with observer location
     if (window.aprsPanel) {
         window.aprsPanel.setObserverLocation(observerLocation);
+    }
+}
+
+// Function to update the visibility of the S.A.T panel button based on settings
+function updateSatPanelButtonVisibility() {
+    const satPanelButton = document.getElementById('open-sat-panel-btn');
+    if (!satPanelButton) {
+        console.error("S.A.T Panel button not found.");
+        return;
+    }
+
+    const isCsnSatEnabled = localStorage.getItem('enableCsnSat') === 'true'; // Read camelCase key
+    
+    if (isCsnSatEnabled) {
+        satPanelButton.style.display = ''; // Show button (reset to default display)
+    } else {
+        satPanelButton.style.display = 'none'; // Hide button
+    }
+}
+
+// Function to update the visibility of the APRS button based on settings
+function updateAPRSButtonVisibility() {
+    const aprsButton = document.getElementById('open-aprs');
+    if (!aprsButton) {
+        console.error("APRS button not found.");
+        return;
+    }
+
+    let isAPRSEnabled = false;
+    try {
+        const savedSettings = localStorage.getItem('aprsSettings');
+        if (savedSettings) {
+            const settings = JSON.parse(savedSettings);
+            isAPRSEnabled = settings.enableAPRS === true;
+        }
+    } catch (error) {
+        console.error("Error reading APRS settings from localStorage:", error);
+        isAPRSEnabled = false; // Default to hidden if error
+    }
+
+    if (isAPRSEnabled) {
+        aprsButton.style.display = ''; // Show button
+    } else {
+        aprsButton.style.display = 'none'; // Hide button
     }
 }
