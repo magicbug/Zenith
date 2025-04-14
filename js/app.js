@@ -3361,27 +3361,26 @@ function checkUpcomingPassesForNotifications() {
         
         // Check if we're within the notification threshold (15 minutes)
         if (minutesUntilPass > 0 && minutesUntilPass <= NOTIFICATION_THRESHOLD_MINUTES) {
-            // Create a unique ID for this pass that includes both start and end times
-            const dateStr = startTime.toISOString().split('T')[0];
-            const passId = `${satelliteName}-${dateStr}-${startTimeStr}-${endTimeStr}`;
+            // Create a unique ID for this pass using the exact start timestamp for robustness
+            const passId = `${satelliteName}-${startTime.getTime()}`;
             
             // Check if we've already notified for this pass
             if (!notifiedPasses.has(passId)) {
                 console.log(`Showing notification for pass: ${passId}`);
                 
-                // Create notification
+                // Create notification using the original time strings for the body
                 showPassNotification(satelliteName, startTimeStr, endTimeStr, detailsText, passId, startTime);
                 
-                // Mark this pass as notified
+                // Mark this pass as notified using the robust ID
                 notifiedPasses.set(passId, {
                     id: passId,
                     satellite: satelliteName,
-                    startTime: startTimeStr,
-                    endTime: endTimeStr,
+                    startTime: startTimeStr, // Keep original string for reference
+                    endTime: endTimeStr,   // Keep original string for reference
                     details: detailsText,
-                    timestamp: now.getTime(),
-                    startDateTime: startTime.getTime(),
-                    endDateTime: endTime.getTime()
+                    timestamp: now.getTime(), // When notification was triggered
+                    startDateTime: startTime.getTime(), // Store actual start timestamp
+                    endDateTime: endTime.getTime()     // Store actual end timestamp
                 });
                 
                 // Save to localStorage
