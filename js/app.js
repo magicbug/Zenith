@@ -648,28 +648,48 @@ function processTLEs(data) {
             const tle2 = lines[i + 2].trim();
             
             if (satelliteName && tle1 && tle2) {
-                const validLine1 = /^1 \d{5}[UCS] /.test(tle1);
-                const validLine2 = /^2 \d{5} /.test(tle2);
+                // Updated regex to support both 4 and 5 digit catalog numbers
+                // Format: Line 1 starts with '1 ' followed by catalog number (4-5 digits), followed by classification (U,C,S) and space
+                const validLine1 = /^1 +\d{4,5}[UCS] /.test(tle1);
+                // Format: Line 2 starts with '2 ' followed by catalog number (4-5 digits) and space
+                const validLine2 = /^2 +\d{4,5} /.test(tle2);
                 
                 if (validLine1 && validLine2) {
                     try {
                         const satrec = satellite.twoline2satrec(tle1, tle2);
-                        // Check for propagation error right away (optional but good)
-                        // satellite.propagate(satrec, new Date()); 
-                        window.tleData[satelliteName] = {
-                            name: satelliteName,
-                            tle1: tle1,
-                            tle2: tle2,
-                            satrec: satrec // Store the parsed object
-                        };
-                        tleCount++;
+                        
+                        // Optional validation: test propagation with current time
+                        const now = new Date();
+                        const positionAndVelocity = satellite.propagate(satrec, now);
+                        
+                        // Store satellite data if propagation succeeds (or skip this check to be more lenient)
+                        if (positionAndVelocity.position) {
+                            window.tleData[satelliteName] = {
+                                name: satelliteName,
+                                tle1: tle1,
+                                tle2: tle2,
+                                satrec: satrec // Store the parsed object
+                            };
+                            tleCount++;
+                        } else {
+                            console.warn(`Propagation failed for ${satelliteName}, skipping`);
+                            failedTLEs.push(`${satelliteName} (Propagation Failed)`);
+                        }
                     } catch (e) {
                         console.warn(`Error parsing TLE for ${satelliteName}: ${e.message}`);
                         failedTLEs.push(satelliteName); // Add to failed list
                     }
                 } else if (satelliteName) {
-                    // console.warn(`Skipping invalid TLE format for "${satelliteName}"`);
-                    failedTLEs.push(`${satelliteName} (Bad Format)`); // Add format errors too
+                    // Provide more detailed error for diagnostic purposes
+                    let reason = "";
+                    if (!validLine1 && !validLine2) reason = "Both lines invalid";
+                    else if (!validLine1) reason = "Line 1 invalid";
+                    else reason = "Line 2 invalid";
+                    
+                    console.warn(`Invalid TLE format for "${satelliteName}": ${reason}`);
+                    console.warn(`Line 1: ${tle1}`);
+                    console.warn(`Line 2: ${tle2}`);
+                    failedTLEs.push(`${satelliteName} (Bad Format)`);
                 }
             }
         }
