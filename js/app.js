@@ -337,8 +337,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Initialize notifications
-    initNotifications();
+    // Initialize notifications only if enabled in localStorage
+    const savedNotificationsEnabled = localStorage.getItem('notificationsEnabled');
+    if (savedNotificationsEnabled === 'true') {
+        initNotifications();
+    }
     
     // Test notification button
     const testNotificationBtn = document.getElementById('test-notification');
