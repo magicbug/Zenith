@@ -73,9 +73,13 @@ function checkSATAPIAvailability() {
 // Send satellite selection to the S.A.T API
 function selectSatelliteForSAT(satName) {
     if (!enableCsnSat || !csnSatAddress || !satAPIAvailable) {
-        return false;
+        return Promise.resolve(false);
     }
 
+    // Store the satellite we're currently trying to select 
+    // This helps identify which satellite is being referenced in error messages
+    window.pendingSatSelection = satName;
+    
     console.log('Selecting satellite for S.A.T through proxy:', satName);
     
     // Use our PHP proxy for satellite selection
@@ -84,14 +88,24 @@ function selectSatelliteForSAT(satName) {
     // Show that we're sending the selection to the API
     showSATPanel(`Selecting satellite: ${satName}...`);
     
-    return fetch(proxyUrl)
+    // Set a timeout for the fetch operation (10 seconds)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    
+    return fetch(proxyUrl, {
+        signal: controller.signal
+    })
     .then(response => {
+        clearTimeout(timeoutId);
         if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
         }
         return response.json();
     })
     .then(data => {
+        // Clear the pending selection since we got a response
+        window.pendingSatSelection = null;
+        
         console.log('S.A.T selection response:', data);
         
         if (data.success) {
@@ -103,13 +117,31 @@ function selectSatelliteForSAT(satName) {
             return true;
         } else {
             console.error('S.A.T API selection error:', data.error);
-            showSATPanel(`Failed to select satellite: ${satName}. Error: ${data.error}`, 'error');
+            
+            // Check if the user has already selected a different satellite
+            // If so, don't update the panel to avoid confusion
+            if (window.pendingSatSelection === satName || !window.pendingSatSelection) {
+                showSATPanel(`Failed to select satellite: ${satName}. Error: ${data.error}`, 'error');
+            } else {
+                console.log(`Not showing error for ${satName} because user has selected ${window.pendingSatSelection}`);
+            }
+            
             return false;
         }
     })
     .catch(error => {
-        console.error('Error selecting satellite for S.A.T:', error);
-        showSATPanel(`Error selecting satellite: ${error.message}`, 'error');
+        // Clear the pending selection since we got a response (error)
+        window.pendingSatSelection = null;
+        
+        // Check if this is an abort error (timeout)
+        if (error.name === 'AbortError') {
+            console.error(`Selection timeout for satellite ${satName}`);
+            showSATPanel(`Connection to S.A.T timed out. Please check your network and controller.`, 'error');
+        } else {
+            console.error('Error selecting satellite for S.A.T:', error);
+            showSATPanel(`Error selecting satellite: ${error.message}`, 'error');
+        }
+        
         return false;
     });
 }
@@ -128,6 +160,23 @@ function showSATPanel(message, status = 'pending') {
     if (statusElement) {
         statusElement.className = `sat-status ${status}`;
         statusElement.textContent = message;
+    }
+    
+    // Create or update connection status indicator
+    let statusIndicator = satPanelContent.querySelector('#sat-status-indicator');
+    if (!statusIndicator) {
+        statusIndicator = document.createElement('div');
+        statusIndicator.id = 'sat-status-indicator';
+        statusIndicator.className = satAPIAvailable ? 'status-connected' : 'status-error';
+        statusIndicator.textContent = satAPIAvailable ? 'Connected' : 'Not Connected';
+        
+        // Add to the panel in a sensible location
+        const headerElement = satPanelContent.querySelector('.sat-panel-header');
+        if (headerElement) {
+            headerElement.appendChild(statusIndicator);
+        } else {
+            satPanelContent.appendChild(statusIndicator);
+        }
     }
     
     // Show the panel
@@ -639,3 +688,37 @@ function updateSatButtonStates() {
         }
     }
 }
+
+// Add CSS styles for the status indicator
+document.addEventListener('DOMContentLoaded', () => {
+    // Add CSS for the status indicator
+    const style = document.createElement('style');
+    style.textContent = `
+        #sat-status-indicator {
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            margin-left: 10px;
+            display: inline-block;
+        }
+        .status-connected {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .status-error {
+            background-color: #f44336;
+            color: white;
+        }
+        .status-connecting {
+            background-color: #2196F3;
+            color: white;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+    `;
+    document.head.appendChild(style);
+});

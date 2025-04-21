@@ -135,8 +135,10 @@ window.showSatelliteInfo = function(satName) {
             updateSatPanelForSelection(satName);
         }
         
-        // Also update the Polar Plot if visible
-        updatePolarPlotForSatellite(satName);
+        // Also update the Polar Plot if visible and the function exists
+        if (typeof updatePolarPlotForSatellite === 'function') {
+            updatePolarPlotForSatellite(satName);
+        }
         
     } else {
         console.error("Satellite info panel elements not found.");
@@ -145,11 +147,68 @@ window.showSatelliteInfo = function(satName) {
 
 // Function to send satellite selection to the CSN S.A.T interface
 function updateSatPanelForSelection(satName) {
-    if (typeof selectSatelliteForSAT === 'function') {
-        selectSatelliteForSAT(satName);
-    } else {
+    if (typeof selectSatelliteForSAT !== 'function') {
         console.error('selectSatelliteForSAT function not available');
+        return;
     }
+    
+    // Set a status indicator if available
+    const satStatusIndicator = document.getElementById('sat-status-indicator');
+    if (satStatusIndicator) {
+        satStatusIndicator.textContent = 'Connecting...';
+        satStatusIndicator.className = 'status-connecting';
+    }
+    
+    // Call the CSN integration to select the satellite
+    selectSatelliteForSAT(satName)
+        .then(success => {
+            // Update status indicator
+            if (satStatusIndicator) {
+                satStatusIndicator.textContent = success ? 'Connected' : 'Connection Error';
+                satStatusIndicator.className = success ? 'status-connected' : 'status-error';
+            }
+            
+            // If there's consistent connection issues, suggest checking settings
+            if (!success) {
+                // Increment error counter (reset after 1 hour)
+                if (!window.satConnectionErrors) {
+                    window.satConnectionErrors = 0;
+                    window.satConnectionErrorTimer = setTimeout(() => {
+                        window.satConnectionErrors = 0;
+                    }, 3600000); // 1 hour
+                }
+                window.satConnectionErrors++;
+                
+                // After 3 errors, suggest checking settings
+                if (window.satConnectionErrors >= 3) {
+                    console.warn('Multiple CSN connection failures detected. Suggesting settings check.');
+                    const message = `Having trouble connecting to your S.A.T controller. Please check the address in Settings → CSN S.A.T.`;
+                    
+                    // Show notification or console message
+                    if (typeof showNotification === 'function') {
+                        showNotification('Connection Issues', message);
+                    } else {
+                        console.warn(message);
+                    }
+                    
+                    // Reset counter to avoid spamming the user
+                    window.satConnectionErrors = 0;
+                }
+            } else {
+                // Reset error counter on success
+                window.satConnectionErrors = 0;
+                if (window.satConnectionErrorTimer) {
+                    clearTimeout(window.satConnectionErrorTimer);
+                }
+            }
+        })
+        .catch(err => {
+            console.error('Error in satellite selection:', err);
+            if (satStatusIndicator) {
+                satStatusIndicator.textContent = 'Error';
+                satStatusIndicator.className = 'status-error';
+            }
+        });
 }
 
 // Initialize the application when the DOM is fully loaded
@@ -2583,4 +2642,29 @@ function updateAPRSButtonVisibility() {
     } else {
         aprsButton.style.display = 'none'; // Hide button
     }
+}
+
+// Function to update the polar plot for a specific satellite
+function updatePolarPlotForSatellite(satName) {
+    // First check if the polar plot functionality is available
+    if (typeof showPolarRadarForPass !== 'function') {
+        return; // Silently fail if the function doesn't exist
+    }
+
+    // Get the next pass for this satellite
+    const nextPass = getNextPass(satName);
+    if (!nextPass) {
+        return; // No upcoming pass to display
+    }
+
+    // Prepare the pass data structure expected by showPolarRadarForPass
+    const passData = {
+        satellite: satName,
+        start: nextPass.start,
+        end: nextPass.end,
+        maxElevation: nextPass.maxElevation
+    };
+
+    // Show the pass in the polar plot
+    showPolarRadarForPass(passData);
 }

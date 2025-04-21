@@ -252,32 +252,33 @@ function showPolarRadarForPass(pass) {
     if (!polarRadarChart) {
         polarRadarChart = initPolarRadarChart();
     }
-
-    // Ensure the panel is visible before setting dimensions
-    const panel = document.getElementById('polar-radar-panel');
-    panel.style.display = 'block';
-
-    // Dynamically resize the canvas to match the parent container
-    const canvas = document.getElementById('polar-radar-chart');
-    const parent = canvas.parentElement;
-    canvas.width = parent.offsetWidth;
-    canvas.height = parent.offsetHeight;
-
-    // Check if dimensions are valid
-    if (canvas.width <= 0 || canvas.height <= 0) {
-        console.error('Canvas dimensions are invalid. Ensure the parent container has proper dimensions.');
-        return;
-    }
-
-    // Get pass points
+    
+    // Calculate points for the pass track
     const points = calculatePassPoints(pass);
-
-    // Draw the chart
-    polarRadarChart.draw(points);
-
-    // Set chart title
-    document.getElementById('polar-radar-title').textContent = `${pass.satellite} Pass Track`;
+    
+    // Show the panel
+    const panel = document.getElementById('polar-radar-panel');
+    if (panel) {
+        panel.style.display = 'block';
+    
+        // Resize the canvas if necessary
+        const canvas = document.getElementById('polar-radar-chart');
+        if (canvas) {
+            const parent = canvas.parentElement;
+            canvas.width = parent.offsetWidth;
+            canvas.height = parent.offsetHeight;
+        }
+        
+        // Draw the pass track
+        polarRadarChart.draw(points);
+        
+        // Update the title with the satellite name
+        document.getElementById('polar-radar-title').textContent = `${pass.satellite} Pass Track`;
+    }
 }
+
+// Make the showPolarRadarForPass function globally available
+window.showPolarRadarForPass = showPolarRadarForPass;
 
 // Calculate points along the pass for visualization
 function calculatePassPoints(pass) {
