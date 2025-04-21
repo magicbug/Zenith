@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Zenith">
     <link rel="apple-touch-icon" href="assets/pwa_icons/ios/Icon-60@2x.png">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" /> -->
     <link rel="stylesheet" href="css/style.css">
 
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -53,13 +53,25 @@
             </div>
 
             <div class="map-container">
+                <!-- Replace Leaflet div with Canvas -->
+                <div id="map-container">
+                    <canvas id="satellite-canvas" width="3600" height="1800"></canvas>
+                    <!-- Keep existing controls inside -->
+                    <div id="amsat-status-button" class="map-control-button" title="Report Satellite Status to AMSAT">
+                        Report Status
+                    </div>
+                    <!-- Add other map controls if needed -->
+                </div>
+                <!-- Original map div commented out for reference
                 <div id="satellite-map">
-                <!-- Add AMSAT status button -->
+
                 <div id="amsat-status-button" class="map-control-button" title="Report Satellite Status to AMSAT">
                     Report Status
                 </div>
 
                 </div>
+                -->
+
 
                 <!-- Add AMSAT status dialog -->
                 <div id="amsat-status-dialog" class="modal">
@@ -682,10 +694,12 @@
     </div>
 
     <!-- Load Scripts -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script> -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/4.0.0/satellite.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.js"></script>
+    <script src="js/map_d3.js"></script>
     <script src="js/aprs.js"></script>
     <script src="js/csn.js"></script>
     <script src="js/cloudlog.js"></script>

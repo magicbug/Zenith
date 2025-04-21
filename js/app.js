@@ -25,9 +25,9 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-let map;
-let satelliteMarkers = {};
-let satelliteFootprints = {};
+// let map; // Remove Leaflet map instance
+// let satelliteMarkers = {}; // Remove Leaflet markers store
+// let satelliteFootprints = {}; // Remove Leaflet footprints store
 let selectedSatellites = [];
 let observer = {
     latitude: 51.5074,
@@ -89,6 +89,59 @@ let cloudlogApiKey = '';
 let enableAPRS = false;
 let aprsServer = 'localhost';
 let aprsPort = 8765;
+
+// --- Make showSatelliteInfo globally accessible for D3 map clicks ---
+window.showSatelliteInfo = function(satName) {
+    currentInfoSatellite = satName;
+    // Find the satellite object to get TLE data if needed for display
+    const satData = window.tleData[satName];
+    if (!satData) {
+        console.error("Satellite data not found for:", satName);
+        hideSatelliteInfoPanel();
+        return;
+    }
+
+    // Select the satellite in the options list (visual feedback)
+    const checkbox = document.getElementById(`sat-${satName}`);
+    if (checkbox) {
+        // Optional: Add visual indication without changing selection state
+        // Maybe highlight the row or similar?
+    }
+
+    // Display the info panel
+    const infoPanel = document.getElementById('satellite-info-panel');
+    const infoName = document.getElementById('info-satellite-name');
+    const infoContent = document.getElementById('info-content');
+
+    if (infoPanel && infoName && infoContent) {
+        infoName.textContent = satName;
+        infoPanel.style.display = 'block';
+        updateSatelliteInfoDisplay(satName); // Populate with initial data
+
+        // Start interval to update info panel data regularly
+        if (satInfoUpdateInterval) {
+            clearInterval(satInfoUpdateInterval);
+        }
+        satInfoUpdateInterval = setInterval(() => {
+            if (currentInfoSatellite === satName) { // Check if still the selected sat
+                updateSatelliteInfoDisplay(satName);
+            } else {
+                clearInterval(satInfoUpdateInterval); // Stop if different sat selected
+            }
+        }, SAT_INFO_UPDATE_INTERVAL_MS);
+
+        // Also update the S.A.T Panel if enabled
+        if (enableCsnSat && satAPIAvailable) {
+            updateSatPanelForSelection(satName);
+        }
+        
+        // Also update the Polar Plot if visible
+        updatePolarPlotForSatellite(satName);
+        
+    } else {
+        console.error("Satellite info panel elements not found.");
+    }
+};
 
 // Initialize the application when the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
@@ -302,42 +355,45 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// Initialize the Leaflet map
+// Function to initialize the map
 function initMap() {
-    // Initialize map with the observer location loaded from localStorage
-    map = L.map('satellite-map').setView([observer.latitude, observer.longitude], 2);
+    console.log("Initializing D3 Map...");
+    // --- Leaflet Initialization Removed ---
     
-    // Create a custom pane for satellite footprints that sits below markers
-    map.createPane('footprints');
-    map.getPane('footprints').style.zIndex = 350; // Between tile layer and overlay pane
-    
-    // Add the base map layer
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 18
-    }).addTo(map);
-    
-    // Add observer marker as just a dot (no popup)
-    addObserverMarker();
+    // --- Add D3 Map Initialization ---
+    if (typeof MapD3 !== 'undefined' && MapD3.init) {
+        // Pass canvas ID, observer object, TLE data, and selected satellites array
+        MapD3.init('satellite-canvas', observer, window.tleData, selectedSatellites);
+        console.log("MapD3.init called.");
+    } else {
+        console.error("MapD3 object or init function not found! Cannot initialize D3 map.");
+    }
 }
 
-// Add or update the observer marker
+// Remove Leaflet observer marker function
+/*
 function addObserverMarker() {
-    // Remove existing observer marker if it exists
+    if (!map) return;
+    // Remove existing marker if it exists
     if (window.observerMarker) {
         map.removeLayer(window.observerMarker);
     }
-    
-    // Create a circle marker for the observer location
+
+    // Create a simple circle marker for the observer
     window.observerMarker = L.circleMarker([observer.latitude, observer.longitude], {
         radius: 5,
-        fillColor: '#3388ff',
-        color: '#fff',
-        weight: 2,
+        fillColor: "#ff7800",
+        color: "#000",
+        weight: 1,
         opacity: 1,
         fillOpacity: 0.8
     }).addTo(map);
+
+    // Add tooltip with observer info
+    const tooltipContent = `<b>Observer</b><br>Lat: ${observer.latitude.toFixed(4)}<br>Lon: ${observer.longitude.toFixed(4)}<br>Grid: ${latLonToGridSquare(observer.latitude, observer.longitude)}`;
+    window.observerMarker.bindTooltip(tooltipContent);
 }
+*/
 
 // Set up event listeners
 function setupEventListeners() {
@@ -512,15 +568,11 @@ function fetchTLEs() {
 // Process TLE data from the response
 function processTLEs(data) {
     console.log('Processing TLE data...');
-    
-    // Parse TLE data
     const lines = data.split('\n');
-    console.log('Number of lines:', lines.length);
-    
-    // Clear the existing data and start fresh
     window.tleData = {};
     let tleCount = 0;
-    
+    let failedTLEs = []; // Keep track of satellites that failed parsing
+
     for (let i = 0; i < lines.length; i += 3) {
         if (i + 2 < lines.length) {
             const satelliteName = lines[i].trim();
@@ -528,54 +580,111 @@ function processTLEs(data) {
             const tle2 = lines[i + 2].trim();
             
             if (satelliteName && tle1 && tle2) {
-                // More lenient validation: Line 1 often starts with '1 ' and line 2 with '2 '
-                // But we'll check more broadly for digits in specific positions
-                const validLine1 = /^\d/.test(tle1);
-                const validLine2 = /^\d/.test(tle2);
+                const validLine1 = /^1 \d{5}[UCS] /.test(tle1);
+                const validLine2 = /^2 \d{5} /.test(tle2);
                 
                 if (validLine1 && validLine2) {
-                    window.tleData[satelliteName] = {
-                        name: satelliteName,
-                        tle1: tle1,
-                        tle2: tle2
-                    };
-                    tleCount++;
-                } else {
-                    console.warn(`Skipping invalid TLE format for "${satelliteName}"`);
-                    console.log('TLE line 1:', tle1);
-                    console.log('TLE line 2:', tle2);
+                    try {
+                        const satrec = satellite.twoline2satrec(tle1, tle2);
+                        // Check for propagation error right away (optional but good)
+                        // satellite.propagate(satrec, new Date()); 
+                        window.tleData[satelliteName] = {
+                            name: satelliteName,
+                            tle1: tle1,
+                            tle2: tle2,
+                            satrec: satrec // Store the parsed object
+                        };
+                        tleCount++;
+                    } catch (e) {
+                        console.warn(`Error parsing TLE for ${satelliteName}: ${e.message}`);
+                        failedTLEs.push(satelliteName); // Add to failed list
+                    }
+                } else if (satelliteName) {
+                    // console.warn(`Skipping invalid TLE format for "${satelliteName}"`);
+                    failedTLEs.push(`${satelliteName} (Bad Format)`); // Add format errors too
                 }
             }
         }
     }
     
-    console.log(`Found ${tleCount} valid satellites`);
-    console.log(`Size of window.tleData:`, Object.keys(window.tleData).length);
-    
-    if (tleCount > 0) {
-        console.log('First satellite example:', Object.keys(window.tleData)[0]);
-        
-        // DEBUGGING: Log the full contents
-        console.log('Full window.tleData contents:', window.tleData);
-    } else {
-        console.warn('No valid satellites found!');
+    console.log(`Processed ${tleCount} valid satellites into window.tleData`);
+    if (failedTLEs.length > 0) {
+        console.warn(`Failed to parse TLEs for ${failedTLEs.length} satellites:`, failedTLEs.join(', '));
+        // Optional: Display this to the user in a less intrusive way?
     }
+
+    // Assign random colors
+    Object.values(window.tleData).forEach(sat => {
+        if (sat.satrec) {
+            sat.color = getRandomColor();
+        }
+    });
     
     populateSatelliteList();
     
-    // If we had selected satellites before, try to reselect them
+    // Restore selection, considering potential failures
+    let actuallySelected = [];
     if (selectedSatellites.length > 0) {
         console.log('Restoring selected satellites:', selectedSatellites);
         selectedSatellites.forEach(satName => {
             const checkbox = document.querySelector(`input[data-satellite="${satName}"]`);
             if (checkbox) {
-                checkbox.checked = true;
+                // Only check it if the TLE was processed successfully
+                if (window.tleData[satName] && window.tleData[satName].satrec) {
+                    checkbox.checked = true;
+                    actuallySelected.push(satName);
+                } else {
+                    checkbox.checked = false; // Uncheck if TLE failed
+                }
+            } else {
+                 console.warn(`Checkbox not found for previously selected satellite: ${satName}`);
             }
         });
+        selectedSatellites = actuallySelected; // Update the main list
+        localStorage.setItem('selectedSatellites', JSON.stringify(selectedSatellites)); // Save updated selection
+        console.log('Successfully restored:', selectedSatellites);
+    } else {
+        // If no prior selection, ensure selectedSatellites is empty and update display
+        updateSelectedSatellites(); 
     }
     
-    updateSelectedSatellites();
     startSatelliteTracking();
+}
+
+// Update calculateSatellitePosition to expect satrec directly
+function calculateSatellitePosition(satrec, time) { // Changed first argument from sat object to satrec
+    if (!satrec) {
+        console.error("calculateSatellitePosition called with null satrec");
+        return null;
+    }
+    try {
+        // Get position using the provided satrec
+        const positionAndVelocity = satellite.propagate(satrec, time);
+        
+        // Convert position to geodetic coordinates
+        if (positionAndVelocity.position) {
+            const gmst = satellite.gstime(time);
+            const positionEci = positionAndVelocity.position;
+            const positionGd = satellite.eciToGeodetic(positionEci, gmst);
+            
+            // Convert to degrees and return structure needed by updateSatellitePositions
+            return {
+                 positionGd: {
+                    latitude: satellite.degreesLat(positionGd.latitude),
+                    longitude: satellite.degreesLong(positionGd.longitude),
+                    height: positionGd.height // Keep height in km
+                },
+                velocity: positionAndVelocity.velocity // Keep velocity if needed later
+            };
+        } else {
+             console.warn("Propagation returned no position.");
+             return null;
+        }
+    } catch (error) {
+        // Using console.warn as errors during propagation might be expected for old TLEs
+        console.warn(`Error calculating position:`, error);
+        return null;
+    }
 }
 
 // Populate the satellite selection list
@@ -728,6 +837,8 @@ function updateObserverLocation(location) {
 
 // Update satellite display on map (marker and footprint)
 function updateSatelliteDisplay() {
+    // --- Remove Leaflet-specific clearing ---
+    /*
     // Clear all existing satellites from map
     Object.keys(satelliteMarkers).forEach(satName => {
         if (satelliteMarkers[satName]) {
@@ -740,8 +851,9 @@ function updateSatelliteDisplay() {
             delete satelliteFootprints[satName];
         }
     });
+    */
     
-    // Update positions for selected satellites
+    // Update positions for selected satellites (this now implicitly handles clearing in MapD3)
     updateSatellitePositions();
 }
 
@@ -768,123 +880,73 @@ function startSatelliteTracking() {
 
 // Update positions of all selected satellites
 function updateSatellitePositions() {
+    if (selectedSatellites.length === 0 || Object.keys(window.tleData).length === 0) {
+        // Clear map if no satellites selected or no TLE data
+        // TODO: Need a clear function in map_d3.js
+        // Example: MapD3.clearSatellites();
+        return;
+    }
+
     const now = new Date();
+    const updatedSatelliteData = [];
     
     selectedSatellites.forEach(satName => {
-        if (!window.tleData[satName]) return;
-        
-        const sat = window.tleData[satName];
-        
-        // Calculate position
-        const positionAndVelocity = calculateSatellitePosition(sat, now);
-        if (!positionAndVelocity) return;
-        
-        const { position } = positionAndVelocity;
-        
-        // Update or create marker
-        updateSatelliteMarker(satName, position);
-        
-        // Update or create footprint
-        updateSatelliteFootprint(satName, position);
+        const satData = window.tleData[satName];
+        // Add extra check: Ensure satData itself exists before checking satrec
+        if (satData && satData.satrec) { 
+            const position = calculateSatellitePosition(satData.satrec, now);
+            if (position) {
+                // Add calculated position AND the satrec to the data for D3 map
+                updatedSatelliteData.push({
+                    name: satName,
+                    // tle1: satData.tle1, // No longer needed by map_d3
+                    // tle2: satData.tle2, // No longer needed by map_d3
+                    color: satData.color || '#FFFFFF',
+                    positionGd: position.positionGd, // Pass geodetic position
+                    satrec: satData.satrec // *** Pass the satrec directly ***
+                });
+            } else {
+                 // Propagation failed, do nothing (don't add to updatedSatelliteData)
+            }
+        } else {
+             // TLE data or satrec missing, do nothing (don't add to updatedSatelliteData)
+            // console.warn(`No TLE data or satrec found for selected satellite: ${satName}`); // Keep this commented unless debugging
+        }
     });
     
-    // Remove markers and footprints for satellites no longer selected
-    Object.keys(satelliteMarkers).forEach(satName => {
-        if (!selectedSatellites.includes(satName)) {
-            if (satelliteMarkers[satName]) {
-                map.removeLayer(satelliteMarkers[satName]);
-                delete satelliteMarkers[satName];
-            }
-            
-            if (satelliteFootprints[satName]) {
-                map.removeLayer(satelliteFootprints[satName]);
-                delete satelliteFootprints[satName];
-            }
-        }
-    });
-}
+    // --- Call D3 Map Update Function ---
+    // Pass the array of updated satellite data (now including satrec) to the D3 map script
+    if (typeof MapD3 !== 'undefined' && MapD3.updateSatellites) {
+        MapD3.updateSatellites(updatedSatelliteData);
+    } else {
+        // console.warn("MapD3 object or updateSatellites function not available yet.");
+    }
 
-// Calculate satellite position from TLE data
-function calculateSatellitePosition(sat, time) {
-    try {
-        // Parse TLE data
-        const satrec = satellite.twoline2satrec(sat.tle1, sat.tle2);
-        
-        // Get position
-        const positionAndVelocity = satellite.propagate(satrec, time);
-        
-        // Convert position to geodetic coordinates
-        if (positionAndVelocity.position) {
-            const gmst = satellite.gstime(time);
-            const positionEci = positionAndVelocity.position;
-            const positionGd = satellite.eciToGeodetic(positionEci, gmst);
-            
-            // Convert to degrees
-            const longitude = satellite.degreesLong(positionGd.longitude);
-            const latitude = satellite.degreesLat(positionGd.latitude);
-            const altitude = positionGd.height;
-            
-            return {
-                position: {
-                    latitude,
-                    longitude,
-                    altitude
-                },
-                velocity: positionAndVelocity.velocity
-            };
-        }
-        return null;
-    } catch (error) {
-        console.error(`Error calculating position for ${sat.name}:`, error);
-        return null;
+    // Update info for the currently selected satellite in the info panel
+    if (currentInfoSatellite && selectedSatellites.includes(currentInfoSatellite)) {
+        // updateSatelliteInfoDisplay(currentInfoSatellite); // This is handled by the interval now
+    } else if (currentInfoSatellite && !selectedSatellites.includes(currentInfoSatellite)) {
+        // If the satellite in the info panel is deselected, hide the panel
+        // hideSatelliteInfoPanel(); // Or keep it open showing last known data?
     }
 }
 
 // Update the satellite marker creation function
-function updateSatelliteMarker(satName, position) {
-    if (!position) return;
-    
-    const latLng = [position.latitude, position.longitude];
-    
-    // Calculate footprint radius
-    const earthRadius = 6371000;
-    const altitudeMeters = position.altitude * 1000;
-    const footprintRadiusMeters = Math.acos(earthRadius / (earthRadius + altitudeMeters)) * earthRadius;
-    
-    // Create or update footprint and label
-    if (!satelliteFootprints[satName]) {
-        // Create footprint circle with label
-        satelliteFootprints[satName] = L.circle(latLng, {
-            radius: footprintRadiusMeters,
-            color: getRandomColor(),
-            weight: 1,
-            opacity: 0.8,
-            fillOpacity: 0.2,
-            interactive: true // Make circle clickable
-        }).addTo(map);
-        
-        // Add label in center of footprint
-        const labelIcon = L.divIcon({
-            className: 'satellite-label-container',
-            html: `<div class="satellite-name-centered">${satName}</div>`,
-            iconSize: [0, 0]
-        });
-        
-        satelliteFootprints[satName].label = L.marker(latLng, {
-            icon: labelIcon,
-            interactive: false // Make label non-interactive
-        }).addTo(map);
-        
-        // Add click handler to the footprint circle
-        satelliteFootprints[satName].on('click', () => {
-            showSatelliteInfo(satName);
-        });
-    } else {
-        // Update positions and radius
-        satelliteFootprints[satName].setLatLng(latLng);
-        satelliteFootprints[satName].setRadius(footprintRadiusMeters);
-        satelliteFootprints[satName].label.setLatLng(latLng);
+function addObserverMarker() {
+    // Remove existing observer marker if it exists
+    if (window.observerMarker) {
+        map.removeLayer(window.observerMarker);
     }
+    
+    // Create a circle marker for the observer location
+    window.observerMarker = L.circleMarker([observer.latitude, observer.longitude], {
+        radius: 5,
+        fillColor: '#3388ff',
+        color: '#fff',
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.8
+    }).addTo(map);
 }
 
 // Create satellite popup content
@@ -929,44 +991,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
 });
-
-// Update the showSatelliteInfo function to implement real-time updates
-function showSatelliteInfo(satName) {
-    const infoPanel = document.getElementById('satellite-info-panel');
-    
-    // Store the currently selected satellite for the update interval
-    currentInfoSatellite = satName;
-    
-    // First update immediately
-    updateSatelliteInfoDisplay(satName);
-    
-    // Update Cloudlog data with the new satellite
-    updateCloudlogData();
-    
-    // Ensure the panel is visible
-    infoPanel.style.display = 'block';
-    
-    // Clear any existing update interval
-    if (satInfoUpdateInterval) {
-        clearInterval(satInfoUpdateInterval);
-    }
-    
-    // Start a new update interval while the panel is visible
-    satInfoUpdateInterval = setInterval(() => {
-        if (infoPanel.style.display === 'block') {
-            updateSatelliteInfoDisplay(currentInfoSatellite);
-        } else {
-            // If panel is hidden, clear the interval
-            clearInterval(satInfoUpdateInterval);
-            satInfoUpdateInterval = null;
-        }
-    }, SAT_INFO_UPDATE_INTERVAL_MS);
-    
-    // Send the satellite selection to the S.A.T system if enabled
-    if (enableCsnSat && satAPIAvailable) {
-        selectSatelliteForSAT(satName);
-    }
-}
 
 // Add a new function that handles updating the satellite info display
 function updateSatelliteInfoDisplay(satName) {
@@ -1046,7 +1070,7 @@ function getSatellitePosition(satName) {
     
     try {
         const sat = window.tleData[satName];
-        const positionData = calculateSatellitePosition(sat, now);
+        const positionData = calculateSatellitePosition(sat.satrec, now);
         if (!positionData) {
             console.error('Failed to calculate position for satellite:', satName);
             return null;
@@ -1776,14 +1800,15 @@ function saveOptions() {
     // Save to local storage
     saveObserverToLocalStorage();
     
+    // --- Remove Leaflet calls ---
     // Update the observer marker on the map
-    addObserverMarker();
+    // addObserverMarker(); 
     
     // Update map center
-    map.setView([observer.latitude, observer.longitude], map.getZoom());
+    // map.setView([observer.latitude, observer.longitude], map.getZoom());
     
     // Recalculate passes with new location
-    calculateUpcomingPasses();
+    calculateUpcomingPasses(); // Keep this
     
     // Save API settings
     saveApiSettings();
