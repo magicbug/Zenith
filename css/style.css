@@ -1876,7 +1876,7 @@ button:hover {
     width: 100%; /* Use container width */
     /* Maintain aspect ratio (1800 / 3600 = 0.5) */
     aspect-ratio: 3600 / 1800;
-    background-image: url('https://eoimages.gsfc.nasa.gov/images/imagerecords/73000/73884/world.topo.bathy.200411.3x5400x2700.jpg');
+    background-image: url('/assets/worldmap/worldmap_blue.jpg');
     background-size: contain; /* Scale the image nicely */
     background-repeat: no-repeat;
     background-position: center;
