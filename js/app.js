@@ -995,68 +995,76 @@ document.addEventListener('DOMContentLoaded', () => {
 // Add a new function that handles updating the satellite info display
 function updateSatelliteInfoDisplay(satName) {
     if (!satName) return;
-    
-    const lookAngles = calculateLookAngles(satName);
+
+    // Attempt to get current data
     const position = getSatellitePosition(satName);
-    const inEclipse = isInEclipse(satName);
-    
-    if (!position || !lookAngles) {
-        console.error('Unable to get satellite position or look angles');
-        return;
-    }
-    
-    // Set the satellite name in the header
+    // *** CHANGE: Only calculate look angles if position is available ***
+    const lookAngles = position ? calculateLookAngles(satName) : null;
+    const inEclipse = position ? isInEclipse(satName) : null; // Only check eclipse if position is valid
+
+    // Set the satellite name in the header (always possible)
     document.getElementById('info-satellite-name').textContent = satName;
-    
-    // Format orbital parameters
+
+    // Format orbital parameters (these depend only on TLE, not current position)
     const orbitalSpeed = calculateOrbitalSpeed(satName);
     const orbitalPeriod = calculateOrbitalPeriod(satName);
-    const nextPass = getNextPass(satName);
-    
+    const nextPass = getNextPass(satName); // Prediction might still work
+
+    // Build panel content, handling potentially unavailable data
+    const positionHtml = position ? `
+        <div class="info-grid">
+            <div>Latitude:</div><div>${position.latitude.toFixed(2)}°</div>
+            <div>Longitude:</div><div>${position.longitude.toFixed(2)}°</div>
+            <div>Altitude:</div><div>${(position.altitude * 1000).toFixed(0)} m</div>
+            <div>Eclipse:</div><div>${inEclipse === null ? 'N/A' : (inEclipse ? '<span class="eclipse-indicator">In Shadow</span>' : '<span class="sunlight-indicator">In Sunlight</span>')}</div>
+        </div>
+    ` : `<div class="info-unavailable">Position data unavailable (TLE issue?)</div>`;
+
+    const lookAnglesHtml = lookAngles ? `
+        <div class="info-grid">
+            <div>Azimuth:</div><div>${lookAngles.azimuth.toFixed(1)}°</div>
+            <div>Elevation:</div><div>${lookAngles.elevation.toFixed(1)}°</div>
+            <div>Range:</div><div>${(lookAngles.range * 1000).toFixed(0)} km</div>
+            <div>Visibility:</div><div>${lookAngles.visible ? '<span class="visible-indicator">Visible</span>' : '<span class="not-visible-indicator">Not visible</span>'}</div>
+        </div>
+    ` : `<div class="info-unavailable">Look angles unavailable (TLE issue?)</div>`;
+
+    const orbitalDataHtml = `
+        <div class="info-grid">
+            <div>Speed:</div><div>${orbitalSpeed > 0 ? orbitalSpeed.toFixed(2) + ' km/s' : 'Unavailable'}</div>
+            <div>Period:</div><div>${orbitalPeriod > 0 ? orbitalPeriod.toFixed(0) + ' min' : 'Unavailable'}</div>
+        </div>
+    `;
+
+    const nextPassHtml = nextPass ? `
+        <div class="info-grid">
+            <div>Start:</div><div>${formatDateTime(nextPass.start)}</div>
+            <div>Max Elevation:</div><div>${nextPass.maxElevation.toFixed(1)}°</div>
+            <div>Duration:</div><div>${Math.round((nextPass.end - nextPass.start) / (60 * 1000))} min</div>
+        </div>
+    ` : `<div class="info-unavailable">Next pass prediction unavailable</div>`;
+
     // Set the panel content
     document.getElementById('info-content').innerHTML = `
         <div class="info-section">
             <h4>Current Position</h4>
-            <div class="info-grid">
-                <div>Latitude:</div><div>${position.latitude.toFixed(2)}°</div>
-                <div>Longitude:</div><div>${position.longitude.toFixed(2)}°</div>
-                <div>Altitude:</div><div>${(position.altitude * 1000).toFixed(0)} m</div>
-                <div>Eclipse:</div><div>${inEclipse ? 
-                    '<span class="eclipse-indicator">In Earth\'s Shadow</span>' : 
-                    '<span class="sunlight-indicator">In Sunlight</span>'}</div>
-            </div>
+            ${positionHtml}
         </div>
         
         <div class="info-section">
             <h4>Look Angles from Observer</h4>
-            <div class="info-grid">
-                <div>Azimuth:</div><div>${lookAngles.azimuth.toFixed(1)}°</div>
-                <div>Elevation:</div><div>${lookAngles.elevation.toFixed(1)}°</div>
-                <div>Range:</div><div>${(lookAngles.range * 1000).toFixed(0)} km</div>
-                <div>Visibility:</div><div>${lookAngles.visible ? 
-                    '<span class="visible-indicator">Visible</span>' : 
-                    '<span class="not-visible-indicator">Not visible</span>'}</div>
-            </div>
+            ${lookAnglesHtml}
         </div>
         
         <div class="info-section">
             <h4>Orbital Data</h4>
-            <div class="info-grid">
-                <div>Speed:</div><div>${orbitalSpeed.toFixed(2)} km/s</div>
-                <div>Period:</div><div>${orbitalPeriod.toFixed(0)} min</div>
-            </div>
+            ${orbitalDataHtml}
         </div>
         
-        ${nextPass ? `
         <div class="info-section">
             <h4>Next Pass</h4>
-            <div class="info-grid">
-                <div>Start:</div><div>${formatDateTime(nextPass.start)}</div>
-                <div>Max Elevation:</div><div>${nextPass.maxElevation.toFixed(1)}°</div>
-                <div>Duration:</div><div>${Math.round((nextPass.end - nextPass.start) / (60 * 1000))} min</div>
-            </div>
+            ${nextPassHtml}
         </div>
-        ` : ''}
     `;
 }
 
@@ -1075,7 +1083,7 @@ function getSatellitePosition(satName) {
             console.error('Failed to calculate position for satellite:', satName);
             return null;
         }
-        return positionData.position;
+        return positionData.positionGd; // Changed from positionData.position to positionData.positionGd
     } catch (error) {
         console.error(`Error getting position for ${satName}:`, error);
         return null;
@@ -1326,19 +1334,24 @@ function calculateUpcomingPasses() {
         passItem.addEventListener('click', () => {
             const satName = pass.satellite;
             
-            // Verify satellite exists in TLE data
-            if (!window.tleData[satName]) {
-                console.error('Satellite TLE data not found:', satName);
-                return;
+            // Verify satellite exists AND has valid TLE data (satrec)
+            if (!window.tleData[satName] || !window.tleData[satName].satrec) {
+                console.error('Satellite TLE data not found or invalid for:', satName);
+                alert(`Cannot display info for ${satName}. TLE data might be missing, outdated, or invalid.`);
+                return; // Stop execution if data is bad
             }
             
-            // Get current position
-            const position = getSatellitePosition(satName);
-            if (position) {
-                showSatelliteInfo(satName);
+            // Get current position (This call already handles errors internally)
+            // const position = getSatellitePosition(satName); // No longer needed to check here
+            
+            // Always call showSatelliteInfo, it will handle unavailable data internally
+            showSatelliteInfo(satName); 
+            
+            // Check if showPolarRadarForPass exists before calling
+            if (typeof showPolarRadarForPass === 'function') {
                 showPolarRadarForPass(pass);
             } else {
-                console.error('Unable to get satellite position:', satName);
+                console.warn('showPolarRadarForPass function not found.');
             }
         });
         
@@ -1576,6 +1589,8 @@ AO-92 (FOX-1D)
 SO-50
 1 27607U 02058C   23150.41389181  .00000512  00000-0  27114-4 0  9992
 2 27607  64.5555 308.9962 0072520 342.7423  17.1555 14.71818654 85000
+``;
+</rewritten_file>
 ISS (ZARYA)
 1 25544U 98067A   23150.53695899  .00016566  00000-0  30369-3 0  9990
 2 25544  51.6431 331.8524 0004641  36.8562 338.1335 15.50127612399416`;
