@@ -10,6 +10,8 @@ const MapD3 = (() => {
     let allTleData = {}; // Store all available TLEs passed from app.js
     let activeSatellites = {}; // Store satellite data for currently *drawn* satellites { name: { satrec, color, positionGd, canvasPos, footprintGeoJson }, ... }
     let animationFrameId = null;
+    let highlightedSatellite = null;
+    let highlightTimer = null;
 
     // --- Constants ---
     const earthRadiusKm = 6371;
@@ -19,6 +21,8 @@ const MapD3 = (() => {
     const observerMarkerRadius = 4;
     const observerMarkerColor = '#ff7800'; // Orange
     const observerMarkerStrokeColor = '#FFFFFF';
+    const highlightColor = '#FFFF00'; // Bright yellow for highlighted satellite
+    const highlightDuration = 3000; // 3 seconds highlight
 
     // --- Initialization ---
     function init(canvasId, obsData, tleData, selectedSatNames) {
@@ -123,20 +127,41 @@ const MapD3 = (() => {
         if (!sat.canvasPos || !ctx) return;
         const [x, y] = sat.canvasPos;
 
+        // Determine if this satellite is highlighted
+        const isHighlighted = (sat.name === highlightedSatellite);
+        
+        // Use highlight color if satellite is highlighted, otherwise use normal color
+        const satColor = isHighlighted ? highlightColor : sat.color;
+
         // Draw satellite dot
-        ctx.fillStyle = sat.color;
+        ctx.fillStyle = satColor;
         ctx.beginPath();
-        ctx.arc(x, y, satelliteRadius, 0, 2 * Math.PI);
+        ctx.arc(x, y, isHighlighted ? satelliteRadius * 1.5 : satelliteRadius, 0, 2 * Math.PI);
         ctx.fill();
 
-        // Draw satellite name label - Increased visibility
-        ctx.font = 'bold 40px sans-serif'; // Larger font
+        // Draw satellite name label - Increased visibility for highlighted satellites
+        ctx.font = isHighlighted ? 'bold 45px sans-serif' : 'bold 40px sans-serif';
         ctx.textAlign = 'center';
         ctx.strokeStyle = 'black';
-        ctx.lineWidth = 5; // Thicker stroke
+        ctx.lineWidth = isHighlighted ? 6 : 5;
         ctx.strokeText(sat.name, x, y - labelOffset);
-        ctx.fillStyle = 'white';
+        ctx.fillStyle = isHighlighted ? highlightColor : 'white';
         ctx.fillText(sat.name, x, y - labelOffset);
+        
+        // If highlighted, draw a pulsing circle around the satellite
+        if (isHighlighted) {
+            const pulseRadius = satelliteRadius * 3;
+            const now = Date.now();
+            const pulseOpacity = 0.5 + 0.5 * Math.sin(now / 200); // Pulsing effect
+            
+            ctx.strokeStyle = highlightColor;
+            ctx.lineWidth = 2;
+            ctx.globalAlpha = pulseOpacity;
+            ctx.beginPath();
+            ctx.arc(x, y, pulseRadius, 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.globalAlpha = 1.0;
+        }
     }
 
     function drawFootprint(sat) {
@@ -343,12 +368,31 @@ const MapD3 = (() => {
         }
     }
     
+    // --- Highlight Satellite Function ---
+    function highlightSatellite(satName) {
+        // Clear any existing highlight timer
+        if (highlightTimer) {
+            clearTimeout(highlightTimer);
+            highlightTimer = null;
+        }
+        
+        // Set the highlighted satellite
+        highlightedSatellite = satName;
+        
+        // Set a timer to clear the highlight after duration
+        highlightTimer = setTimeout(() => {
+            highlightedSatellite = null;
+            highlightTimer = null;
+        }, highlightDuration);
+    }
+
     // --- Return Public API ---
     return {
         init: init,
         updateSatellites: updateSatellites,
         start: startAnimation,
-        stop: stopAnimation
+        stop: stopAnimation,
+        highlightSatellite: highlightSatellite
         // Expose other functions if needed by app.js
     };
 
@@ -387,3 +431,6 @@ function handleCanvasClick(event) { ... } // Moved inside namespace
 // Setup click listener for satellite selection
 // canvas.addEventListener('click', handleCanvasClick); // Added in init
 */
+
+// Make MapD3 available globally
+window.MapD3 = MapD3;

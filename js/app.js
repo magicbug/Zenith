@@ -143,6 +143,15 @@ window.showSatelliteInfo = function(satName) {
     }
 };
 
+// Function to send satellite selection to the CSN S.A.T interface
+function updateSatPanelForSelection(satName) {
+    if (typeof selectSatelliteForSAT === 'function') {
+        selectSatelliteForSAT(satName);
+    } else {
+        console.error('selectSatelliteForSAT function not available');
+    }
+}
+
 // Initialize the application when the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
     // Load settings from local storage first, before map initialization
@@ -1361,28 +1370,38 @@ function calculateUpcomingPasses() {
 
 // Function to highlight a satellite briefly
 function highlightSatellite(satName) {
-    if (!satelliteMarkers[satName]) return;
+    // D3 map implementation
+    if (typeof MapD3 !== 'undefined' && MapD3.highlightSatellite) {
+        MapD3.highlightSatellite(satName);
+        return;
+    }
     
-    // Store the original icon
-    const marker = satelliteMarkers[satName];
-    const originalIcon = marker.options.icon;
-    
-    // Create a highlighted icon
-    const highlightedIcon = L.divIcon({
-        className: 'satellite-icon highlighted',
-        html: `<div class="satellite-dot highlight-pulse"></div><div class="satellite-label highlight">${satName}</div>`,
-        iconSize: [100, 20],
-        iconAnchor: [5, 5]
-    });
-    
-    // Apply the highlighted icon
-    marker.setIcon(highlightedIcon);
-    
-    // Restore the original icon after a delay
-    setTimeout(() => {
-        marker.setIcon(originalIcon);
-    }, 3000); // 3 seconds
+    // Fallback for Leaflet implementation (kept for backward compatibility)
+    if (window.satelliteMarkers && window.satelliteMarkers[satName]) {
+        // Store the original icon
+        const marker = window.satelliteMarkers[satName];
+        const originalIcon = marker.options.icon;
+        
+        // Create a highlighted icon
+        const highlightedIcon = L.divIcon({
+            className: 'satellite-icon highlighted',
+            html: `<div class="satellite-dot highlight-pulse"></div><div class="satellite-label highlight">${satName}</div>`,
+            iconSize: [100, 20],
+            iconAnchor: [5, 5]
+        });
+        
+        // Apply the highlighted icon
+        marker.setIcon(highlightedIcon);
+        
+        // Restore the original icon after a delay
+        setTimeout(() => {
+            marker.setIcon(originalIcon);
+        }, 3000); // 3 seconds
+    }
 }
+
+// Make the highlightSatellite function globally available
+window.highlightSatellite = highlightSatellite;
 
 // Check if a satellite is within the observer's footprint
 function isSatelliteWithinFootprint(satelliteName) {

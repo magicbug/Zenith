@@ -370,13 +370,13 @@ function stopSatTrackPolling() {
     }
 }
 
-// Modify the fetchSatTrackData function to update the tracked satellite
+// Fetch S.A.T tracking data
 function fetchSatTrackData() {
     if (!enableCsnSat || !csnSatAddress || !satAPIAvailable) {
         return;
     }
-
-    // Use our proxy to avoid mixed content issues
+    
+    // Use our PHP proxy for tracking data
     const proxyUrl = `api/sat_proxy.php?address=${encodeURIComponent(csnSatAddress)}&action=track`;
     
     fetch(proxyUrl)
@@ -387,15 +387,12 @@ function fetchSatTrackData() {
         return response.json();
     })
     .then(result => {
-        if (result.success && result.data) {
-            // Store the tracking data
+        if (result.data) {
+            // Store the tracking data globally
             satTrackData = result.data;
             
-            // Update the rotator display
+            // Update rotator display
             updateSatRotatorDisplay();
-            
-            // Update button states
-            updateSatButtonStates();
             
             // If we have a satellite name in the tracking data, update it as the selected satellite
             if (satTrackData.satname && satTrackData.satname.trim() !== '') {
@@ -410,8 +407,18 @@ function fetchSatTrackData() {
                     if (window.tleData && window.tleData[satTrackData.satname]) {
                         // Only highlight the satellite if it hasn't been done before
                         if (!window.satHighlightedFromCSN) {
-                            highlightSatellite(satTrackData.satname);
-                            showSatelliteInfo(satTrackData.satname);
+                            // Use the global showSatelliteInfo to show satellite data
+                            if (typeof window.showSatelliteInfo === 'function') {
+                                window.showSatelliteInfo(satTrackData.satname);
+                            }
+                            
+                            // Use MapD3 highlight if available, otherwise fall back to app's function
+                            if (typeof MapD3 !== 'undefined' && MapD3.highlightSatellite) {
+                                MapD3.highlightSatellite(satTrackData.satname);
+                            } else if (typeof window.highlightSatellite === 'function') {
+                                window.highlightSatellite(satTrackData.satname);
+                            }
+                            
                             window.satHighlightedFromCSN = true;
                         }
                     }
