@@ -12,6 +12,7 @@ const MapD3 = (() => {
     let animationFrameId = null;
     let highlightedSatellite = null;
     let highlightTimer = null;
+    let sunPosition = null; // Store the sun's position
 
     // --- Constants ---
     const earthRadiusKm = 6371;
@@ -23,6 +24,8 @@ const MapD3 = (() => {
     const observerMarkerStrokeColor = '#FFFFFF';
     const highlightColor = '#FFFF00'; // Bright yellow for highlighted satellite
     const highlightDuration = 3000; // 3 seconds highlight
+    const sunSize = 15; // Size of the sun icon
+    const sunColor = '#FFD700'; // Gold color for the sun
 
     // --- Initialization ---
     function init(canvasId, obsData, tleData, selectedSatNames) {
@@ -164,6 +167,46 @@ const MapD3 = (() => {
         }
     }
 
+    // Draw the sun with an SVG-like icon
+    function drawSun() {
+        if (!sunPosition || !ctx) return;
+        const [x, y] = sunPosition.canvasPos;
+
+        // Draw sun circle
+        ctx.fillStyle = sunColor;
+        ctx.beginPath();
+        ctx.arc(x, y, sunSize, 0, 2 * Math.PI);
+        ctx.fill();
+
+        // Draw sun rays (straight lines)
+        ctx.strokeStyle = sunColor;
+        ctx.lineWidth = 2;
+        const rayLength = sunSize * 0.7;
+        const numRays = 8;
+        
+        for (let i = 0; i < numRays; i++) {
+            const angle = (i * 2 * Math.PI) / numRays;
+            const startX = x + Math.cos(angle) * sunSize;
+            const startY = y + Math.sin(angle) * sunSize;
+            const endX = x + Math.cos(angle) * (sunSize + rayLength);
+            const endY = y + Math.sin(angle) * (sunSize + rayLength);
+            
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(endX, endY);
+            ctx.stroke();
+        }
+
+        // Draw "SUN" label
+        ctx.font = 'bold 40px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 5;
+        ctx.strokeText('SUN', x, y - sunSize - 10);
+        ctx.fillStyle = 'white';
+        ctx.fillText('SUN', x, y - sunSize - 10);
+    }
+
     function drawFootprint(sat) {
         if (!sat.footprintGeoJson || !ctx) return;
         // Increased visibility
@@ -193,6 +236,31 @@ const MapD3 = (() => {
         ctx.stroke();
     }
 
+    // Calculate the sun's position
+    function calculateSunPosition() {
+        if (!window.getSunPositionEci) return null;
+        
+        const now = new Date();
+        
+        // Use app.js's getSunPositionEci function to get the sun's position in ECI coordinates
+        const sunEci = window.getSunPositionEci(now);
+        
+        if (!sunEci) return null;
+        
+        // Convert ECI to geodetic coordinates
+        const gmst = satellite.gstime(now);
+        const sunGd = satellite.eciToGeodetic(sunEci, gmst);
+        
+        // Convert to degrees
+        return {
+            positionGd: {
+                latitude: satellite.degreesLat(sunGd.latitude),
+                longitude: satellite.degreesLong(sunGd.longitude),
+                height: sunGd.height // Keep height in km
+            }
+        };
+    }
+
     // --- Main Update Loop ---
     function update() {
         if (!ctx || !projection) {
@@ -202,6 +270,15 @@ const MapD3 = (() => {
         }
         
         clearCanvas();
+
+        // Calculate the sun's position
+        const sunData = calculateSunPosition();
+        if (sunData) {
+            sunPosition = {
+                positionGd: sunData.positionGd,
+                canvasPos: projection([sunData.positionGd.longitude, sunData.positionGd.latitude])
+            };
+        }
 
         // Draw Observer Marker first (so it's potentially under footprints/sats)
         drawObserverMarker();
@@ -232,6 +309,11 @@ const MapD3 = (() => {
                 sat.footprintGeoJson = null;
             }
         });
+
+        // Draw the sun
+        if (sunPosition) {
+            drawSun();
+        }
 
         // Draw satellite dots and labels *after* all footprints
         Object.values(activeSatellites).forEach(sat => {
@@ -346,6 +428,14 @@ const MapD3 = (() => {
 
                 if (distSq < clickRadius * clickRadius && distSq < minDistanceSq) {
                     minDistanceSq = distSq;
+                    clickedSatName = sat.name;
+                }
+            }
+            
+            // Check if click is within the satellite's footprint
+            if (!clickedSatName && sat.footprintGeoJson) {
+                // Use d3.geoContains to check if the click point is within the footprint polygon
+                if (d3.geoContains(sat.footprintGeoJson, [lon, lat])) {
                     clickedSatName = sat.name;
                 }
             }

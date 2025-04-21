@@ -2425,9 +2425,8 @@ function getSunPositionEci(date) {
     return sunPos;
 }
 
-
-
-
+// Expose getSunPositionEci to the global window object
+window.getSunPositionEci = getSunPositionEci;
 
 // Add event listener for callsign input
 document.addEventListener('DOMContentLoaded', () => {
