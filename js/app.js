@@ -1103,7 +1103,7 @@ function updateSatelliteInfoDisplay(satName) {
         <div class="info-grid">
             <div>Latitude:</div><div>${position.latitude.toFixed(2)}°</div>
             <div>Longitude:</div><div>${position.longitude.toFixed(2)}°</div>
-            <div>Altitude:</div><div>${(position.altitude * 1000).toFixed(0)} m</div>
+            <div>Altitude:</div><div>${position.height.toFixed(1)} km</div>
             <div>Eclipse:</div><div>${inEclipse === null ? 'N/A' : (inEclipse ? '<span class="eclipse-indicator">In Shadow</span>' : '<span class="sunlight-indicator">In Sunlight</span>')}</div>
         </div>
     ` : `<div class="info-unavailable">Position data unavailable (TLE issue?)</div>`;
