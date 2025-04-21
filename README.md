@@ -106,7 +106,7 @@ A modern web-based satellite tracking application designed for amateur radio ope
   - Web server with SSL/TLS support
 
 - **Client-side**
-  - Leaflet.js (1.9.4) - Interactive maps
+  - D3.js - Interactive map visualization
   - Satellite.js (4.0.0) - Satellite position calculations
   - jQuery (3.7.1) - DOM manipulation
   - DataTables - Table management
