@@ -58,7 +58,7 @@ window.tleData = {};
 
 // Constants
 const TLE_URL = 'api/fetch_tle.php';  // Changed to use our PHP proxy script
-const UPDATE_INTERVAL_MS = 10000; // Increase update interval from 5s to 10s
+const UPDATE_INTERVAL_MS = 3000; // Increase update interval from 5s to 10s
 const PASS_UPDATE_INTERVAL_MS = 600000; // Increase pass update interval from 5min to 10min
 const PASS_PREDICTION_HOURS = 24; // Predict passes for the next 24 hours
 const FOOTPRINT_POINTS = 36; // Number of points to draw the footprint circle
