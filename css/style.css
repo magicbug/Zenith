@@ -1221,11 +1221,16 @@ button:hover {
     padding: 8px 10px;
     border-top-left-radius: 5px;
     border-top-right-radius: 5px;
+    gap: 10px;
 }
 
 .sat-panel .info-header h3 {
     margin: 0;
     font-size: 1rem;
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .sat-panel-content {
@@ -1904,4 +1909,29 @@ button:hover {
     padding: 5px;
     border: 1px solid #aaa;
     cursor: pointer;
+}
+
+/* Style for the new connection badge */
+#sat-connection-badge {
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 0.8em;
+    font-weight: bold;
+    color: white;
+    flex-shrink: 0; /* Prevent badge from shrinking */
+}
+
+#sat-connection-badge.status-connected {
+    background-color: #4caf50; /* Green for connected */
+}
+
+#sat-connection-badge.status-error {
+    background-color: #f44336; /* Red for error */
+}
+
+/* Adjust panel controls alignment if needed */
+.sat-panel .panel-controls {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0; /* Prevent controls from shrinking */
 }

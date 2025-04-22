@@ -1,4 +1,3 @@
-// Add this to your document ready event listener
 document.addEventListener('DOMContentLoaded', () => {    
     // Initialize CSN tracking to check for already selected satellites
     setTimeout(initializeCsnTracking, 1000); // Small delay to ensure everything is loaded
@@ -162,21 +161,11 @@ function showSATPanel(message, status = 'pending') {
         statusElement.textContent = message;
     }
     
-    // Create or update connection status indicator
-    let statusIndicator = satPanelContent.querySelector('#sat-status-indicator');
-    if (!statusIndicator) {
-        statusIndicator = document.createElement('div');
-        statusIndicator.id = 'sat-status-indicator';
-        statusIndicator.className = satAPIAvailable ? 'status-connected' : 'status-error';
-        statusIndicator.textContent = satAPIAvailable ? 'Connected' : 'Not Connected';
-        
-        // Add to the panel in a sensible location
-        const headerElement = satPanelContent.querySelector('.sat-panel-header');
-        if (headerElement) {
-            headerElement.appendChild(statusIndicator);
-        } else {
-            satPanelContent.appendChild(statusIndicator);
-        }
+    // Update the connection status badge in the header
+    const connectionBadge = document.getElementById('sat-connection-badge');
+    if (connectionBadge) {
+        connectionBadge.textContent = satAPIAvailable ? 'Connected' : 'Not Connected';
+        connectionBadge.className = satAPIAvailable ? 'status-badge status-connected' : 'status-badge status-error';
     }
     
     // Show the panel
