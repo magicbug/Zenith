@@ -65,7 +65,7 @@ const FOOTPRINT_POINTS = 36; // Number of points to draw the footprint circle
 
 // Add to your global variables at the top of the file
 let satInfoUpdateInterval = null;
-const SAT_INFO_UPDATE_INTERVAL_MS = 2000; // Reduce update frequency from 1s to 2s
+const SAT_INFO_UPDATE_INTERVAL_MS = 1000; // Reduce update frequency from 1s to 2s
 let currentInfoSatellite = null;
 // Add throttling variables
 let lastPositionUpdate = 0;
