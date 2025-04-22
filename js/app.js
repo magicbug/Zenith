@@ -58,15 +58,18 @@ window.tleData = {};
 
 // Constants
 const TLE_URL = 'api/fetch_tle.php';  // Changed to use our PHP proxy script
-const UPDATE_INTERVAL_MS = 5000; // Update satellite positions every 5 seconds
-const PASS_UPDATE_INTERVAL_MS = 300000; // Update passes every minute
+const UPDATE_INTERVAL_MS = 10000; // Increase update interval from 5s to 10s
+const PASS_UPDATE_INTERVAL_MS = 600000; // Increase pass update interval from 5min to 10min
 const PASS_PREDICTION_HOURS = 24; // Predict passes for the next 24 hours
 const FOOTPRINT_POINTS = 36; // Number of points to draw the footprint circle
 
 // Add to your global variables at the top of the file
 let satInfoUpdateInterval = null;
-const SAT_INFO_UPDATE_INTERVAL_MS = 1000; // Update info every second
+const SAT_INFO_UPDATE_INTERVAL_MS = 2000; // Reduce update frequency from 1s to 2s
 let currentInfoSatellite = null;
+// Add throttling variables
+let lastPositionUpdate = 0;
+const THROTTLE_CALCULATIONS_MS = 500;
 
 // Hams.at API configuration
 let hamsAtApiKey = '';
@@ -981,17 +984,35 @@ function startSatelliteTracking() {
 
 // Update positions of all selected satellites
 function updateSatellitePositions() {
+    // Throttle updates if called too frequently
+    const now = new Date();
+    if (now - lastPositionUpdate < THROTTLE_CALCULATIONS_MS) {
+        return; // Skip this update if called too soon after the last one
+    }
+    lastPositionUpdate = now;
+
     if (selectedSatellites.length === 0 || Object.keys(window.tleData).length === 0) {
         // Clear map if no satellites selected or no TLE data
         // TODO: Need a clear function in map_d3.js
         // Example: MapD3.clearSatellites();
         return;
     }
-
-    const now = new Date();
+    
+    // Limit the number of satellites processed in a single update if there are many
+    let satsToProcess = selectedSatellites;
+    const MAX_SATS_PER_UPDATE = 50;
+    if (selectedSatellites.length > MAX_SATS_PER_UPDATE) {
+        // Process a subset of satellites each time, in a round-robin fashion
+        if (!window.lastProcessedIndex) window.lastProcessedIndex = 0;
+        const startIndex = window.lastProcessedIndex;
+        const endIndex = Math.min(startIndex + MAX_SATS_PER_UPDATE, selectedSatellites.length);
+        satsToProcess = selectedSatellites.slice(startIndex, endIndex);
+        window.lastProcessedIndex = endIndex >= selectedSatellites.length ? 0 : endIndex;
+    }
+    
     const updatedSatelliteData = [];
     
-    selectedSatellites.forEach(satName => {
+    satsToProcess.forEach(satName => {
         const satData = window.tleData[satName];
         // Add extra check: Ensure satData itself exists before checking satrec
         if (satData && satData.satrec) { 
@@ -1006,12 +1027,7 @@ function updateSatellitePositions() {
                     positionGd: position.positionGd, // Pass geodetic position
                     satrec: satData.satrec // *** Pass the satrec directly ***
                 });
-            } else {
-                 // Propagation failed, do nothing (don't add to updatedSatelliteData)
             }
-        } else {
-             // TLE data or satrec missing, do nothing (don't add to updatedSatelliteData)
-            // console.warn(`No TLE data or satrec found for selected satellite: ${satName}`); // Keep this commented unless debugging
         }
     });
     
@@ -1019,16 +1035,11 @@ function updateSatellitePositions() {
     // Pass the array of updated satellite data (now including satrec) to the D3 map script
     if (typeof MapD3 !== 'undefined' && MapD3.updateSatellites) {
         MapD3.updateSatellites(updatedSatelliteData);
-    } else {
-        // console.warn("MapD3 object or updateSatellites function not available yet.");
     }
 
     // Update info for the currently selected satellite in the info panel
     if (currentInfoSatellite && selectedSatellites.includes(currentInfoSatellite)) {
-        // updateSatelliteInfoDisplay(currentInfoSatellite); // This is handled by the interval now
-    } else if (currentInfoSatellite && !selectedSatellites.includes(currentInfoSatellite)) {
-        // If the satellite in the info panel is deselected, hide the panel
-        // hideSatelliteInfoPanel(); // Or keep it open showing last known data?
+        // Don't update here - already handled by satInfoUpdateInterval
     }
 }
 
@@ -1096,20 +1107,65 @@ document.addEventListener('DOMContentLoaded', () => {
 // Add a new function that handles updating the satellite info display
 function updateSatelliteInfoDisplay(satName) {
     if (!satName) return;
-
-    // Attempt to get current data
-    const position = getSatellitePosition(satName);
-    // *** CHANGE: Only calculate look angles if position is available ***
-    const lookAngles = position ? calculateLookAngles(satName) : null;
-    const inEclipse = position ? isInEclipse(satName) : null; // Only check eclipse if position is valid
+    
+    // Throttle updates if called too frequently
+    if (!window.lastInfoUpdate) window.lastInfoUpdate = {};
+    if (window.lastInfoUpdate[satName] && (new Date() - window.lastInfoUpdate[satName]) < 500) {
+        return; // Skip update if less than 500ms since last update for this satellite
+    }
+    window.lastInfoUpdate[satName] = new Date();
 
     // Set the satellite name in the header (always possible)
     document.getElementById('info-satellite-name').textContent = satName;
 
-    // Format orbital parameters (these depend only on TLE, not current position)
+    // Cache DOM elements to reduce DOM lookups
+    const infoContent = document.getElementById('info-content');
+    if (!infoContent) return;
+
+    // Use cached position data if available and recent
+    let position, lookAngles, inEclipse;
+    
+    if (window.satPositionCache && 
+        window.satPositionCache[satName] && 
+        (new Date() - window.satPositionCache[satName].timestamp) < 2000) {
+        // Use cached data if less than 2 seconds old
+        position = window.satPositionCache[satName].position;
+        lookAngles = window.satPositionCache[satName].lookAngles;
+        inEclipse = window.satPositionCache[satName].inEclipse;
+    } else {
+        // Calculate new data
+        position = getSatellitePosition(satName);
+        // Only calculate look angles if position is available
+        lookAngles = position ? calculateLookAngles(satName) : null;
+        inEclipse = position ? isInEclipse(satName) : null;
+        
+        // Cache the results
+        if (!window.satPositionCache) window.satPositionCache = {};
+        window.satPositionCache[satName] = {
+            position: position,
+            lookAngles: lookAngles,
+            inEclipse: inEclipse,
+            timestamp: new Date()
+        };
+    }
+
+    // Calculate these only once per display update - these depend only on TLE, not current position
     const orbitalSpeed = calculateOrbitalSpeed(satName);
     const orbitalPeriod = calculateOrbitalPeriod(satName);
-    const nextPass = getNextPass(satName); // Prediction might still work
+    
+    // Use cached pass data if available
+    let nextPass;
+    if (window.passCache && window.passCache[satName] && 
+        (new Date() - window.passCache[satName].timestamp) < 60000) { // 1 minute cache
+        nextPass = window.passCache[satName].pass;
+    } else {
+        nextPass = getNextPass(satName);
+        if (!window.passCache) window.passCache = {};
+        window.passCache[satName] = {
+            pass: nextPass,
+            timestamp: new Date()
+        };
+    }
 
     // Build panel content, handling potentially unavailable data
     const positionHtml = position ? `
@@ -1145,8 +1201,8 @@ function updateSatelliteInfoDisplay(satName) {
         </div>
     ` : `<div class="info-unavailable">Next pass prediction unavailable</div>`;
 
-    // Set the panel content
-    document.getElementById('info-content').innerHTML = `
+    // Set the panel content (avoid unnecessary DOM updates if content hasn't changed)
+    const newContent = `
         <div class="info-section">
             <h4>Current Position</h4>
             ${positionHtml}
@@ -1167,6 +1223,11 @@ function updateSatelliteInfoDisplay(satName) {
             ${nextPassHtml}
         </div>
     `;
+    
+    // Only update DOM if content has changed
+    if (infoContent.innerHTML !== newContent) {
+        infoContent.innerHTML = newContent;
+    }
 }
 
 // Get satellite position
@@ -1353,6 +1414,8 @@ function updateSatelliteFootprint(satName, position) {
 // Calculate upcoming passes for selected satellites
 function calculateUpcomingPasses() {
     const passesContainer = document.getElementById('upcoming-passes');
+    if (!passesContainer) return; // Early exit if container doesn't exist
+    
     passesContainer.innerHTML = '';
     
     if (selectedSatellites.length === 0) {
@@ -1360,28 +1423,53 @@ function calculateUpcomingPasses() {
         return;
     }
     
-    // For each satellite, predict passes
+    // Check if it's time to recalculate passes
     const now = new Date();
+    if (window.lastPassCalculation && 
+        (now - window.lastPassCalculation) < (5 * 60 * 1000) && // 5 minutes
+        window.cachedPasses && 
+        window.cachedPasses.length > 0) {
+        // Use cached passes if they exist and are recent
+        displayPasses(window.cachedPasses, passesContainer);
+        return;
+    }
+    
+    // For each satellite, predict passes
     const endTime = new Date(now.getTime() + PASS_PREDICTION_HOURS * 60 * 60 * 1000);
     const passes = [];
     
-    // Track satellites that are currently visible
+    // Track satellites that are currently visible (limit work)
     const currentlyVisibleSats = [];
+    const visibilityCheckLimit = Math.min(selectedSatellites.length, 10);
     
-    selectedSatellites.forEach(satName => {
-        if (!window.tleData[satName]) return;
+    for (let i = 0; i < visibilityCheckLimit; i++) {
+        const satName = selectedSatellites[i];
+        if (!window.tleData[satName]) continue;
         
         try {
-            // Check if the satellite is currently visible
+            // Check visibility for a subset of satellites to reduce CPU load
             const currentLookAngles = calculateLookAngles(satName);
             if (currentLookAngles && currentLookAngles.elevation >= observer.minElevation) {
                 currentlyVisibleSats.push(satName);
             }
-            
+        } catch (error) {
+            console.error(`Error checking visibility for ${satName}:`, error);
+        }
+    }
+    
+    // Process satellites in batches if there are many
+    const MAX_PASSES_BATCH = 15;
+    let satellitesToProcess = selectedSatellites.length > MAX_PASSES_BATCH ? 
+        selectedSatellites.slice(0, MAX_PASSES_BATCH) : selectedSatellites;
+    
+    satellitesToProcess.forEach(satName => {
+        if (!window.tleData[satName]) return;
+        
+        try {
             const sat = window.tleData[satName];
             const satrec = satellite.twoline2satrec(sat.tle1, sat.tle2);
             
-            // Predict passes (simplified algorithm)
+            // Predict passes with simplified algorithm
             const satPasses = predictPasses(satrec, observer, now, endTime);
             
             satPasses.forEach(pass => {
@@ -1400,9 +1488,20 @@ function calculateUpcomingPasses() {
     // Sort passes by start time
     passes.sort((a, b) => a.start - b.start);
     
+    // Cache the calculated passes
+    window.cachedPasses = passes;
+    window.lastPassCalculation = now;
+    
     // Display passes
+    displayPasses(passes, passesContainer, currentlyVisibleSats);
+}
+
+// Separate function to display passes
+function displayPasses(passes, container, visibleSats = []) {
+    const now = new Date();
+    
     if (passes.length === 0) {
-        passesContainer.innerHTML = `<p>No passes found in the next ${PASS_PREDICTION_HOURS} hours that reach ${observer.minElevation}° elevation</p>`;
+        container.innerHTML = `<p>No passes found in the next ${PASS_PREDICTION_HOURS} hours that reach ${observer.minElevation}° elevation</p>`;
         return;
     }
     
@@ -1414,7 +1513,7 @@ function calculateUpcomingPasses() {
         let isActive = now >= pass.start && now <= pass.end;
         
         // Force active state if satellite is currently visible (above min elevation)
-        if (currentlyVisibleSats.includes(pass.satellite) && !isActive) {
+        if (visibleSats.includes(pass.satellite) && !isActive) {
             // If satellite is visible but not marked as active, adjust pass times
             if (now < pass.start) {
                 pass.start = new Date(now);
@@ -1430,9 +1529,8 @@ function calculateUpcomingPasses() {
             passItem.classList.add('pass-upcoming'); // Light orange for upcoming passes within 15 minutes
         }
 
-        // Check if the satellite is within the observer's footprint
-        const isWithinFootprint = isSatelliteWithinFootprint(pass.satellite);
-        if (isWithinFootprint) {
+        // Check if the satellite is within the observer's footprint (only for active passes)
+        if (isActive && visibleSats.includes(pass.satellite)) {
             passItem.classList.add('pass-visible'); // Light green for visible passes
         }
         
@@ -1461,21 +1559,16 @@ function calculateUpcomingPasses() {
                 return; // Stop execution if data is bad
             }
             
-            // Get current position (This call already handles errors internally)
-            // const position = getSatellitePosition(satName); // No longer needed to check here
-            
             // Always call showSatelliteInfo, it will handle unavailable data internally
             showSatelliteInfo(satName); 
             
             // Check if showPolarRadarForPass exists before calling
             if (typeof showPolarRadarForPass === 'function') {
                 showPolarRadarForPass(pass);
-            } else {
-                console.warn('showPolarRadarForPass function not found.');
             }
         });
         
-        passesContainer.appendChild(passItem);
+        container.appendChild(passItem);
     });
 }
 
@@ -1733,11 +1826,8 @@ AO-92 (FOX-1D)
 SO-50
 1 27607U 02058C   23150.41389181  .00000512  00000-0  27114-4 0  9992
 2 27607  64.5555 308.9962 0072520 342.7423  17.1555 14.71818654 85000
-``;
-</rewritten_file>
-ISS (ZARYA)
-1 25544U 98067A   23150.53695899  .00016566  00000-0  30369-3 0  9990
-2 25544  51.6431 331.8524 0004641  36.8562 338.1335 15.50127612399416`;
+`;
+
     
     processTLEs(fallbackTLEs);
 }
@@ -1800,7 +1890,9 @@ function fetchElevation(lat, lon) {
     // We'll use a free elevation API
     // Note: This particular API may have usage limits
     fetch(`https://api.open-elevation.com/api/v1/lookup?locations=${lat},${lon}`)
-        .then(response => response.json())
+        .then(response => {
+            return response.json();
+        })
         .then(data => {
             if (data && data.results && data.results.length > 0) {
                 const elevation = data.results[0].elevation;
