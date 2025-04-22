@@ -49,7 +49,7 @@ const MapD3 = (() => {
         geoPathGenerator = d3.geoPath(projection, ctx);
 
         // Initialize active satellites based on initial selection
-        updateActiveSatellites(selectedSatNames.map(name => allTleData[name])); // Initial population
+        updateSatellites(selectedSatNames.map(name => allTleData[name])); // Initial population
 
         // Add click listener
         canvas.addEventListener('click', handleCanvasClick);
