@@ -75,13 +75,13 @@ async function sendToCloudlog(data) {
     }
 
     const proxyUrl = '/api/cloudlog_proxy.php';
-    console.log('Sending request to proxy:', proxyUrl);
+    /*console.log('Sending request to proxy:', proxyUrl);
     console.log('Request data:', {
         key: cloudlogApiKey,
         radio: "Zenith Satellite Tracker",
         ...data,
         cloudlog_url: cloudlogUrl
-    });
+    });*/
 
     try {
         const response = await fetch(proxyUrl, {
@@ -97,16 +97,13 @@ async function sendToCloudlog(data) {
             })
         });
 
-        console.log('Response status:', response.status);
         const responseText = await response.text();
-        console.log('Response text:', responseText);
 
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const result = JSON.parse(responseText);
-        console.log('Cloudlog API response:', result);
     } catch (error) {
         console.error('Error sending data to Cloudlog:', error);
     }
@@ -121,15 +118,6 @@ function updateCloudlogData() {
     const uplinkMode = document.getElementById('sat-uplink-mode')?.textContent;
     const downlinkMode = document.getElementById('sat-downlink-mode')?.textContent;
     const satelliteName = document.getElementById('info-satellite-name')?.textContent;
-
-    console.log('Raw frequency values:', {
-        uplinkFreq,
-        downlinkFreq,
-        uplinkMode,
-        downlinkMode,
-        satelliteName
-    });
-
     // Validate frequencies and modes
     if (!uplinkFreq || !downlinkFreq || !uplinkMode || !downlinkMode || !satelliteName ||
         uplinkFreq === '---' || downlinkFreq === '---' ||
@@ -143,7 +131,7 @@ function updateCloudlogData() {
     if (typeof calculateLookAngles === 'function' && satelliteName) {
         const lookAngles = calculateLookAngles(satelliteName);
         if (!lookAngles || !lookAngles.visible) {
-            console.log('Satellite is below the horizon, skipping Cloudlog update');
+            // Satellite is below the horizon, skipping Cloudlog update
             return;
         }
     }
@@ -153,19 +141,9 @@ function updateCloudlogData() {
     const uplinkFreqMHz = parseFloat(uplinkFreq.replace('MHz', '').trim());
     const downlinkFreqMHz = parseFloat(downlinkFreq.replace('MHz', '').trim());
 
-    console.log('Parsed frequency values (MHz):', {
-        uplinkFreqMHz,
-        downlinkFreqMHz
-    });
-
     // Convert MHz to Hz (multiply by 1,000,000)
     const uplinkFreqHz = Math.round(uplinkFreqMHz * 1000000);
     const downlinkFreqHz = Math.round(downlinkFreqMHz * 1000000);
-
-    console.log('Converted frequency values (Hz):', {
-        uplinkFreqHz,
-        downlinkFreqHz
-    });
 
     // Validate frequency conversion
     if (isNaN(uplinkFreqHz) || isNaN(downlinkFreqHz)) {
@@ -223,12 +201,6 @@ function updateCloudlogData() {
     // Combine bands for satmode
     satmode = `${uplinkBand}/${downlinkBand}`;
 
-    console.log('Calculated satmode:', {
-        uplinkBand,
-        downlinkBand,
-        satmode
-    });
-
     const data = {
         key: cloudlogApiKey,
         radio: "Zenith Satellite Tracker",
@@ -240,7 +212,6 @@ function updateCloudlogData() {
         sat_name: satelliteName
     };
 
-    console.log('Final data being sent to Cloudlog:', data);
     sendToCloudlog(data);
 }
 
