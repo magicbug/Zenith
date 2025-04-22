@@ -139,6 +139,15 @@ function updateCloudlogData() {
         return;
     }
 
+    // Check if the satellite is above the horizon
+    if (typeof calculateLookAngles === 'function' && satelliteName) {
+        const lookAngles = calculateLookAngles(satelliteName);
+        if (!lookAngles || !lookAngles.visible) {
+            console.log('Satellite is below the horizon, skipping Cloudlog update');
+            return;
+        }
+    }
+
     // Convert MHz to Hz
     // Remove MHz suffix and any spaces, then convert to number
     const uplinkFreqMHz = parseFloat(uplinkFreq.replace('MHz', '').trim());
