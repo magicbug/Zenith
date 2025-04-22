@@ -992,55 +992,50 @@ function updateSatellitePositions() {
     lastPositionUpdate = now;
 
     if (selectedSatellites.length === 0 || Object.keys(window.tleData).length === 0) {
-        // Clear map if no satellites selected or no TLE data
-        // TODO: Need a clear function in map_d3.js
-        // Example: MapD3.clearSatellites();
         return;
     }
     
-    // Limit the number of satellites processed in a single update if there are many
-    let satsToProcess = selectedSatellites;
-    const MAX_SATS_PER_UPDATE = 50;
-    if (selectedSatellites.length > MAX_SATS_PER_UPDATE) {
-        // Process a subset of satellites each time, in a round-robin fashion
-        if (!window.lastProcessedIndex) window.lastProcessedIndex = 0;
-        const startIndex = window.lastProcessedIndex;
-        const endIndex = Math.min(startIndex + MAX_SATS_PER_UPDATE, selectedSatellites.length);
-        satsToProcess = selectedSatellites.slice(startIndex, endIndex);
-        window.lastProcessedIndex = endIndex >= selectedSatellites.length ? 0 : endIndex;
-    }
+    // Use requestAnimationFrame to align with browser's paint cycle
+    if (window.updateInProgress) return;
+    window.updateInProgress = true;
     
-    const updatedSatelliteData = [];
-    
-    satsToProcess.forEach(satName => {
-        const satData = window.tleData[satName];
-        // Add extra check: Ensure satData itself exists before checking satrec
-        if (satData && satData.satrec) { 
-            const position = calculateSatellitePosition(satData.satrec, now);
-            if (position) {
-                // Add calculated position AND the satrec to the data for D3 map
-                updatedSatelliteData.push({
-                    name: satName,
-                    // tle1: satData.tle1, // No longer needed by map_d3
-                    // tle2: satData.tle2, // No longer needed by map_d3
-                    color: satData.color || '#FFFFFF',
-                    positionGd: position.positionGd, // Pass geodetic position
-                    satrec: satData.satrec // *** Pass the satrec directly ***
-                });
-            }
+    requestAnimationFrame(() => {
+        // Limit the number of satellites processed in a single update if there are many
+        let satsToProcess = selectedSatellites;
+        const MAX_SATS_PER_UPDATE = 50;
+        if (selectedSatellites.length > MAX_SATS_PER_UPDATE) {
+            // Process a subset of satellites each time, in a round-robin fashion
+            if (!window.lastProcessedIndex) window.lastProcessedIndex = 0;
+            const startIndex = window.lastProcessedIndex;
+            const endIndex = Math.min(startIndex + MAX_SATS_PER_UPDATE, selectedSatellites.length);
+            satsToProcess = selectedSatellites.slice(startIndex, endIndex);
+            window.lastProcessedIndex = endIndex >= selectedSatellites.length ? 0 : endIndex;
         }
-    });
-    
-    // --- Call D3 Map Update Function ---
-    // Pass the array of updated satellite data (now including satrec) to the D3 map script
-    if (typeof MapD3 !== 'undefined' && MapD3.updateSatellites) {
-        MapD3.updateSatellites(updatedSatelliteData);
-    }
+        
+        const updatedSatelliteData = [];
+        
+        satsToProcess.forEach(satName => {
+            const satData = window.tleData[satName];
+            if (satData && satData.satrec) { 
+                const position = calculateSatellitePosition(satData.satrec, now);
+                if (position) {
+                    updatedSatelliteData.push({
+                        name: satName,
+                        color: satData.color || '#FFFFFF',
+                        positionGd: position.positionGd,
+                        satrec: satData.satrec
+                    });
+                }
+            }
+        });
+        
+        // Call D3 Map Update Function
+        if (typeof MapD3 !== 'undefined' && MapD3.updateSatellites) {
+            MapD3.updateSatellites(updatedSatelliteData);
+        }
 
-    // Update info for the currently selected satellite in the info panel
-    if (currentInfoSatellite && selectedSatellites.includes(currentInfoSatellite)) {
-        // Don't update here - already handled by satInfoUpdateInterval
-    }
+        window.updateInProgress = false;
+    });
 }
 
 // Update the satellite marker creation function
@@ -1115,119 +1110,130 @@ function updateSatelliteInfoDisplay(satName) {
     }
     window.lastInfoUpdate[satName] = new Date();
 
-    // Set the satellite name in the header (always possible)
-    document.getElementById('info-satellite-name').textContent = satName;
-
-    // Cache DOM elements to reduce DOM lookups
-    const infoContent = document.getElementById('info-content');
-    if (!infoContent) return;
-
-    // Use cached position data if available and recent
-    let position, lookAngles, inEclipse;
+    // Schedule update to align with browser's paint cycle
+    if (window.infoUpdateInProgress) return;
+    window.infoUpdateInProgress = true;
     
-    if (window.satPositionCache && 
-        window.satPositionCache[satName] && 
-        (new Date() - window.satPositionCache[satName].timestamp) < 2000) {
-        // Use cached data if less than 2 seconds old
-        position = window.satPositionCache[satName].position;
-        lookAngles = window.satPositionCache[satName].lookAngles;
-        inEclipse = window.satPositionCache[satName].inEclipse;
-    } else {
-        // Calculate new data
-        position = getSatellitePosition(satName);
-        // Only calculate look angles if position is available
-        lookAngles = position ? calculateLookAngles(satName) : null;
-        inEclipse = position ? isInEclipse(satName) : null;
-        
-        // Cache the results
-        if (!window.satPositionCache) window.satPositionCache = {};
-        window.satPositionCache[satName] = {
-            position: position,
-            lookAngles: lookAngles,
-            inEclipse: inEclipse,
-            timestamp: new Date()
-        };
-    }
-
-    // Calculate these only once per display update - these depend only on TLE, not current position
-    const orbitalSpeed = calculateOrbitalSpeed(satName);
-    const orbitalPeriod = calculateOrbitalPeriod(satName);
+    requestAnimationFrame(() => {
+        // Set the satellite name in the header (always possible)
+        document.getElementById('info-satellite-name').textContent = satName;
     
-    // Use cached pass data if available
-    let nextPass;
-    if (window.passCache && window.passCache[satName] && 
-        (new Date() - window.passCache[satName].timestamp) < 60000) { // 1 minute cache
-        nextPass = window.passCache[satName].pass;
-    } else {
-        nextPass = getNextPass(satName);
-        if (!window.passCache) window.passCache = {};
-        window.passCache[satName] = {
-            pass: nextPass,
-            timestamp: new Date()
-        };
-    }
-
-    // Build panel content, handling potentially unavailable data
-    const positionHtml = position ? `
-        <div class="info-grid">
-            <div>Latitude:</div><div>${position.latitude.toFixed(2)}°</div>
-            <div>Longitude:</div><div>${position.longitude.toFixed(2)}°</div>
-            <div>Altitude:</div><div>${position.height.toFixed(1)} km</div>
-            <div>Eclipse:</div><div>${inEclipse === null ? 'N/A' : (inEclipse ? '<span class="eclipse-indicator">In Shadow</span>' : '<span class="sunlight-indicator">In Sunlight</span>')}</div>
-        </div>
-    ` : `<div class="info-unavailable">Position data unavailable (TLE issue?)</div>`;
-
-    const lookAnglesHtml = lookAngles ? `
-        <div class="info-grid">
-            <div>Azimuth:</div><div>${lookAngles.azimuth.toFixed(1)}°</div>
-            <div>Elevation:</div><div>${lookAngles.elevation.toFixed(1)}°</div>
-            <div>Range:</div><div>${(lookAngles.range * 1000).toFixed(0)} km</div>
-            <div>Visibility:</div><div>${lookAngles.visible ? '<span class="visible-indicator">Visible</span>' : '<span class="not-visible-indicator">Not visible</span>'}</div>
-        </div>
-    ` : `<div class="info-unavailable">Look angles unavailable (TLE issue?)</div>`;
-
-    const orbitalDataHtml = `
-        <div class="info-grid">
-            <div>Speed:</div><div>${orbitalSpeed > 0 ? orbitalSpeed.toFixed(2) + ' km/s' : 'Unavailable'}</div>
-            <div>Period:</div><div>${orbitalPeriod > 0 ? orbitalPeriod.toFixed(0) + ' min' : 'Unavailable'}</div>
-        </div>
-    `;
-
-    const nextPassHtml = nextPass ? `
-        <div class="info-grid">
-            <div>Start:</div><div>${formatDateTime(nextPass.start)}</div>
-            <div>Max Elevation:</div><div>${nextPass.maxElevation.toFixed(1)}°</div>
-            <div>Duration:</div><div>${Math.round((nextPass.end - nextPass.start) / (60 * 1000))} min</div>
-        </div>
-    ` : `<div class="info-unavailable">Next pass prediction unavailable</div>`;
-
-    // Set the panel content (avoid unnecessary DOM updates if content hasn't changed)
-    const newContent = `
-        <div class="info-section">
-            <h4>Current Position</h4>
-            ${positionHtml}
-        </div>
-        
-        <div class="info-section">
-            <h4>Look Angles from Observer</h4>
-            ${lookAnglesHtml}
-        </div>
-        
-        <div class="info-section">
-            <h4>Orbital Data</h4>
-            ${orbitalDataHtml}
-        </div>
-        
-        <div class="info-section">
-            <h4>Next Pass</h4>
-            ${nextPassHtml}
-        </div>
-    `;
+        // Cache DOM elements to reduce DOM lookups
+        const infoContent = document.getElementById('info-content');
+        if (!infoContent) {
+            window.infoUpdateInProgress = false;
+            return;
+        }
     
-    // Only update DOM if content has changed
-    if (infoContent.innerHTML !== newContent) {
-        infoContent.innerHTML = newContent;
-    }
+        // Use cached position data if available and recent
+        let position, lookAngles, inEclipse;
+        
+        if (window.satPositionCache && 
+            window.satPositionCache[satName] && 
+            (new Date() - window.satPositionCache[satName].timestamp) < 2000) {
+            // Use cached data if less than 2 seconds old
+            position = window.satPositionCache[satName].position;
+            lookAngles = window.satPositionCache[satName].lookAngles;
+            inEclipse = window.satPositionCache[satName].inEclipse;
+        } else {
+            // Calculate new data
+            position = getSatellitePosition(satName);
+            // Only calculate look angles if position is available
+            lookAngles = position ? calculateLookAngles(satName) : null;
+            inEclipse = position ? isInEclipse(satName) : null;
+            
+            // Cache the results
+            if (!window.satPositionCache) window.satPositionCache = {};
+            window.satPositionCache[satName] = {
+                position: position,
+                lookAngles: lookAngles,
+                inEclipse: inEclipse,
+                timestamp: new Date()
+            };
+        }
+    
+        // Calculate these only once per display update
+        const orbitalSpeed = calculateOrbitalSpeed(satName);
+        const orbitalPeriod = calculateOrbitalPeriod(satName);
+        
+        // Use cached pass data if available
+        let nextPass;
+        if (window.passCache && window.passCache[satName] && 
+            (new Date() - window.passCache[satName].timestamp) < 60000) { // 1 minute cache
+            nextPass = window.passCache[satName].pass;
+        } else {
+            nextPass = getNextPass(satName);
+            if (!window.passCache) window.passCache = {};
+            window.passCache[satName] = {
+                pass: nextPass,
+                timestamp: new Date()
+            };
+        }
+    
+        // Build panel content
+        const positionHtml = position ? `
+            <div class="info-grid">
+                <div>Latitude:</div><div>${position.latitude.toFixed(2)}°</div>
+                <div>Longitude:</div><div>${position.longitude.toFixed(2)}°</div>
+                <div>Altitude:</div><div>${position.height.toFixed(1)} km</div>
+                <div>Eclipse:</div><div>${inEclipse === null ? 'N/A' : (inEclipse ? '<span class="eclipse-indicator">In Shadow</span>' : '<span class="sunlight-indicator">In Sunlight</span>')}</div>
+            </div>
+        ` : `<div class="info-unavailable">Position data unavailable (TLE issue?)</div>`;
+    
+        const lookAnglesHtml = lookAngles ? `
+            <div class="info-grid">
+                <div>Azimuth:</div><div>${lookAngles.azimuth.toFixed(1)}°</div>
+                <div>Elevation:</div><div>${lookAngles.elevation.toFixed(1)}°</div>
+                <div>Range:</div><div>${(lookAngles.range * 1000).toFixed(0)} km</div>
+                <div>Visibility:</div><div>${lookAngles.visible ? '<span class="visible-indicator">Visible</span>' : '<span class="not-visible-indicator">Not visible</span>'}</div>
+            </div>
+        ` : `<div class="info-unavailable">Look angles unavailable (TLE issue?)</div>`;
+    
+        const orbitalDataHtml = `
+            <div class="info-grid">
+                <div>Speed:</div><div>${orbitalSpeed > 0 ? orbitalSpeed.toFixed(2) + ' km/s' : 'Unavailable'}</div>
+                <div>Period:</div><div>${orbitalPeriod > 0 ? orbitalPeriod.toFixed(0) + ' min' : 'Unavailable'}</div>
+            </div>
+        `;
+    
+        const nextPassHtml = nextPass ? `
+            <div class="info-grid">
+                <div>Start:</div><div>${formatDateTime(nextPass.start)}</div>
+                <div>Max Elevation:</div><div>${nextPass.maxElevation.toFixed(1)}°</div>
+                <div>Duration:</div><div>${Math.round((nextPass.end - nextPass.start) / (60 * 1000))} min</div>
+            </div>
+        ` : `<div class="info-unavailable">Next pass prediction unavailable</div>`;
+    
+        // Set the panel content
+        const newContent = `
+            <div class="info-section">
+                <h4>Current Position</h4>
+                ${positionHtml}
+            </div>
+            
+            <div class="info-section">
+                <h4>Look Angles from Observer</h4>
+                ${lookAnglesHtml}
+            </div>
+            
+            <div class="info-section">
+                <h4>Orbital Data</h4>
+                ${orbitalDataHtml}
+            </div>
+            
+            <div class="info-section">
+                <h4>Next Pass</h4>
+                ${nextPassHtml}
+            </div>
+        `;
+        
+        // Only update DOM if content has changed
+        if (infoContent.innerHTML !== newContent) {
+            infoContent.innerHTML = newContent;
+        }
+        
+        window.infoUpdateInProgress = false;
+    });
 }
 
 // Get satellite position
@@ -1929,6 +1935,8 @@ document.addEventListener('DOMContentLoaded', () => {
             height: 10px;
             background-color: red;
             border-radius: 50%;
+            will-change: transform;
+            transform: translateZ(0);
         }
         
         .satellite-label {
@@ -1938,6 +1946,22 @@ document.addEventListener('DOMContentLoaded', () => {
             text-shadow: 1px 1px 1px #000;
             margin-left: 12px;
             margin-top: -10px;
+            will-change: transform;
+        }
+        
+        /* Hardware acceleration for map elements */
+        #map {
+            will-change: transform;
+            transform: translateZ(0);
+        }
+        
+        .map-container svg {
+            will-change: transform;
+        }
+        
+        /* Optimize animation performance */
+        .orbit-line, .satellite-marker, .footprint-circle {
+            will-change: transform;
         }
     `;
     document.head.appendChild(style);
@@ -1979,6 +2003,31 @@ document.addEventListener('DOMContentLoaded', () => {
             border-radius: 4px;
             font-weight: bold;
             display: inline-block;
+        }
+        
+        /* Performance optimizations for satellite info panel */
+        #satellite-info-panel {
+            will-change: transform;
+            transform: translateZ(0);
+        }
+        
+        .info-section {
+            will-change: contents;
+        }
+        
+        /* Optimize pass list rendering */
+        #upcoming-passes {
+            will-change: contents;
+        }
+        
+        .pass-item {
+            will-change: transform;
+            transform: translateZ(0);
+        }
+        
+        /* Reduce paint areas by isolating elements */
+        .satellite-list-container {
+            contain: paint layout;
         }
     `;
     document.head.appendChild(eclipseStyle);
