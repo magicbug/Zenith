@@ -15,6 +15,8 @@ const MapD3 = (() => {
     let highlightedSatellite = null;
     let highlightTimer = null;
     let sunPosition = null; // Store the sun's position
+    let lastFrameTime = 0; // Store the time of the last frame render
+    let frameInterval = 200; // 200ms = ~5fps
 
     // --- Constants ---
     const earthRadiusKm = 6371;
@@ -263,10 +265,20 @@ const MapD3 = (() => {
     }
 
     // --- Main Update Loop ---
-    function update() {
+    function update(timestamp) {
+        // Always request next frame first to maintain the animation loop
+        animationFrameId = requestAnimationFrame(update);
+        
+        // Check if enough time has passed since the last frame
+        if (!timestamp || timestamp - lastFrameTime < frameInterval) {
+            return; // Skip drawing this frame
+        }
+        
+        // Update last frame time
+        lastFrameTime = timestamp;
+        
         if (!ctx || !projection) {
             console.error("Canvas context or D3 projection not initialized!");
-            animationFrameId = requestAnimationFrame(update);
             return;
         }
         
@@ -313,9 +325,6 @@ const MapD3 = (() => {
                 sat.canvasPos = null; // Ensure no drawing if positionGd is missing
             }
         });
-
-        // Schedule the next frame update
-        animationFrameId = requestAnimationFrame(update);
     }
     
     // --- Footprint Calculation ---
