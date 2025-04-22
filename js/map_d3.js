@@ -10,6 +10,8 @@ const MapD3 = (() => {
     let allTleData = {}; // Store all available TLEs passed from app.js
     let activeSatellites = {}; // Store satellite data for currently *drawn* satellites { name: { satrec, color, positionGd, canvasPos, footprintGeoJson }, ... }
     let animationFrameId = null;
+    let sunCanvasPos = null;
+    let observerCanvasPos = null;
     let highlightedSatellite = null;
     let highlightTimer = null;
     let sunPosition = null; // Store the sun's position
@@ -64,35 +66,56 @@ const MapD3 = (() => {
         
         appSatelliteData.forEach(satData => {
             if (satData && satData.name) {
-                currentActiveNames[satData.name] = true; 
+                currentActiveNames[satData.name] = true;
+                let sat = activeSatellites[satData.name];
 
-                // If satellite already exists in our D3 list, update its position and color
-                if (activeSatellites[satData.name]) {
-                    activeSatellites[satData.name].positionGd = satData.positionGd;
-                    activeSatellites[satData.name].color = satData.color;
-                    // Should already have the correct satrec, but update just in case
-                    activeSatellites[satData.name].satrec = satData.satrec; 
+                // If satellite already exists, update its data
+                if (sat) {
+                    sat.positionGd = satData.positionGd;
+                    sat.color = satData.color;
+                    sat.satrec = satData.satrec; // Ensure satrec is updated if it changes
                 } else {
-                    // If it's new, add it using the provided data (including satrec)
-                    // We trust app.js has already filtered for valid satrec and position
-                    if (satData.satrec) { // Double check satrec is provided
-                         activeSatellites[satData.name] = { 
-                            name: satData.name, 
-                            satrec: satData.satrec, // Use the satrec passed directly
-                            color: satData.color, 
+                    // If it's new, add it
+                    if (satData.satrec) {
+                        sat = {
+                            name: satData.name,
+                            satrec: satData.satrec,
+                            color: satData.color,
                             positionGd: satData.positionGd,
-                            canvasPos: null, 
-                            footprintGeoJson: null 
+                            canvasPos: null,
+                            footprintGeoJson: null // Initialize footprint
                         };
+                        activeSatellites[satData.name] = sat;
                     } else {
-                        // This case should be extremely rare now
                         console.error(`MapD3: Received data for new satellite ${satData.name} WITHOUT a satrec object.`);
+                        return; // Skip this satellite if no satrec
                     }
                 }
+
+                // --- Calculate Footprint Here (Runs every 5 seconds) ---
+                sat.footprintGeoJson = null; // Reset footprint before calculation
+                // Only calculate if position is valid and satellite object exists
+                if (sat && sat.positionGd) {
+                    const heightKm = sat.positionGd.height;
+                    // Check for valid position data before calculating footprint
+                    if (heightKm > 0 && typeof sat.positionGd.latitude === 'number' && typeof sat.positionGd.longitude === 'number') {
+                        const footprintPoints = calculateFootprint(sat.positionGd);
+                        if (footprintPoints.length > 0) {
+                            sat.footprintGeoJson = {
+                                type: "Polygon",
+                                coordinates: [footprintPoints]
+                            };
+                        }
+                    } else {
+                         // Log if position data is invalid for footprint calculation
+                         // console.warn(`MapD3: Invalid positionGd for footprint calculation for ${sat.name}`, sat.positionGd);
+                    }
+                }
+                // --- End Footprint Calculation ---
             }
         });
         
-        // Remove satellites from our internal D3 list if they were NOT in the latest `appSatelliteData`
+        // Remove satellites no longer active
         Object.keys(activeSatellites).forEach(name => {
             if (!currentActiveNames[name]) {
                 delete activeSatellites[name];
@@ -100,25 +123,6 @@ const MapD3 = (() => {
         });
     }
     
-    // --- Internal function to update satellite data for the animation loop ---
-    // This replaces the direct use of app.js data in the original update loop
-    function updateActiveSatellites(satDataArray) {
-        const newActive = {};
-        satDataArray.forEach(satData => {
-            if (satData && satData.name && satData.satrec) {
-                 newActive[satData.name] = {
-                    name: satData.name,
-                    satrec: satData.satrec,
-                    color: satData.color || '#FFFFFF',
-                    positionGd: null, // Position will be updated by app.js via updateSatellites
-                    canvasPos: null,
-                    footprintGeoJson: null
-                };
-            }
-        });
-        activeSatellites = newActive;
-    }
-
     // --- Drawing Functions ---
     function clearCanvas() {
         if (ctx) {
@@ -168,9 +172,9 @@ const MapD3 = (() => {
     }
 
     // Draw the sun with an SVG-like icon
-    function drawSun() {
-        if (!sunPosition || !ctx) return;
-        const [x, y] = sunPosition.canvasPos;
+    function drawSun(canvasPos) {
+        if (!canvasPos || !ctx) return;
+        const [x, y] = canvasPos;
 
         // Draw sun circle
         ctx.fillStyle = sunColor;
@@ -219,10 +223,9 @@ const MapD3 = (() => {
         ctx.globalAlpha = 1.0; // Reset alpha
     }
 
-    function drawObserverMarker() {
-        if (!ctx || !projection || !observerLocation) return;
-
-        const [obsX, obsY] = projection([observerLocation.longitude, observerLocation.latitude]);
+    function drawObserverMarker(canvasPos) {
+        if (!ctx || !canvasPos) return;
+        const [obsX, obsY] = canvasPos;
 
         if (isNaN(obsX) || isNaN(obsY)) return; // Don't draw if projection failed
 
@@ -251,13 +254,11 @@ const MapD3 = (() => {
         const gmst = satellite.gstime(now);
         const sunGd = satellite.eciToGeodetic(sunEci, gmst);
         
-        // Convert to degrees
+        // Convert to degrees and return structure
         return {
-            positionGd: {
-                latitude: satellite.degreesLat(sunGd.latitude),
-                longitude: satellite.degreesLong(sunGd.longitude),
-                height: sunGd.height // Keep height in km
-            }
+            latitude: satellite.degreesLat(sunGd.latitude),
+            longitude: satellite.degreesLong(sunGd.longitude),
+            height: sunGd.height // Keep height in km
         };
     }
 
@@ -265,60 +266,51 @@ const MapD3 = (() => {
     function update() {
         if (!ctx || !projection) {
             console.error("Canvas context or D3 projection not initialized!");
-            animationFrameId = requestAnimationFrame(update); // Keep trying?
+            animationFrameId = requestAnimationFrame(update);
             return;
         }
         
         clearCanvas();
 
-        // Calculate the sun's position
-        const sunData = calculateSunPosition();
-        if (sunData) {
-            sunPosition = {
-                positionGd: sunData.positionGd,
-                canvasPos: projection([sunData.positionGd.longitude, sunData.positionGd.latitude])
-            };
+        // --- Calculate Canvas Positions for Static/Slow Elements ---
+        // Calculate observer canvas position
+        observerCanvasPos = projection([observerLocation.longitude, observerLocation.latitude]);
+        if (observerCanvasPos && !isNaN(observerCanvasPos[0])) {
+            drawObserverMarker(observerCanvasPos); // Pass position
         }
 
-        // Draw Observer Marker first (so it's potentially under footprints/sats)
-        drawObserverMarker();
+        // Calculate sun position (Geo) and project to canvas
+        const sunGeoPos = calculateSunPosition();
+        sunCanvasPos = null;
+        if (sunGeoPos) {
+            sunCanvasPos = projection([sunGeoPos.longitude, sunGeoPos.latitude]);
+        }
 
-        // Iterate over the *active* satellites managed by this module
+        // --- Draw Footprints (Using Pre-calculated GeoJSON) ---
+        // Calculation moved to updateSatellites
         Object.values(activeSatellites).forEach(sat => {
-            // Position (positionGd) is now updated externally by app.js via updateSatellites
-            if (sat.positionGd) {
-                // Project geodetic coordinates to canvas [x, y]
-                sat.canvasPos = projection([sat.positionGd.longitude, sat.positionGd.latitude]);
-
-                // Calculate footprint if height is valid
-                const heightKm = sat.positionGd.height;
-                sat.footprintGeoJson = null; // Reset footprint
-                if (heightKm > 0 && sat.positionGd.latitude !== undefined && sat.positionGd.longitude !== undefined) {
-                    const footprintPoints = calculateFootprint(sat.positionGd);
-                    if (footprintPoints.length > 0) {
-                        sat.footprintGeoJson = {
-                            type: "Polygon",
-                            coordinates: [footprintPoints]
-                        };
-                    }
-                }
-                // Draw footprint (drawn first so satellites appear on top)
-                drawFootprint(sat);
-            } else {
-                sat.canvasPos = null; // Ensure no drawing if position is missing
-                sat.footprintGeoJson = null;
+            if (sat.footprintGeoJson) { // Check if footprint exists
+                drawFootprint(sat); // Footprint drawing uses sat.footprintGeoJson
             }
         });
+        // --- End Footprint Drawing ---
 
         // Draw the sun
-        if (sunPosition) {
-            drawSun();
+        if (sunCanvasPos && !isNaN(sunCanvasPos[0])) {
+            drawSun(sunCanvasPos); // Pass position
         }
 
-        // Draw satellite dots and labels *after* all footprints
+        // --- Draw Satellites ---
         Object.values(activeSatellites).forEach(sat => {
-            if (sat.canvasPos) { // Only draw if position was calculated
-                drawSatellite(sat);
+            // Project current geodetic position to canvas coordinates
+            if (sat.positionGd) {
+                sat.canvasPos = projection([sat.positionGd.longitude, sat.positionGd.latitude]);
+                // Draw the satellite if the projection was successful
+                if (sat.canvasPos && !isNaN(sat.canvasPos[0])) {
+                    drawSatellite(sat); // Draw uses sat.canvasPos
+                }
+            } else {
+                sat.canvasPos = null; // Ensure no drawing if positionGd is missing
             }
         });
 
