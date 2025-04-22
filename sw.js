@@ -1,5 +1,5 @@
 const CACHE_NAME = 'zenith-v1';
-const STATIC_CACHE = 'zenith-static-v1';
+const STATIC_CACHE = 'zenith-static-v2';
 const DATA_CACHE = 'zenith-data-v1';
 
 // Files to cache immediately
@@ -8,9 +8,15 @@ const STATIC_FILES = [
   '/index.html',
   '/manifest.json',
   '/css/styles.css',
-  '/js/main.js',
-  '/js/satellite.js',
-  '/js/leaflet.js',
+  '/js/map_d3.js',
+  '/js/aprs.js',
+  '/js/csn.js',
+  '/js/cloudlog.js',
+  '/js/amsat_reporting.js',
+  '/js/notification.js',
+  '/js/pass_skeds.js',
+  '/js/polar_plot.js',
+  '/js/app.js',
   '/assets/pwa_icons/windows/Square44x44Logo.targetsize-96.png',
   '/assets/pwa_icons/windows/Square44x44Logo.targetsize-256.png',
   '/assets/pwa_icons/windows/Square150x150Logo.scale-400.png',

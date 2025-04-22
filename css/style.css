@@ -1869,3 +1869,39 @@ button:hover {
     width: 100% !important;
     margin: 0 !important;
 }
+
+/* Add styles from cavas/style.css */
+#map-container {
+    position: relative; /* Needed for absolute positioning of the canvas */
+    width: 100%; /* Use container width */
+    /* Maintain aspect ratio (1800 / 3600 = 0.5) */
+    aspect-ratio: 3600 / 1800;
+    background-image: url('/assets/worldmap/worldmap_blue.jpg');
+    background-size: contain; /* Scale the image nicely */
+    background-repeat: no-repeat;
+    background-position: center;
+    border: 1px solid #ccc;
+    overflow: hidden; /* Hide parts of canvas that might overflow if not perfectly scaled */
+}
+
+#satellite-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* The canvas drawing will be scaled by the browser based on container size */
+}
+
+/* Ensure map controls are visible above the canvas */
+.map-control-button {
+    position: absolute; /* Position relative to map-container */
+    z-index: 10; /* Make sure it's above the canvas */
+    /* Add specific positioning (e.g., top, right) as needed */
+    top: 10px;
+    right: 10px;
+    background-color: white;
+    padding: 5px;
+    border: 1px solid #aaa;
+    cursor: pointer;
+}
