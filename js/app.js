@@ -218,7 +218,9 @@ document.addEventListener('DOMContentLoaded', () => {
     loadSelectedSatellitesFromLocalStorage();
     loadHamsAtSettingsFromLocalStorage();
     loadCsnSatSettingsFromLocalStorage();
-    loadCloudlogSettingsFromLocalStorage();
+    if (typeof loadCloudlogSettingsFromLocalStorage === 'function') {
+        loadCloudlogSettingsFromLocalStorage();
+    }
     loadAPRSSettingsFromLocalStorage();
     
     // Update button visibility based on loaded settings
@@ -373,29 +375,37 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Load Cloudlog settings
-    loadCloudlogSettingsFromLocalStorage();
+    if (typeof loadCloudlogSettingsFromLocalStorage === 'function') {
+        loadCloudlogSettingsFromLocalStorage();
+    }
 
     // Add event listeners for Cloudlog settings
     document.getElementById('enable-cloudlog').addEventListener('change', function() {
         enableCloudlog = this.checked;
-        saveCloudlogSettingsToLocalStorage();
+        if (typeof saveCloudlogSettingsToLocalStorage === 'function') {
+            saveCloudlogSettingsToLocalStorage();
+        }
     });
 
     document.getElementById('cloudlog-url').addEventListener('input', function() {
         cloudlogUrl = this.value.trim();
-        saveCloudlogSettingsToLocalStorage();
+        if (typeof saveCloudlogSettingsToLocalStorage === 'function') {
+            saveCloudlogSettingsToLocalStorage();
+        }
     });
 
     document.getElementById('cloudlog-api-key').addEventListener('input', function() {
         cloudlogApiKey = this.value.trim();
-        saveCloudlogSettingsToLocalStorage();
+        if (typeof saveCloudlogSettingsToLocalStorage === 'function') {
+            saveCloudlogSettingsToLocalStorage();
+        }
     });
 
     // Add event listeners for frequency and mode changes
     const frequencyInputs = ['uplink-freq', 'downlink-freq', 'uplink-mode', 'downlink-mode'];
     frequencyInputs.forEach(id => {
         const element = document.getElementById(id);
-        if (element) {
+        if (element && typeof updateCloudlogData === 'function') {
             element.addEventListener('change', updateCloudlogData);
         }
     });
