@@ -1365,10 +1365,19 @@ function calculateUpcomingPasses() {
     const endTime = new Date(now.getTime() + PASS_PREDICTION_HOURS * 60 * 60 * 1000);
     const passes = [];
     
+    // Track satellites that are currently visible
+    const currentlyVisibleSats = [];
+    
     selectedSatellites.forEach(satName => {
         if (!window.tleData[satName]) return;
         
         try {
+            // Check if the satellite is currently visible
+            const currentLookAngles = calculateLookAngles(satName);
+            if (currentLookAngles && currentLookAngles.elevation >= observer.minElevation) {
+                currentlyVisibleSats.push(satName);
+            }
+            
             const sat = window.tleData[satName];
             const satrec = satellite.twoline2satrec(sat.tle1, sat.tle2);
             
@@ -1393,7 +1402,7 @@ function calculateUpcomingPasses() {
     
     // Display passes
     if (passes.length === 0) {
-        passesContainer.innerHTML = `<p>No passes found in the next ${PASS_PREDICTION_HOURS} hours above ${observer.minElevation}° elevation</p>`;
+        passesContainer.innerHTML = `<p>No passes found in the next ${PASS_PREDICTION_HOURS} hours that reach ${observer.minElevation}° elevation</p>`;
         return;
     }
     
@@ -1402,7 +1411,17 @@ function calculateUpcomingPasses() {
         passItem.className = 'pass-item';
         
         // Check if pass is active now
-        const isActive = now >= pass.start && now <= pass.end;
+        let isActive = now >= pass.start && now <= pass.end;
+        
+        // Force active state if satellite is currently visible (above min elevation)
+        if (currentlyVisibleSats.includes(pass.satellite) && !isActive) {
+            // If satellite is visible but not marked as active, adjust pass times
+            if (now < pass.start) {
+                pass.start = new Date(now);
+                isActive = true;
+            }
+        }
+        
         const timeToPass = (pass.start - now) / (60 * 1000); // Time to pass in minutes
         
         if (isActive) {
@@ -1540,6 +1559,7 @@ function predictPasses(satrec, observer, startTime, endTime) {
     const passes = [];
     const stepMinutes = 1; // Step size in minutes
     let currentPass = null;
+    const userMinElevation = observer.minElevation; // Store user's min elevation for filtering
     
     // Convert observer coordinates to radians
     const observerGd = {
@@ -1565,22 +1585,33 @@ function predictPasses(satrec, observer, startTime, endTime) {
             // Convert elevation to degrees
             const elevationDeg = lookAngles.elevation * 180 / Math.PI;
             
-            // Check if satellite is visible above minimum elevation
-            if (elevationDeg >= observer.minElevation) {
+            // Check if satellite is visible above horizon (0 degrees)
+            if (elevationDeg >= 0) {
                 if (!currentPass) {
-                    // Start of a new pass
+                    // Start of a new pass at horizon
                     currentPass = {
                         start: new Date(time),
-                        maxElevation: elevationDeg
+                        maxElevation: elevationDeg,
+                        aboveMinElevation: elevationDeg >= userMinElevation
                     };
-                } else if (elevationDeg > currentPass.maxElevation) {
+                } else {
                     // Update max elevation if higher
-                    currentPass.maxElevation = elevationDeg;
+                    if (elevationDeg > currentPass.maxElevation) {
+                        currentPass.maxElevation = elevationDeg;
+                    }
+                    // Update if satellite goes above minimum elevation during pass
+                    if (!currentPass.aboveMinElevation && elevationDeg >= userMinElevation) {
+                        currentPass.aboveMinElevation = true;
+                    }
                 }
             } else if (currentPass) {
-                // End of a pass
+                // End of a pass when satellite goes below horizon
                 currentPass.end = new Date(time);
-                passes.push(currentPass);
+                
+                // Only include pass if it ever went above the user's minimum elevation
+                if (currentPass.aboveMinElevation) {
+                    passes.push(currentPass);
+                }
                 currentPass = null;
             }
         } catch (error) {
@@ -1591,7 +1622,9 @@ function predictPasses(satrec, observer, startTime, endTime) {
     // If we have an ongoing pass at the end time, add it
     if (currentPass) {
         currentPass.end = new Date(endTime);
-        passes.push(currentPass);
+        if (currentPass.aboveMinElevation) {
+            passes.push(currentPass);
+        }
     }
     
     return passes;
