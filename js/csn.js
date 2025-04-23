@@ -28,6 +28,9 @@ function checkSATAPIAvailability() {
         return Promise.resolve(false);
     }
 
+    // Remove trailing slash from address if present
+    csnSatAddress = csnSatAddress.replace(/\/+$/, '');
+
     console.log('Checking CSN S.A.T API availability through proxy for:', csnSatAddress);
     
     // Using PHP proxy to avoid CORS issues
@@ -199,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     document.getElementById('csn-sat-address').addEventListener('input', function() {
-        csnSatAddress = this.value.trim();
+        csnSatAddress = this.value.trim().replace(/\/+$/, ''); // Trim and remove trailing slashes
         saveCsnSatSettingsToLocalStorage();
     });
 });
