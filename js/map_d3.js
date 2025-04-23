@@ -16,7 +16,7 @@ const MapD3 = (() => {
     let highlightTimer = null;
     let sunPosition = null; // Store the sun's position
     let lastFrameTime = 0; // Store the time of the last frame render
-    let frameInterval = 500;
+    let frameInterval = 600; // Any lower than 300 casues performance issues
 
     // --- Constants ---
     const earthRadiusKm = 6371;
