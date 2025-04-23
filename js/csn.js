@@ -372,6 +372,11 @@ function fetchSatTrackData() {
         if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
         }
+        // Clone the response to log the raw text before parsing as JSON
+        const clonedResponse = response.clone();
+        clonedResponse.text().then(text => {
+            console.log('Raw S.A.T tracking response:', text);
+        });
         return response.json();
     })
     .then(result => {
