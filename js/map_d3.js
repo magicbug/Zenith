@@ -1,37 +1,36 @@
 const satellite = window.satellite;
 const d3 = window.d3;
 
-// --- Wrap code in an object/namespace ---
+// Module pattern for encapsulation and namespacing
 const MapD3 = (() => {
-    // --- Module Variables ---
+    // Module state
     let canvas, ctx, projection, geoPathGenerator;
     let canvasWidth, canvasHeight;
-    let observerLocation = { latitude: 0, longitude: 0 }; // Store observer location
-    let allTleData = {}; // Store all available TLEs passed from app.js
-    let activeSatellites = {}; // Store satellite data for currently *drawn* satellites { name: { satrec, color, positionGd, canvasPos, footprintGeoJson }, ... }
+    let observerLocation = { latitude: 0, longitude: 0 };
+    let allTleData = {}; // TLEs passed from app.js
+    let activeSatellites = {}; // Currently drawn satellites: { name: { satrec, color, positionGd, canvasPos, footprintGeoJson }, ... }
     let animationFrameId = null;
     let sunCanvasPos = null;
     let observerCanvasPos = null;
     let highlightedSatellite = null;
     let highlightTimer = null;
-    let sunPosition = null; // Store the sun's position
-    let lastFrameTime = 0; // Store the time of the last frame render
-    let frameInterval = 600; // Any lower than 300 casues performance issues
+    let sunPosition = null;
+    let lastFrameTime = 0;
+    let frameInterval = 600; // Min 300ms to prevent performance issues
 
-    // --- Constants ---
+    // Visual configuration
     const earthRadiusKm = 6371;
-    const satelliteRadius = 5; // Visual radius on canvas (smaller than mockup)
+    const satelliteRadius = 5;
     const labelOffset = satelliteRadius + 2;
     const MIN_ELEVATION_DEGREES = 0.0;
     const observerMarkerRadius = 4;
-    const observerMarkerColor = '#ff7800'; // Orange
+    const observerMarkerColor = '#ff7800';
     const observerMarkerStrokeColor = '#FFFFFF';
-    const highlightColor = '#FFFF00'; // Bright yellow for highlighted satellite
+    const highlightColor = '#FFFF00';
     const highlightDuration = 3000; // 3 seconds highlight
-    const sunSize = 15; // Size of the sun icon
-    const sunColor = '#FFD700'; // Gold color for the sun
+    const sunSize = 15;
+    const sunColor = '#FFD700';
 
-    // --- Initialization ---
     function init(canvasId, obsData, tleData, selectedSatNames) {
         canvas = document.getElementById(canvasId);
         if (!canvas) {
@@ -41,29 +40,26 @@ const MapD3 = (() => {
         ctx = canvas.getContext('2d');
         canvasWidth = canvas.width;
         canvasHeight = canvas.height;
-        observerLocation = obsData; // Store observer data from app.js
-        allTleData = tleData; // Store TLE reference from app.js
+        observerLocation = obsData;
+        allTleData = tleData;
 
-        // D3 Setup
+        // Configure D3 projection
         projection = d3.geoEquirectangular()
             .scale(canvasWidth / (2 * Math.PI))
             .translate([canvasWidth / 2, canvasHeight / 2]);
         geoPathGenerator = d3.geoPath(projection, ctx);
 
         // Initialize active satellites based on initial selection
-        updateSatellites(selectedSatNames.map(name => allTleData[name])); // Initial population
+        updateSatellites(selectedSatNames.map(name => allTleData[name]));
 
-        // Add click listener
         canvas.addEventListener('click', handleCanvasClick);
-
-        // Start animation loop
         startAnimation();
         console.log("MapD3 Initialized");
     }
 
-    // --- Public Function to Update Satellites from app.js ---
+    // Update active satellites based on new data from app.js
     function updateSatellites(appSatelliteData) {
-        // `appSatelliteData` is an array: [{ name, color, positionGd, satrec }, ...]
+        // appSatelliteData is an array: [{ name, color, positionGd, satrec }, ...]
         const currentActiveNames = {};
         
         appSatelliteData.forEach(satData => {
@@ -71,13 +67,12 @@ const MapD3 = (() => {
                 currentActiveNames[satData.name] = true;
                 let sat = activeSatellites[satData.name];
 
-                // If satellite already exists, update its data
+                // Update existing satellite or add new one
                 if (sat) {
                     sat.positionGd = satData.positionGd;
                     sat.color = satData.color;
-                    sat.satrec = satData.satrec; // Ensure satrec is updated if it changes
+                    sat.satrec = satData.satrec;
                 } else {
-                    // If it's new, add it
                     if (satData.satrec) {
                         sat = {
                             name: satData.name,
@@ -85,21 +80,19 @@ const MapD3 = (() => {
                             color: satData.color,
                             positionGd: satData.positionGd,
                             canvasPos: null,
-                            footprintGeoJson: null // Initialize footprint
+                            footprintGeoJson: null
                         };
                         activeSatellites[satData.name] = sat;
                     } else {
                         console.error(`MapD3: Received data for new satellite ${satData.name} WITHOUT a satrec object.`);
-                        return; // Skip this satellite if no satrec
+                        return;
                     }
                 }
 
-                // --- Calculate Footprint Here (Runs every 5 seconds) ---
-                sat.footprintGeoJson = null; // Reset footprint before calculation
-                // Only calculate if position is valid and satellite object exists
+                // Calculate satellite's visibility footprint
+                sat.footprintGeoJson = null;
                 if (sat && sat.positionGd) {
                     const heightKm = sat.positionGd.height;
-                    // Check for valid position data before calculating footprint
                     if (heightKm > 0 && typeof sat.positionGd.latitude === 'number' && typeof sat.positionGd.longitude === 'number') {
                         const footprintPoints = calculateFootprint(sat.positionGd);
                         if (footprintPoints.length > 0) {
@@ -108,16 +101,12 @@ const MapD3 = (() => {
                                 coordinates: [footprintPoints]
                             };
                         }
-                    } else {
-                         // Log if position data is invalid for footprint calculation
-                         // console.warn(`MapD3: Invalid positionGd for footprint calculation for ${sat.name}`, sat.positionGd);
                     }
                 }
-                // --- End Footprint Calculation ---
             }
         });
         
-        // Remove satellites no longer active
+        // Clean up satellites no longer active
         Object.keys(activeSatellites).forEach(name => {
             if (!currentActiveNames[name]) {
                 delete activeSatellites[name];
@@ -125,7 +114,6 @@ const MapD3 = (() => {
         });
     }
     
-    // --- Drawing Functions ---
     function clearCanvas() {
         if (ctx) {
              ctx.clearRect(0, 0, canvasWidth, canvasHeight);
@@ -136,10 +124,7 @@ const MapD3 = (() => {
         if (!sat.canvasPos || !ctx) return;
         const [x, y] = sat.canvasPos;
 
-        // Determine if this satellite is highlighted
         const isHighlighted = (sat.name === highlightedSatellite);
-        
-        // Use highlight color if satellite is highlighted, otherwise use normal color
         const satColor = isHighlighted ? highlightColor : sat.color;
 
         // Draw satellite dot
@@ -148,7 +133,7 @@ const MapD3 = (() => {
         ctx.arc(x, y, isHighlighted ? satelliteRadius * 1.5 : satelliteRadius, 0, 2 * Math.PI);
         ctx.fill();
 
-        // Draw satellite name label - Increased visibility for highlighted satellites
+        // Draw name label with improved visibility for highlighted satellites
         ctx.font = isHighlighted ? 'bold 45px sans-serif' : 'bold 40px sans-serif';
         ctx.textAlign = 'center';
         ctx.strokeStyle = 'black';
@@ -157,11 +142,11 @@ const MapD3 = (() => {
         ctx.fillStyle = isHighlighted ? highlightColor : 'white';
         ctx.fillText(sat.name, x, y - labelOffset);
         
-        // If highlighted, draw a pulsing circle around the satellite
+        // Add pulsing effect for highlighted satellites
         if (isHighlighted) {
             const pulseRadius = satelliteRadius * 3;
             const now = Date.now();
-            const pulseOpacity = 0.5 + 0.5 * Math.sin(now / 200); // Pulsing effect
+            const pulseOpacity = 0.5 + 0.5 * Math.sin(now / 200);
             
             ctx.strokeStyle = highlightColor;
             ctx.lineWidth = 2;
@@ -173,7 +158,7 @@ const MapD3 = (() => {
         }
     }
 
-    // Draw the sun with an SVG-like icon
+    // Draw the sun icon
     function drawSun(canvasPos) {
         if (!canvasPos || !ctx) return;
         const [x, y] = canvasPos;
@@ -184,7 +169,7 @@ const MapD3 = (() => {
         ctx.arc(x, y, sunSize, 0, 2 * Math.PI);
         ctx.fill();
 
-        // Draw sun rays (straight lines)
+        // Draw sun rays
         ctx.strokeStyle = sunColor;
         ctx.lineWidth = 2;
         const rayLength = sunSize * 0.7;
@@ -203,7 +188,7 @@ const MapD3 = (() => {
             ctx.stroke();
         }
 
-        // Draw "SUN" label
+        // Draw label
         ctx.font = 'bold 40px sans-serif';
         ctx.textAlign = 'center';
         ctx.strokeStyle = 'black';
@@ -215,23 +200,21 @@ const MapD3 = (() => {
 
     function drawFootprint(sat) {
         if (!sat.footprintGeoJson || !ctx) return;
-        // Increased visibility
         ctx.strokeStyle = sat.color; 
-        ctx.lineWidth = 8; // Thicker footprint line
-        ctx.globalAlpha = 0.85; // More opaque
+        ctx.lineWidth = 8;
+        ctx.globalAlpha = 0.85;
         ctx.beginPath();
         geoPathGenerator(sat.footprintGeoJson);
         ctx.stroke();
-        ctx.globalAlpha = 1.0; // Reset alpha
+        ctx.globalAlpha = 1.0;
     }
 
     function drawObserverMarker(canvasPos) {
         if (!ctx || !canvasPos) return;
         const [obsX, obsY] = canvasPos;
 
-        if (isNaN(obsX) || isNaN(obsY)) return; // Don't draw if projection failed
+        if (isNaN(obsX) || isNaN(obsY)) return;
 
-        // Draw observer dot (e.g., orange circle with white outline)
         ctx.fillStyle = observerMarkerColor;
         ctx.strokeStyle = observerMarkerStrokeColor;
         ctx.lineWidth = 1.5;
@@ -241,13 +224,11 @@ const MapD3 = (() => {
         ctx.stroke();
     }
 
-    // Calculate the sun's position
+    // Get current sun position for visualization
     function calculateSunPosition() {
         if (!window.getSunPositionEci) return null;
         
         const now = new Date();
-        
-        // Use app.js's getSunPositionEci function to get the sun's position in ECI coordinates
         const sunEci = window.getSunPositionEci(now);
         
         if (!sunEci) return null;
@@ -256,25 +237,22 @@ const MapD3 = (() => {
         const gmst = satellite.gstime(now);
         const sunGd = satellite.eciToGeodetic(sunEci, gmst);
         
-        // Convert to degrees and return structure
         return {
             latitude: satellite.degreesLat(sunGd.latitude),
             longitude: satellite.degreesLong(sunGd.longitude),
-            height: sunGd.height // Keep height in km
+            height: sunGd.height
         };
     }
 
-    // --- Main Update Loop ---
+    // Main rendering loop - throttled for performance
     function update(timestamp) {
-        // Always request next frame first to maintain the animation loop
         animationFrameId = requestAnimationFrame(update);
         
-        // Check if enough time has passed since the last frame
+        // Throttle frames for performance
         if (!timestamp || timestamp - lastFrameTime < frameInterval) {
-            return; // Skip drawing this frame
+            return;
         }
         
-        // Update last frame time
         lastFrameTime = timestamp;
         
         if (!ctx || !projection) {
@@ -284,50 +262,45 @@ const MapD3 = (() => {
         
         clearCanvas();
 
-        // --- Calculate Canvas Positions for Static/Slow Elements ---
-        // Calculate observer canvas position
+        // Project observer location to canvas
         observerCanvasPos = projection([observerLocation.longitude, observerLocation.latitude]);
         if (observerCanvasPos && !isNaN(observerCanvasPos[0])) {
-            drawObserverMarker(observerCanvasPos); // Pass position
+            drawObserverMarker(observerCanvasPos);
         }
 
-        // Calculate sun position (Geo) and project to canvas
+        // Calculate and project sun position
         const sunGeoPos = calculateSunPosition();
         sunCanvasPos = null;
         if (sunGeoPos) {
             sunCanvasPos = projection([sunGeoPos.longitude, sunGeoPos.latitude]);
         }
 
-        // --- Draw Footprints (Using Pre-calculated GeoJSON) ---
-        // Calculation moved to updateSatellites
+        // Draw satellite footprints
         Object.values(activeSatellites).forEach(sat => {
-            if (sat.footprintGeoJson) { // Check if footprint exists
-                drawFootprint(sat); // Footprint drawing uses sat.footprintGeoJson
+            if (sat.footprintGeoJson) {
+                drawFootprint(sat);
             }
         });
-        // --- End Footprint Drawing ---
 
         // Draw the sun
         if (sunCanvasPos && !isNaN(sunCanvasPos[0])) {
-            drawSun(sunCanvasPos); // Pass position
+            drawSun(sunCanvasPos);
         }
 
-        // --- Draw Satellites ---
+        // Draw satellites and labels
         Object.values(activeSatellites).forEach(sat => {
-            // Project current geodetic position to canvas coordinates
             if (sat.positionGd) {
                 sat.canvasPos = projection([sat.positionGd.longitude, sat.positionGd.latitude]);
-                // Draw the satellite if the projection was successful
                 if (sat.canvasPos && !isNaN(sat.canvasPos[0])) {
-                    drawSatellite(sat); // Draw uses sat.canvasPos
+                    drawSatellite(sat);
                 }
             } else {
-                sat.canvasPos = null; // Ensure no drawing if positionGd is missing
+                sat.canvasPos = null;
             }
         });
     }
     
-    // --- Footprint Calculation ---
+    // Calculate satellite visibility footprint based on height and min elevation
     function calculateFootprint(positionGd) {
         const heightKm = positionGd.height;
         const subLatRad = satellite.degreesToRadians(positionGd.latitude);
@@ -346,10 +319,10 @@ const MapD3 = (() => {
         const visibilityLimitAngleRad = Math.acos(cosAngularRadiusGeometric);
         
         if (minElevationRad > visibilityLimitAngleRad) {
-            // The required minimum elevation is beyond the geometric horizon - footprint is empty
+            // Minimum elevation is beyond the geometric horizon - empty footprint
              return [];
         } else {
-            // Adjust radius based on minimum elevation constraint (using spherical law of sines)
+            // Adjust radius based on minimum elevation constraint using spherical law of sines
             const sinHorizonAngle = (earthRadiusKm * Math.sin(Math.PI/2 + minElevationRad)) / (earthRadiusKm + heightKm);
              if(sinHorizonAngle < -1 || sinHorizonAngle > 1){
                 console.warn("Invalid sine value in footprint calculation");
@@ -360,7 +333,8 @@ const MapD3 = (() => {
         }
 
         if (!isNaN(angularRadiusToUseRad) && angularRadiusToUseRad > 0) {
-            for (let azimuthDegrees = 0; azimuthDegrees <= 360; azimuthDegrees += 10) { // 10 degree step
+            // Generate points around the satellite in 10-degree steps
+            for (let azimuthDegrees = 0; azimuthDegrees <= 360; azimuthDegrees += 10) {
                 const azimuthRad = satellite.degreesToRadians(azimuthDegrees);
                 const latRad = Math.asin(
                     Math.sin(subLatRad) * Math.cos(angularRadiusToUseRad) +
@@ -386,7 +360,6 @@ const MapD3 = (() => {
         return footprintGeographicPoints;
     }
 
-    // --- Animation Control ---
     function startAnimation() {
         if (!animationFrameId) {
             animationFrameId = requestAnimationFrame(update);
@@ -400,18 +373,18 @@ const MapD3 = (() => {
         }
     }
 
-    // --- Event Handling ---
+    // Handle clicks on the map - detect clicks on satellites or their footprints
     function handleCanvasClick(event) {
         if (!projection || !canvas) return;
 
         const rect = canvas.getBoundingClientRect();
-        // Adjust click coordinates for canvas scaling and offset
+        // Adjust for canvas scaling
         const scaleX = canvas.width / rect.width;
         const scaleY = canvas.height / rect.height;
         const canvasX = (event.clientX - rect.left) * scaleX;
         const canvasY = (event.clientY - rect.top) * scaleY;
 
-        // Convert canvas click coordinates back to [longitude, latitude]
+        // Convert canvas coords to geographic coords
         const [lon, lat] = projection.invert([canvasX, canvasY]);
         
         console.log(`Canvas click at (${canvasX.toFixed(0)}, ${canvasY.toFixed(0)}), inverted to Geo: (${lon.toFixed(2)}, ${lat.toFixed(2)})`);
@@ -419,13 +392,13 @@ const MapD3 = (() => {
         let clickedSatName = null;
         let minDistanceSq = Infinity;
 
-        // Find the visually closest satellite to the click (within a threshold)
+        // Find closest satellite to click point
         Object.values(activeSatellites).forEach(sat => {
             if (sat.canvasPos) {
                 const dx = sat.canvasPos[0] - canvasX;
                 const dy = sat.canvasPos[1] - canvasY;
                 const distSq = dx * dx + dy * dy;
-                const clickRadius = satelliteRadius + 5; // Allow slightly larger click area
+                const clickRadius = satelliteRadius + 5; // Extend click hit area
 
                 if (distSq < clickRadius * clickRadius && distSq < minDistanceSq) {
                     minDistanceSq = distSq;
@@ -433,9 +406,8 @@ const MapD3 = (() => {
                 }
             }
             
-            // Check if click is within the satellite's footprint
+            // Check for clicks inside footprint
             if (!clickedSatName && sat.footprintGeoJson) {
-                // Use d3.geoContains to check if the click point is within the footprint polygon
                 if (d3.geoContains(sat.footprintGeoJson, [lon, lat])) {
                     clickedSatName = sat.name;
                 }
@@ -444,7 +416,6 @@ const MapD3 = (() => {
 
         if (clickedSatName) {
              console.log(`Satellite clicked: ${clickedSatName}`);
-            // Call the globally exposed function from app.js
             if (typeof window.showSatelliteInfo === 'function') {
                 window.showSatelliteInfo(clickedSatName);
             } else {
@@ -452,76 +423,34 @@ const MapD3 = (() => {
             }
         } else {
             console.log("No satellite clicked.");
-             // Optionally, hide the info panel if background is clicked
-             // if (typeof window.hideSatelliteInfoPanel === 'function') {
-             //    window.hideSatelliteInfoPanel();
-             // }
         }
     }
     
-    // --- Highlight Satellite Function ---
+    // Temporarily highlight a satellite on the map
     function highlightSatellite(satName) {
-        // Clear any existing highlight timer
         if (highlightTimer) {
             clearTimeout(highlightTimer);
             highlightTimer = null;
         }
         
-        // Set the highlighted satellite
         highlightedSatellite = satName;
         
-        // Set a timer to clear the highlight after duration
         highlightTimer = setTimeout(() => {
             highlightedSatellite = null;
             highlightTimer = null;
         }, highlightDuration);
     }
 
-    // --- Return Public API ---
+    // Public API
     return {
         init: init,
         updateSatellites: updateSatellites,
         start: startAnimation,
         stop: stopAnimation,
         highlightSatellite: highlightSatellite
-        // Expose other functions if needed by app.js
     };
 
-})(); // Immediately invoke the function expression to create the MapD3 object
-
-// --- Remove original mockup code outside the namespace ---
-/*
-// --- Configuration ---
-const satellitesData = [ ... ]; // REMOVED
-// Initialize satellite records from TLE data
-const satellites = satellitesData.map(satData => ({ ... })); // REMOVED
-const canvas = document.getElementById('satellite-canvas'); // Handled in init
-const ctx = canvas.getContext('2d'); // Handled in init
-const canvasWidth = canvas.width; // Handled in init
-const canvasHeight = canvas.height; // Handled in init
-// --- D3 Setup ---
-const projection = d3.geoEquirectangular()...; // Handled in init
-const geoPathGenerator = d3.geoPath(projection, ctx); // Handled in init
-// --- Constants ---
-// ... (Moved inside namespace)
-// --- Drawing Functions ---
-function clearCanvas() { ... } // Moved inside namespace
-function drawSatellite(sat) { ... } // Moved inside namespace
-function drawFootprint(sat) { ... } // Moved inside namespace
-// --- Main Update Loop ---
-function update() { ... } // Moved inside namespace and adapted
-// --- Initialization and Event Listeners ---
-let currentSelectedSatelliteName = null; // Handled by app.js
-function selectSatellite(name) { ... } // Handled by app.js
-function updateSatelliteInfoPanel() { ... } // Handled by app.js
-function handleCanvasClick(event) { ... } // Moved inside namespace
-
-// Initial call to start the animation loop
-// requestAnimationFrame(update); // Started by init function
-
-// Setup click listener for satellite selection
-// canvas.addEventListener('click', handleCanvasClick); // Added in init
-*/
+})();
 
 // Make MapD3 available globally
 window.MapD3 = MapD3;
