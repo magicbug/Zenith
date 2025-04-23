@@ -1,6 +1,5 @@
 // Add event listener for CSN panel button
 document.addEventListener('DOMContentLoaded', () => {
-    // Existing event listeners...
     
     // Add event listener for the CSN panel button in the header
     const openSatPanelBtn = document.getElementById('open-sat-panel-btn');
