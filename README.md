@@ -1,6 +1,6 @@
 # Zenith Satellite Tracker
 
-![zenith_screenshot](https://github.com/user-attachments/assets/fca7284e-7b31-4c34-9f3e-bd54c93e6c06)
+![zenith_screenshot](https://github.com/user-attachments/assets/8ba8df6f-4b2e-4b9a-9711-ddaf4b94568d)
 
 A modern web-based satellite tracking application designed for amateur radio operators and satellite enthusiasts. Zenith provides real-time satellite tracking, pass predictions, and radio integration features.
 
