@@ -1881,7 +1881,7 @@ button:hover {
     width: 100%; /* Use container width */
     /* Maintain aspect ratio (1800 / 3600 = 0.5) */
     aspect-ratio: 3600 / 1800;
-    background-image: url('/assets/worldmap/worldmap_blue.jpg');
+    background-image: url('../assets/worldmap/worldmap_blue.jpg');
     background-size: contain; /* Scale the image nicely */
     background-repeat: no-repeat;
     background-position: center;
