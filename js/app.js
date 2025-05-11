@@ -1560,24 +1560,13 @@ function displayPasses(passes, container, visibleSats = []) {
             </div>
         `;
         
-        // Add click handler to show the satellite info
+        // Update click handler to show both info and polar radar
         passItem.addEventListener('click', () => {
-            const satName = pass.satellite;
+            showSatelliteInfo(pass.satellite);
+            showPolarRadarForPass(pass);
             
-            // Verify satellite exists AND has valid TLE data (satrec)
-            if (!window.tleData[satName] || !window.tleData[satName].satrec) {
-                console.error('Satellite TLE data not found or invalid for:', satName);
-                alert(`Cannot display info for ${satName}. TLE data might be missing, outdated, or invalid.`);
-                return; // Stop execution if data is bad
-            }
-            
-            // Always call showSatelliteInfo, it will handle unavailable data internally
-            showSatelliteInfo(satName); 
-            
-            // Check if showPolarRadarForPass exists before calling
-            if (typeof showPolarRadarForPass === 'function') {
-                showPolarRadarForPass(pass);
-            }
+            // Attempt to select the satellite in QTRigDoppler if it's enabled
+            selectSatelliteInQTRigDoppler(pass.satellite);
         });
         
         container.appendChild(passItem);
@@ -2481,6 +2470,9 @@ function updateUpcomingPasses() {
         passItem.addEventListener('click', () => {
             showSatelliteInfo(pass.satellite);
             showPolarRadarForPass(pass);
+            
+            // Attempt to select the satellite in QTRigDoppler if it's enabled
+            selectSatelliteInQTRigDoppler(pass.satellite);
         });
         
         upcomingPassesElement.appendChild(passItem);
@@ -2909,6 +2901,73 @@ function updateQTRigDopplerButtonVisibility() {
         const settings = savedSettings ? JSON.parse(savedSettings) : { enableQTRigDoppler: false };
         openQTRigDopplerBtn.style.display = settings.enableQTRigDoppler ? 'inline-block' : 'none';
     }
+}
+
+// Function to select a satellite in QTRigDoppler if it's enabled
+function selectSatelliteInQTRigDoppler(satName) {
+    // Check if QTRigDoppler is enabled and we have the panel object
+    const savedSettings = localStorage.getItem('qtrigdopplerSettings');
+    if (!savedSettings) return;
+    
+    const settings = JSON.parse(savedSettings);
+    if (!settings.enableQTRigDoppler || !window.qtrigdopplerPanel) return;
+    
+    // Make sure the panel is loaded and socket is connected
+    if (!window.qtrigdopplerPanel.socket?.connected) {
+        // Show the panel first to establish connection
+        window.qtrigdopplerPanel.show();
+        
+        // Try selecting the satellite after a delay to allow connection
+        setTimeout(() => {
+            selectSatInQTRigDoppler();
+        }, 1000);
+    } else {
+        selectSatInQTRigDoppler();
+    }
+    
+    function selectSatInQTRigDoppler() {
+        const satelliteSelect = window.qtrigdopplerPanel.satelliteSelect;
+        
+        // Ensure we have the satellite list loaded
+        if (satelliteSelect.options.length <= 1) {
+            // If the satellite list isn't loaded yet, try to get it and try again after a delay
+            window.qtrigdopplerPanel.getSatelliteList();
+            setTimeout(() => {
+                attemptSelection();
+            }, 1000);
+        } else {
+            attemptSelection();
+        }
+        
+        function attemptSelection() {
+            // Look for the satellite in the dropdown
+            let found = false;
+            for (let i = 0; i < satelliteSelect.options.length; i++) {
+                // Check if the option value or text matches the satellite name or part of it
+                if (satelliteSelect.options[i].value === satName || 
+                    satelliteSelect.options[i].text === satName ||
+                    satelliteSelect.options[i].value.includes(satName) || 
+                    satelliteSelect.options[i].text.includes(satName)) {
+                    
+                    // Select this option
+                    satelliteSelect.selectedIndex = i;
+                    found = true;
+                    break;
+                }
+            }
+            
+            if (found) {
+                // Trigger satellite selection with user click experience
+                window.qtrigdopplerPanel.selectSatellite(true);
+                console.log(`Selected satellite ${satName} in QTRigDoppler`);
+            } else {
+                console.log(`Satellite ${satName} not found in QTRigDoppler satellite list`);
+            }
+        }
+    }
+    
+    // Show the QTRigDoppler panel
+    window.qtrigdopplerPanel.show();
 }
 
 // Save QTRigDoppler settings to localStorage

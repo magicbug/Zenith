@@ -19,6 +19,13 @@ class QTRigDopplerPanel {
         this.subtoneSelect = document.getElementById('qtrigdoppler-subtone');
         this.rxOffsetInput = document.getElementById('qtrigdoppler-rxoffset');
         
+        // Frequency display elements
+        this.downlinkFreqElement = document.getElementById('qtrigdoppler-downlink-freq');
+        this.downlinkModeElement = document.getElementById('qtrigdoppler-downlink-mode');
+        this.uplinkFreqElement = document.getElementById('qtrigdoppler-uplink-freq');
+        this.uplinkModeElement = document.getElementById('qtrigdoppler-uplink-mode');
+        this.dopplerElement = document.getElementById('qtrigdoppler-doppler');
+        
         // State variables
         this.isMinimized = false;
         this.isDragging = false;
@@ -329,6 +336,12 @@ class QTRigDopplerPanel {
             }
         }
         
+        // Log the complete data structure to inspect it
+        console.log('QTRigDoppler status update received:', JSON.stringify(data, null, 2));
+
+        // Update frequency display - with null checks
+        this.updateFrequencyDisplay(data);
+        
         // Update subtone
         if (data.subtone && !this.subtoneDirty) {
             for (let i = 0; i < this.subtoneSelect.options.length; i++) {
@@ -344,6 +357,57 @@ class QTRigDopplerPanel {
         if (data.rx_offset !== undefined && !this.rxOffsetDirty) {
             this.rxOffsetInput.value = data.rx_offset;
         }
+    }
+    
+    // Helper method to update frequency display based on server data
+    updateFrequencyDisplay(data) {
+        // Based on the console output, we know the frequency data is in data.satellite_info
+        const satelliteInfo = data.satellite_info || {};
+        
+        // Get frequency and mode information from satellite_info
+        const downlinkFreq = satelliteInfo.downlink_freq;
+        const downlinkMode = satelliteInfo.downlink_mode;
+        const uplinkFreq = satelliteInfo.uplink_freq;
+        const uplinkMode = satelliteInfo.uplink_mode;
+        
+        // Update the UI elements with frequency data - with null checks
+        if (this.downlinkFreqElement) {
+            this.downlinkFreqElement.textContent = downlinkFreq ? this.formatFreq(downlinkFreq) : '--';
+        }
+        
+        if (this.downlinkModeElement) {
+            this.downlinkModeElement.textContent = downlinkMode || '--';
+        }
+        
+        if (this.uplinkFreqElement) {
+            this.uplinkFreqElement.textContent = uplinkFreq ? this.formatFreq(uplinkFreq) : '--';
+        }
+        
+        if (this.uplinkModeElement) {
+            this.uplinkModeElement.textContent = uplinkMode || '--';
+        }
+        
+        // We removed the doppler element from HTML, so skip updating it
+        // But keep the property check in case we want to add it again later
+        if (this.dopplerElement) {
+            if (data.doppler) {
+                const dopplerText = [];
+                if (data.doppler.downlink) dopplerText.push(`Down: ${data.doppler.downlink}`);
+                if (data.doppler.uplink) dopplerText.push(`Up: ${data.doppler.uplink}`);
+                
+                this.dopplerElement.textContent = dopplerText.length > 0 ? dopplerText.join(' | ') : '--';
+            } else {
+                this.dopplerElement.textContent = '--';
+            }
+        }
+    }
+    
+    // Format frequency in MHz
+    formatFreq(freq) {
+        if (typeof freq === 'number') {
+            return (freq / 1000000).toFixed(3) + ' MHz';
+        }
+        return freq;
     }
     
     updateSatelliteDropdown(satellites, currentSatellite) {
@@ -569,6 +633,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const headerButtons = document.querySelector('.header-buttons');
     if (headerButtons) {
         headerButtons.appendChild(openQTRigDopplerBtn);
+    }
+    
+    // Automatically open the panel if it's enabled in localStorage
+    if (window.qtrigdopplerPanel.settings.enableQTRigDoppler === true) {
+        // Small delay to ensure everything is properly initialized
+        setTimeout(() => {
+            window.qtrigdopplerPanel.show();
+        }, 500);
     }
 });
 
