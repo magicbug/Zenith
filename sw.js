@@ -1,4 +1,4 @@
-const CACHE_NAME = 'zenith-v1';
+const CACHE_NAME = 'zenith-v1.1.1';
 const STATIC_CACHE = 'zenith-static-v2';
 const DATA_CACHE = 'zenith-data-v1';
 

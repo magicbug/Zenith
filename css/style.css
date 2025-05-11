@@ -1935,3 +1935,164 @@ button:hover {
     align-items: center;
     flex-shrink: 0; /* Prevent controls from shrinking */
 }
+
+/* QTRigDoppler Panel Styles */
+.qtrigdoppler-panel {
+    position: absolute;
+    bottom: 20px;
+    left: 100px;
+    width: 400px;
+    background-color: #ffffff;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    display: none;
+    flex-direction: column;
+    z-index: 900;
+}
+
+.qtrigdoppler-panel .info-header {
+    background-color: #2196F3;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    gap: 10px;
+}
+
+.qtrigdoppler-panel-content {
+    padding: 10px;
+    overflow-y: auto;
+    max-height: 400px;
+    background-color: #ffffff;
+}
+
+.qtrigdoppler-panel .control-section {
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+}
+
+.qtrigdoppler-panel .control-select {
+    width: 100%;
+    padding: 6px;
+    margin: 5px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #ffffff;
+}
+
+.qtrigdoppler-panel .rx-offset-buttons button {
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+    color: #333;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.qtrigdoppler-panel .rx-offset-buttons button:hover {
+    background-color: #e9ecef;
+    color: #000;
+}
+
+.qtrigdoppler-panel .info-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.qtrigdoppler-status {
+    margin-bottom: 8px;
+    padding: 5px;
+    border-radius: 4px;
+    background-color: #ffffff;
+}
+
+.qtrigdoppler-status.success {
+    background-color: #e8f5e9;
+    border-left: 4px solid #4caf50;
+}
+
+.qtrigdoppler-status.error {
+    background-color: #ffebee;
+    border-left: 4px solid #f44336;
+}
+
+.qtrigdoppler-status.pending {
+    background-color: #e3f2fd;
+    border-left: 4px solid #2196f3;
+}
+
+.qtrigdoppler-panel .control-section h4 {
+    margin: 0 0 10px 0;
+    color: #333;
+}
+
+.qtrigdoppler-panel .control-button {
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 5px 0;
+    width: 100%;
+    font-weight: 500;
+}
+
+.qtrigdoppler-panel .control-button:disabled {
+    background-color: #ccc;
+    color: #666;
+    cursor: not-allowed;
+}
+
+.qtrigdoppler-panel .rx-offset-controls {
+    display: flex;
+    gap: 5px;
+    margin: 5px 0;
+}
+
+.qtrigdoppler-panel .rx-offset-controls input {
+    flex: 1;
+    padding: 6px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.qtrigdoppler-panel .rx-offset-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+    margin-top: 5px;
+}
+
+.qtrigdoppler-panel.minimized .qtrigdoppler-panel-content {
+    display: none;
+}
+
+/* Custom loading indicator for select elements */
+.select-loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.select-loading::after {
+    content: "Loading...";
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    color: #666;
+    font-size: 11px;
+    font-style: italic;
+}

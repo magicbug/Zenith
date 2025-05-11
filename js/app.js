@@ -221,6 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadSelectedSatellitesFromLocalStorage();
     loadHamsAtSettingsFromLocalStorage();
     loadCsnSatSettingsFromLocalStorage();
+    loadQTRigDopplerSettingsFromLocalStorage(); // Add QTRigDoppler settings loading
     if (typeof loadCloudlogSettingsFromLocalStorage === 'function') {
         loadCloudlogSettingsFromLocalStorage();
     }
@@ -228,7 +229,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Update button visibility based on loaded settings
     updateSatPanelButtonVisibility();
-    updateAPRSButtonVisibility(); // Add call for APRS button
+    updateQTRigDopplerButtonVisibility(); // Add QTRigDoppler button visibility update
+    updateAPRSButtonVisibility();
     
     // Check S.A.T API availability
     if (enableCsnSat && csnSatAddress) {
@@ -437,6 +439,10 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
     });
+
+    // Add event listeners for QTRigDoppler settings
+    document.getElementById('enable-qtrigdoppler')?.addEventListener('change', saveQTRigDopplerSettings);
+    document.getElementById('qtrigdoppler-address')?.addEventListener('change', saveQTRigDopplerSettings);
 });
 
 // Function to initialize the map
@@ -1554,24 +1560,13 @@ function displayPasses(passes, container, visibleSats = []) {
             </div>
         `;
         
-        // Add click handler to show the satellite info
+        // Update click handler to show both info and polar radar
         passItem.addEventListener('click', () => {
-            const satName = pass.satellite;
+            showSatelliteInfo(pass.satellite);
+            showPolarRadarForPass(pass);
             
-            // Verify satellite exists AND has valid TLE data (satrec)
-            if (!window.tleData[satName] || !window.tleData[satName].satrec) {
-                console.error('Satellite TLE data not found or invalid for:', satName);
-                alert(`Cannot display info for ${satName}. TLE data might be missing, outdated, or invalid.`);
-                return; // Stop execution if data is bad
-            }
-            
-            // Always call showSatelliteInfo, it will handle unavailable data internally
-            showSatelliteInfo(satName); 
-            
-            // Check if showPolarRadarForPass exists before calling
-            if (typeof showPolarRadarForPass === 'function') {
-                showPolarRadarForPass(pass);
-            }
+            // Attempt to select the satellite in QTRigDoppler if it's enabled
+            selectSatelliteInQTRigDoppler(pass.satellite);
         });
         
         container.appendChild(passItem);
@@ -2441,16 +2436,19 @@ function saveHamsAtSettingsToLocalStorage() {
 
 // Load CSN SAT settings from local storage
 function loadCsnSatSettingsFromLocalStorage() {
-    const enabledSetting = localStorage.getItem('enableCsnSat');
-    if (enabledSetting !== null) {
-        enableCsnSat = enabledSetting === 'true';
-        document.getElementById('enable-csn-sat').checked = enableCsnSat;
-    }
-
-    const address = localStorage.getItem('csnSatAddress');
-    if (address) {
-        csnSatAddress = address;
-        document.getElementById('csn-sat-address').value = csnSatAddress;
+    const savedSettings = localStorage.getItem('csnSatSettings');
+    if (savedSettings) {
+        const settings = JSON.parse(savedSettings);
+        enableCsnSat = settings.enableCsnSat;
+        csnSatAddress = settings.serverAddress;
+        
+        // Update UI elements
+        const enableCsnSatCheckbox = document.getElementById('enable-csn-sat');
+        const csnSatAddressInput = document.getElementById('csn-sat-address');
+        if (enableCsnSatCheckbox) enableCsnSatCheckbox.checked = enableCsnSat;
+        if (csnSatAddressInput) csnSatAddressInput.value = csnSatAddress;
+        
+        updateSatPanelButtonVisibility();
     }
 }
 
@@ -2472,6 +2470,9 @@ function updateUpcomingPasses() {
         passItem.addEventListener('click', () => {
             showSatelliteInfo(pass.satellite);
             showPolarRadarForPass(pass);
+            
+            // Attempt to select the satellite in QTRigDoppler if it's enabled
+            selectSatelliteInQTRigDoppler(pass.satellite);
         });
         
         upcomingPassesElement.appendChild(passItem);
@@ -2873,4 +2874,118 @@ function updatePolarPlotForSatellite(satName) {
 
     // Show the pass in the polar plot
     showPolarRadarForPass(passData);
+}
+
+// Load QTRigDoppler settings from localStorage
+function loadQTRigDopplerSettingsFromLocalStorage() {
+    const savedSettings = localStorage.getItem('qtrigdopplerSettings');
+    if (savedSettings) {
+        const settings = JSON.parse(savedSettings);
+        
+        // Update UI elements
+        const enableQTRigDopplerCheckbox = document.getElementById('enable-qtrigdoppler');
+        const qtrigdopplerAddressInput = document.getElementById('qtrigdoppler-address');
+        if (enableQTRigDopplerCheckbox) enableQTRigDopplerCheckbox.checked = settings.enableQTRigDoppler;
+        if (qtrigdopplerAddressInput) qtrigdopplerAddressInput.value = settings.serverAddress;
+        
+        // Update button visibility
+        updateQTRigDopplerButtonVisibility();
+    }
+}
+
+// Update QTRigDoppler button visibility based on settings
+function updateQTRigDopplerButtonVisibility() {
+    const openQTRigDopplerBtn = document.getElementById('open-qtrigdoppler');
+    if (openQTRigDopplerBtn) {
+        const savedSettings = localStorage.getItem('qtrigdopplerSettings');
+        const settings = savedSettings ? JSON.parse(savedSettings) : { enableQTRigDoppler: false };
+        openQTRigDopplerBtn.style.display = settings.enableQTRigDoppler ? 'inline-block' : 'none';
+    }
+}
+
+// Function to select a satellite in QTRigDoppler if it's enabled
+function selectSatelliteInQTRigDoppler(satName) {
+    // Check if QTRigDoppler is enabled and we have the panel object
+    const savedSettings = localStorage.getItem('qtrigdopplerSettings');
+    if (!savedSettings) return;
+    
+    const settings = JSON.parse(savedSettings);
+    if (!settings.enableQTRigDoppler || !window.qtrigdopplerPanel) return;
+    
+    // Make sure the panel is loaded and socket is connected
+    if (!window.qtrigdopplerPanel.socket?.connected) {
+        // Show the panel first to establish connection
+        window.qtrigdopplerPanel.show();
+        
+        // Try selecting the satellite after a delay to allow connection
+        setTimeout(() => {
+            selectSatInQTRigDoppler();
+        }, 1000);
+    } else {
+        selectSatInQTRigDoppler();
+    }
+    
+    function selectSatInQTRigDoppler() {
+        const satelliteSelect = window.qtrigdopplerPanel.satelliteSelect;
+        
+        // Ensure we have the satellite list loaded
+        if (satelliteSelect.options.length <= 1) {
+            // If the satellite list isn't loaded yet, try to get it and try again after a delay
+            window.qtrigdopplerPanel.getSatelliteList();
+            setTimeout(() => {
+                attemptSelection();
+            }, 1000);
+        } else {
+            attemptSelection();
+        }
+        
+        function attemptSelection() {
+            // Look for the satellite in the dropdown
+            let found = false;
+            for (let i = 0; i < satelliteSelect.options.length; i++) {
+                // Check if the option value or text matches the satellite name or part of it
+                if (satelliteSelect.options[i].value === satName || 
+                    satelliteSelect.options[i].text === satName ||
+                    satelliteSelect.options[i].value.includes(satName) || 
+                    satelliteSelect.options[i].text.includes(satName)) {
+                    
+                    // Select this option
+                    satelliteSelect.selectedIndex = i;
+                    found = true;
+                    break;
+                }
+            }
+            
+            if (found) {
+                // Trigger satellite selection with user click experience
+                window.qtrigdopplerPanel.selectSatellite(true);
+                console.log(`Selected satellite ${satName} in QTRigDoppler`);
+            } else {
+                console.log(`Satellite ${satName} not found in QTRigDoppler satellite list`);
+            }
+        }
+    }
+    
+    // Show the QTRigDoppler panel
+    window.qtrigdopplerPanel.show();
+}
+
+// Save QTRigDoppler settings to localStorage
+function saveQTRigDopplerSettings() {
+    const enableQTRigDoppler = document.getElementById('enable-qtrigdoppler').checked;
+    const serverAddress = document.getElementById('qtrigdoppler-address').value;
+    
+    const settings = {
+        enableQTRigDoppler: enableQTRigDoppler,
+        serverAddress: serverAddress
+    };
+    
+    localStorage.setItem('qtrigdopplerSettings', JSON.stringify(settings));
+    updateQTRigDopplerButtonVisibility();
+    
+    // Reinitialize QTRigDoppler if the panel exists
+    if (window.qtrigdopplerPanel) {
+        window.qtrigdopplerPanel.settings = settings;
+        window.qtrigdopplerPanel.initializeWebSocket();
+    }
 }

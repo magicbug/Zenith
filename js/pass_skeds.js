@@ -174,6 +174,11 @@ function filterScheduleTable() {
             if (position) {
                 showSatelliteInfo(satName);
                 showPolarRadarForPass(pass);
+                
+                // Attempt to select the satellite in QTRigDoppler if it's enabled
+                if (typeof selectSatelliteInQTRigDoppler === 'function') {
+                    selectSatelliteInQTRigDoppler(satName);
+                }
             }
             
             // Close the schedule modal
@@ -216,125 +221,6 @@ function formatDateTimeWithDate(date) {
 }
 
 // Get a styled status label for a pass
-function getPassStatusLabel(pass, now) {
-    const isActive = now >= pass.start && now <= pass.end;
-    const timeToPass = (pass.start - now) / (60 * 1000); // Time to pass in minutes
-    const isUpcoming = !isActive && timeToPass > 0 && timeToPass <= 60; // Within next hour
-    const isWithinFootprint = isSatelliteWithinFootprint(pass.satellite);
-    
-    if (isActive) {
-        return '<span class="status-label status-active">Active</span>';
-    } else if (isUpcoming) {
-        return '<span class="status-label status-upcoming">Upcoming</span>';
-    } else if (isWithinFootprint) {
-        return '<span class="status-label status-visible">Visible</span>';
-    } else {
-        return '<span class="status-label status-normal">Scheduled</span>';
-    }
-}
-
-// Filter the schedule table based on selected satellite
-// This function is used to filter the schedule table based on the selected satellite
-function filterScheduleTable() {
-    const tableBody = document.getElementById('pass-schedule-body');
-    tableBody.innerHTML = ''; // Clear existing rows
-    
-    const satelliteFilter = document.getElementById('schedule-satellite-filter').value;
-    const now = new Date();
-    
-    // Filter passes by selected satellite
-    const filteredPasses = satelliteFilter === 'all' 
-        ? allScheduledPasses 
-        : allScheduledPasses.filter(pass => pass.satellite === satelliteFilter);
-    
-    // Sort by start time
-    filteredPasses.sort((a, b) => a.start - b.start);
-    
-    // Display filtered passes
-    filteredPasses.forEach(pass => {
-        const row = document.createElement('tr');
-        
-        // Check pass status
-        const isActive = now >= pass.start && now <= pass.end;
-        const timeToPass = (pass.start - now) / (60 * 1000); // Time to pass in minutes
-        const isUpcoming = !isActive && timeToPass > 0 && timeToPass <= 60; // Within next hour
-        const isWithinFootprint = isSatelliteWithinFootprint(pass.satellite);
-        
-        // Set row class based on pass status
-        if (isActive) {
-            row.classList.add('pass-active');
-        } else if (isUpcoming) {
-            row.classList.add('pass-upcoming');
-        } else if (isWithinFootprint) {
-            row.classList.add('pass-visible');
-        }
-        
-        // Format dates
-        const startDateTime = formatDateTimeWithDate(pass.start);
-        const endDateTime = formatDateTimeWithDate(pass.end);
-        const status = getPassStatusLabel(pass, now);
-        
-        // Create row cells
-        row.innerHTML = `
-            <td>${pass.satellite}</td>
-            <td>${startDateTime}</td>
-            <td>${endDateTime}</td>
-            <td>${Math.round(pass.maxElevation)}°</td>
-            <td>${pass.duration} min</td>
-            <td>${status}</td>
-        `;
-        
-        // Add click handler to show satellite info
-        row.addEventListener('click', () => {
-            const satName = pass.satellite;
-            const position = getSatellitePosition(satName);
-            if (position) {
-                showSatelliteInfo(satName);
-                showPolarRadarForPass(pass);
-            }
-            
-            // Close the schedule modal
-            document.getElementById('schedule-modal').style.display = 'none';
-        });
-        
-        tableBody.appendChild(row);
-    });
-    
-    // If no passes match filter
-    if (filteredPasses.length === 0) {
-        const row = document.createElement('tr');
-        row.innerHTML = `<td colspan="6" style="text-align: center;">No passes found for ${satelliteFilter}</td>`;
-        tableBody.appendChild(row);
-    }
-}
-
-// Format date and time for display with date included
-// This function is used to format the date and time for the schedule table
-function formatDateTimeWithDate(date) {
-    const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    
-    const isToday = date.getDate() === now.getDate() && 
-                    date.getMonth() === now.getMonth() && 
-                    date.getFullYear() === now.getFullYear();
-                    
-    const isTomorrow = date.getDate() === tomorrow.getDate() && 
-                      date.getMonth() === tomorrow.getMonth() && 
-                      date.getFullYear() === tomorrow.getFullYear();
-    
-    const day = isToday ? 'Today' : 
-               isTomorrow ? 'Tomorrow' : 
-               `${date.getDate()}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear().toString().substring(2)}`;
-               
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    
-    return `${day} ${hours}:${minutes}`;
-}
-
-// Get a styled status label for a pass
-// This function is used to determine the status of a pass and return a styled label
 function getPassStatusLabel(pass, now) {
     const isActive = now >= pass.start && now <= pass.end;
     const timeToPass = (pass.start - now) / (60 * 1000); // Time to pass in minutes
@@ -736,6 +622,11 @@ function filterSkedPlanningTable() {
             const position = getSatellitePosition(satName);
             if (position) {
                 showSatelliteInfo(satName);
+                
+                // Attempt to select the satellite in QTRigDoppler if it's enabled
+                if (typeof selectSatelliteInQTRigDoppler === 'function') {
+                    selectSatelliteInQTRigDoppler(satName);
+                }
             }
             
             // Close the schedule modal
