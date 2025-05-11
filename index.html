@@ -12,6 +12,21 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Zenith">
     <link rel="apple-touch-icon" href="assets/pwa_icons/ios/Icon-60@2x.png">
+    
+    <style>
+        .server-status {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: red;
+            margin-right: 10px;
+        }
+        .server-status.connected {
+            background-color: green;
+        }
+    </style>
+    
     <link rel="stylesheet" href="css/style.css">
 
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -199,6 +214,129 @@
                 </div>
             </div>
         </div>
+        
+        <!-- QTRigDoppler Panel - Moved outside map-container -->
+        <div id="qtrigdoppler-panel" class="qtrigdoppler-panel">
+            <div class="info-header">
+                <h3 id="qtrigdoppler-panel-title">QTRigDoppler Control</h3>
+                <div style="display: flex; align-items: center;">
+                    <span class="server-status" id="qtrigdoppler-connection-badge"></span>
+                    <span id="qtrigdoppler-server-status">Not connected</span>
+                </div>
+                <div class="panel-controls">
+                    <button id="minimize-qtrigdoppler-panel" class="minimize-button">−</button>
+                    <button id="close-qtrigdoppler-panel" class="close-button">×</button>
+                </div>
+            </div>
+            <div id="qtrigdoppler-panel-content" class="qtrigdoppler-panel-content">
+                <div id="qtrigdoppler-status-message" class="qtrigdoppler-status"></div>
+                <div id="qtrigdoppler-controls">
+                    <div class="control-section">
+                        <h4>Tracking Control</h4>
+                        <button id="qtrigdoppler-start-tracking" class="control-button" disabled>Start Tracking</button>
+                        <button id="qtrigdoppler-stop-tracking" class="control-button" disabled>Stop Tracking</button>
+                    </div>
+                    
+                    <div class="control-section">
+                        <h4>Satellite Selection</h4>
+                        <div style="display: flex; gap: 5px; margin-bottom: 8px;">
+                            <select id="qtrigdoppler-satellite" class="control-select" style="flex: 1;">
+                                <option value="">Choose a satellite...</option>
+                            </select>
+                            <button id="qtrigdoppler-refresh-sats" class="control-button" style="width: 30px; min-width: 30px; padding: 0; flex: 0 0 auto; background-color: #2196F3; color: white; border: none; border-radius: 4px;" title="Refresh satellite list">🔄</button>
+                        </div>
+                        <button id="qtrigdoppler-select-satellite" class="control-button" disabled style="display: none;">Select Satellite</button>
+                        
+                        <div style="display: flex; gap: 5px; margin-bottom: 8px; margin-top: 10px;">
+                            <select id="qtrigdoppler-transponder" class="control-select" style="flex: 1;">
+                                <option value="">Select a satellite first...</option>
+                            </select>
+                            <button id="qtrigdoppler-refresh-transponders" class="control-button" style="width: 30px; min-width: 30px; padding: 0; flex: 0 0 auto; background-color: #2196F3; color: white; border: none; border-radius: 4px;" title="Refresh transponder list">🔄</button>
+                        </div>
+                        <button id="qtrigdoppler-select-transponder" class="control-button" disabled style="display: none;">Select Transponder</button>
+                    </div>
+                    
+                    <div class="control-section">
+                        <h4>Radio Settings</h4>
+                        <label for="qtrigdoppler-subtone">Subtone:</label>
+                        <select id="qtrigdoppler-subtone" class="control-select">
+                            <option value="None">None</option>
+                            <option value="67.0 Hz">67 Hz</option>
+                            <option value="71.9 Hz">71.9 Hz</option>
+                            <option value="74.4 Hz">74.4 Hz</option>
+                            <option value="141.3 Hz">141.3 Hz</option>
+                        </select>
+                        
+                        <label for="qtrigdoppler-rxoffset">RX Offset (Hz):</label>
+                        <div class="rx-offset-controls">
+                            <input type="number" id="qtrigdoppler-rxoffset" value="0">
+                            <button onclick="setQTRigDopplerRxOffset()">Set</button>
+                            <button onclick="resetQTRigDopplerRxOffset()">Reset</button>
+                        </div>
+                        <div class="rx-offset-buttons">
+                            <button onclick="adjustQTRigDopplerRxOffset(1000)">+1000</button>
+                            <button onclick="adjustQTRigDopplerRxOffset(100)">+100</button>
+                            <button onclick="adjustQTRigDopplerRxOffset(10)">+10</button>
+                            <button onclick="adjustQTRigDopplerRxOffset(-10)">-10</button>
+                            <button onclick="adjustQTRigDopplerRxOffset(-100)">-100</button>
+                            <button onclick="adjustQTRigDopplerRxOffset(-1000)">-1000</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- APRS Panel -->
+        <div id="aprs-panel" class="aprs-panel">
+            <div class="info-header">
+                <h3 id="aprs-panel-title">APRS</h3>
+                <button id="aprs-toggle-debug" class="aprs-button debug-button">Show Debug</button>
+                <div class="panel-controls">
+                    <button id="minimize-aprs-panel" class="minimize-button">−</button>
+                    <button id="close-aprs-panel" class="close-button">×</button>
+                </div>
+            </div>
+            <div class="aprs-panel-content">
+                <div id="aprs-messages" class="aprs-messages"></div>
+                <div class="aprs-macros">
+                    <button id="aprs-cq" class="aprs-button">CQ</button>
+                    <button id="aprs-call-rpt" class="aprs-button">CALL RPT & GRID</button>
+                    <button id="aprs-tu73" class="aprs-button">TU 73</button>
+                </div>
+                <div class="aprs-controls">
+                    <div class="form-group">
+                        <label for="aprs-to">To callsign:</label>
+                        <input type="text" id="aprs-to" placeholder="To callsign" value="CQ">
+                    </div>
+                    <div class="form-group">
+                        <label for="aprs-via">Via path:</label>
+                        <input type="text" id="aprs-via" placeholder="Via path" value="WIDE1-1,WIDE2-1">
+                    </div>
+                    <div class="form-group">
+                        <label for="aprs-message">Message:</label>
+                        <input type="text" id="aprs-message" placeholder="Message text">
+                    </div>
+                    <div class="aprs-buttons">
+                        <button id="aprs-send-message" class="aprs-button">Send Message</button>
+                        <button id="aprs-send-position" class="aprs-button">Send Position</button>
+                    </div>
+                </div>
+                <div class="aprs-table-container">
+                    <table id="aprs-packets-table" class="aprs-table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>From</th>
+                                <th>To</th>
+                                <th>Message</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Options Modal -->
@@ -314,14 +452,19 @@
                                 <h4>CSN Technologies S.A.T</h4>
                                 <div class="form-group">
                                     <label>
-                                        <input type="checkbox" id="enable-csn-sat">
+                                        <input type="checkbox" id="enable-csn-sat" name="enable-csn-sat">
                                         Enable CSN Technologies S.A.T
                                     </label>
+                                    <input type="text" id="csn-sat-address" name="csn-sat-address" placeholder="Enter CSN S.A.T server address">
                                 </div>
+
+                                <!-- QTRigDoppler Settings -->
                                 <div class="form-group">
-                                    <label for="csn-sat-address">IP or Domain:</label>
-                                    <input type="text" id="csn-sat-address" value="rotator.local" placeholder="Enter IP address or domain">
-                                    <p class="help-text">Enter the IP address or domain of your CSN Technologies S.A.T</p>
+                                    <label>
+                                        <input type="checkbox" id="enable-qtrigdoppler" name="enable-qtrigdoppler">
+                                        Enable QTRigDoppler
+                                    </label>
+                                    <input type="text" id="qtrigdoppler-address" name="qtrigdoppler-address" placeholder="Enter QTRigDoppler server address">
                                 </div>
                             </div>
 
@@ -641,64 +784,14 @@
         </div>
     </div>
 
-    <!-- APRS Panel -->
-    <div id="aprs-panel" class="aprs-panel">
-        <div class="info-header">
-            <h3 id="aprs-panel-title">APRS</h3>
-            <button id="aprs-toggle-debug" class="aprs-button debug-button">Show Debug</button>
-            <div class="panel-controls">
-                <button id="minimize-aprs-panel" class="minimize-button">−</button>
-                <button id="close-aprs-panel" class="close-button">×</button>
-            </div>
-        </div>
-        <div class="aprs-panel-content">
-            <div id="aprs-messages" class="aprs-messages"></div>
-            <div class="aprs-macros">
-                <button id="aprs-cq" class="aprs-button">CQ</button>
-                <button id="aprs-call-rpt" class="aprs-button">CALL RPT & GRID</button>
-                <button id="aprs-tu73" class="aprs-button">TU 73</button>
-            </div>
-            <div class="aprs-controls">
-                <div class="form-group">
-                    <label for="aprs-to">To callsign:</label>
-                    <input type="text" id="aprs-to" placeholder="To callsign" value="CQ">
-                </div>
-                <div class="form-group">
-                    <label for="aprs-via">Via path:</label>
-                    <input type="text" id="aprs-via" placeholder="Via path" value="WIDE1-1,WIDE2-1">
-                </div>
-                <div class="form-group">
-                    <label for="aprs-message">Message:</label>
-                    <input type="text" id="aprs-message" placeholder="Message text">
-                </div>
-                <div class="aprs-buttons">
-                    <button id="aprs-send-message" class="aprs-button">Send Message</button>
-                    <button id="aprs-send-position" class="aprs-button">Send Position</button>
-                </div>
-            </div>
-            <div class="aprs-table-container">
-                <table id="aprs-packets-table" class="aprs-table">
-                    <thead>
-                        <tr>
-                            <th>Time</th>
-                            <th>From</th>
-                            <th>To</th>
-                            <th>Message</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
     <!-- Load Scripts -->
     <!-- <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script> -->
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/4.0.0/satellite.min.js"></script>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.js"></script>
+    <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
     <script src="js/map_d3.js"></script>
     <script src="js/aprs.js"></script>
     <script src="js/csn.js"></script>
@@ -707,6 +800,7 @@
     <script src="js/notification.js"></script>
     <script src="js/pass_skeds.js"></script>
     <script src="js/polar_plot.js"></script>
+    <script src="js/qtrigdoppler.js"></script>
     <script src="js/app.js"></script>
 </body>
 

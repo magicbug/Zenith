@@ -221,6 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadSelectedSatellitesFromLocalStorage();
     loadHamsAtSettingsFromLocalStorage();
     loadCsnSatSettingsFromLocalStorage();
+    loadQTRigDopplerSettingsFromLocalStorage(); // Add QTRigDoppler settings loading
     if (typeof loadCloudlogSettingsFromLocalStorage === 'function') {
         loadCloudlogSettingsFromLocalStorage();
     }
@@ -228,7 +229,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Update button visibility based on loaded settings
     updateSatPanelButtonVisibility();
-    updateAPRSButtonVisibility(); // Add call for APRS button
+    updateQTRigDopplerButtonVisibility(); // Add QTRigDoppler button visibility update
+    updateAPRSButtonVisibility();
     
     // Check S.A.T API availability
     if (enableCsnSat && csnSatAddress) {
@@ -437,6 +439,10 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
     });
+
+    // Add event listeners for QTRigDoppler settings
+    document.getElementById('enable-qtrigdoppler')?.addEventListener('change', saveQTRigDopplerSettings);
+    document.getElementById('qtrigdoppler-address')?.addEventListener('change', saveQTRigDopplerSettings);
 });
 
 // Function to initialize the map
@@ -2441,16 +2447,19 @@ function saveHamsAtSettingsToLocalStorage() {
 
 // Load CSN SAT settings from local storage
 function loadCsnSatSettingsFromLocalStorage() {
-    const enabledSetting = localStorage.getItem('enableCsnSat');
-    if (enabledSetting !== null) {
-        enableCsnSat = enabledSetting === 'true';
-        document.getElementById('enable-csn-sat').checked = enableCsnSat;
-    }
-
-    const address = localStorage.getItem('csnSatAddress');
-    if (address) {
-        csnSatAddress = address;
-        document.getElementById('csn-sat-address').value = csnSatAddress;
+    const savedSettings = localStorage.getItem('csnSatSettings');
+    if (savedSettings) {
+        const settings = JSON.parse(savedSettings);
+        enableCsnSat = settings.enableCsnSat;
+        csnSatAddress = settings.serverAddress;
+        
+        // Update UI elements
+        const enableCsnSatCheckbox = document.getElementById('enable-csn-sat');
+        const csnSatAddressInput = document.getElementById('csn-sat-address');
+        if (enableCsnSatCheckbox) enableCsnSatCheckbox.checked = enableCsnSat;
+        if (csnSatAddressInput) csnSatAddressInput.value = csnSatAddress;
+        
+        updateSatPanelButtonVisibility();
     }
 }
 
@@ -2873,4 +2882,51 @@ function updatePolarPlotForSatellite(satName) {
 
     // Show the pass in the polar plot
     showPolarRadarForPass(passData);
+}
+
+// Load QTRigDoppler settings from localStorage
+function loadQTRigDopplerSettingsFromLocalStorage() {
+    const savedSettings = localStorage.getItem('qtrigdopplerSettings');
+    if (savedSettings) {
+        const settings = JSON.parse(savedSettings);
+        
+        // Update UI elements
+        const enableQTRigDopplerCheckbox = document.getElementById('enable-qtrigdoppler');
+        const qtrigdopplerAddressInput = document.getElementById('qtrigdoppler-address');
+        if (enableQTRigDopplerCheckbox) enableQTRigDopplerCheckbox.checked = settings.enableQTRigDoppler;
+        if (qtrigdopplerAddressInput) qtrigdopplerAddressInput.value = settings.serverAddress;
+        
+        // Update button visibility
+        updateQTRigDopplerButtonVisibility();
+    }
+}
+
+// Update QTRigDoppler button visibility based on settings
+function updateQTRigDopplerButtonVisibility() {
+    const openQTRigDopplerBtn = document.getElementById('open-qtrigdoppler');
+    if (openQTRigDopplerBtn) {
+        const savedSettings = localStorage.getItem('qtrigdopplerSettings');
+        const settings = savedSettings ? JSON.parse(savedSettings) : { enableQTRigDoppler: false };
+        openQTRigDopplerBtn.style.display = settings.enableQTRigDoppler ? 'inline-block' : 'none';
+    }
+}
+
+// Save QTRigDoppler settings to localStorage
+function saveQTRigDopplerSettings() {
+    const enableQTRigDoppler = document.getElementById('enable-qtrigdoppler').checked;
+    const serverAddress = document.getElementById('qtrigdoppler-address').value;
+    
+    const settings = {
+        enableQTRigDoppler: enableQTRigDoppler,
+        serverAddress: serverAddress
+    };
+    
+    localStorage.setItem('qtrigdopplerSettings', JSON.stringify(settings));
+    updateQTRigDopplerButtonVisibility();
+    
+    // Reinitialize QTRigDoppler if the panel exists
+    if (window.qtrigdopplerPanel) {
+        window.qtrigdopplerPanel.settings = settings;
+        window.qtrigdopplerPanel.initializeWebSocket();
+    }
 }
