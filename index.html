@@ -305,16 +305,16 @@
                             <label for="qtrigdoppler-rxoffset">RX Offset (Hz):</label>
                             <div class="rx-offset-controls">
                                 <input type="number" id="qtrigdoppler-rxoffset" value="0" aria-label="Enter RX offset in Hz">
-                                <button onclick="setQTRigDopplerRxOffset()" aria-label="Apply RX offset value">Set</button>
-                                <button onclick="resetQTRigDopplerRxOffset()" aria-label="Reset RX offset to zero">Reset</button>
+                                <button onclick="window.qtrigdopplerPanel.setRxOffset()" aria-label="Apply RX offset value">Set</button>
+                                <button onclick="window.qtrigdopplerPanel.resetRxOffset()" aria-label="Reset RX offset to zero">Reset</button>
                             </div>
                             <div class="rx-offset-buttons">
-                                <button onclick="adjustQTRigDopplerRxOffset(1000)">+1000</button>
-                                <button onclick="adjustQTRigDopplerRxOffset(100)">+100</button>
-                                <button onclick="adjustQTRigDopplerRxOffset(10)">+10</button>
-                                <button onclick="adjustQTRigDopplerRxOffset(-10)">-10</button>
-                                <button onclick="adjustQTRigDopplerRxOffset(-100)">-100</button>
-                                <button onclick="adjustQTRigDopplerRxOffset(-1000)">-1000</button>
+                                <button onclick="window.qtrigdopplerPanel.adjustRxOffset(1000)">+1000</button>
+                                <button onclick="window.qtrigdopplerPanel.adjustRxOffset(100)">+100</button>
+                                <button onclick="window.qtrigdopplerPanel.adjustRxOffset(10)">+10</button>
+                                <button onclick="window.qtrigdopplerPanel.adjustRxOffset(-10)">-10</button>
+                                <button onclick="window.qtrigdopplerPanel.adjustRxOffset(-100)">-100</button>
+                                <button onclick="window.qtrigdopplerPanel.adjustRxOffset(-1000)">-1000</button>
                             </div>
                         </div>
                     </div>
