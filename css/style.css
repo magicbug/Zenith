@@ -1941,7 +1941,7 @@ button:hover {
     position: absolute;
     bottom: 20px;
     left: 100px;
-    width: 400px;
+    width: 450px;
     background-color: #ffffff;
     border-radius: 5px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
@@ -1956,127 +1956,171 @@ button:hover {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 10px;
+    padding: 8px 12px;
     border-top-left-radius: 5px;
     border-top-right-radius: 5px;
-    gap: 10px;
+    cursor: grab;
+}
+
+.qtrigdoppler-panel .server-info {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background-color: rgba(0, 0, 0, 0.1);
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.qtrigdoppler-panel .server-status {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: red;
+}
+
+.qtrigdoppler-panel .server-status.connected {
+    background-color: #4CAF50;
 }
 
 .qtrigdoppler-panel-content {
-    padding: 10px;
+    padding: 15px;
     overflow-y: auto;
-    max-height: 400px;
-    background-color: #ffffff;
+    max-height: calc(80vh - 40px);
 }
 
 .qtrigdoppler-panel .control-section {
-    margin-bottom: 15px;
-    padding: 10px;
+    margin-bottom: 20px;
+    padding: 12px;
     background-color: #f8f9fa;
     border: 1px solid #e0e0e0;
     border-radius: 4px;
 }
 
+.qtrigdoppler-panel .button-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.qtrigdoppler-panel .selection-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
 .qtrigdoppler-panel .control-select {
     width: 100%;
-    padding: 6px;
-    margin: 5px 0;
+    padding: 8px;
     border: 1px solid #ddd;
     border-radius: 4px;
     background-color: #ffffff;
 }
 
+.qtrigdoppler-panel .control-button {
+    padding: 8px 12px;
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    flex: 1;
+    min-width: 80px;
+}
+
+.qtrigdoppler-panel .control-button:hover {
+    background-color: #1976D2;
+}
+
+.qtrigdoppler-panel .control-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.qtrigdoppler-panel .refresh-button {
+    padding: 8px;
+    min-width: 36px;
+    flex: 0 0 auto;
+}
+
+.qtrigdoppler-panel .freq-info {
+    margin: 10px 0;
+}
+
+.qtrigdoppler-panel .info-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 5px 0;
+}
+
+.qtrigdoppler-panel .info-table td {
+    padding: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+.qtrigdoppler-panel .info-table td:first-child {
+    font-weight: bold;
+    width: 30%;
+}
+
+.qtrigdoppler-panel .freq-value {
+    font-family: 'Courier New', monospace;
+    margin-right: 8px;
+}
+
+.qtrigdoppler-panel .mode-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    min-width: 30px;
+    text-align: center;
+    color: white;
+}
+
+.qtrigdoppler-panel .mode-badge-rx {
+    background-color: #2196F3;
+}
+
+.qtrigdoppler-panel .mode-badge-tx {
+    background-color: #4CAF50;
+}
+
+.qtrigdoppler-panel .radio-settings-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.qtrigdoppler-panel .rx-offset-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.qtrigdoppler-panel .rx-offset-controls input[type="number"] {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    width: 120px;
+}
+
+.qtrigdoppler-panel .rx-offset-buttons {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 4px;
+    margin-top: 8px;
+}
+
 .qtrigdoppler-panel .rx-offset-buttons button {
-    padding: 6px 10px;
+    padding: 6px 4px;
     border: 1px solid #ddd;
     border-radius: 4px;
     background-color: #f8f9fa;
     color: #333;
     cursor: pointer;
-    font-weight: 500;
-}
-
-.qtrigdoppler-panel .rx-offset-buttons button:hover {
-    background-color: #e9ecef;
-    color: #000;
-}
-
-.qtrigdoppler-panel .info-header h3 {
-    margin: 0;
-    font-size: 1rem;
-    flex-grow: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.qtrigdoppler-status {
-    margin-bottom: 8px;
-    padding: 5px;
-    border-radius: 4px;
-    background-color: #ffffff;
-}
-
-.qtrigdoppler-status.success {
-    background-color: #e8f5e9;
-    border-left: 4px solid #4caf50;
-}
-
-.qtrigdoppler-status.error {
-    background-color: #ffebee;
-    border-left: 4px solid #f44336;
-}
-
-.qtrigdoppler-status.pending {
-    background-color: #e3f2fd;
-    border-left: 4px solid #2196f3;
-}
-
-.qtrigdoppler-panel .control-section h4 {
-    margin: 0 0 10px 0;
-    color: #333;
-}
-
-.qtrigdoppler-panel .control-button {
-    background-color: #2196F3;
-    color: white;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 4px;
-    cursor: pointer;
-    margin: 5px 0;
-    width: 100%;
-    font-weight: 500;
-}
-
-.qtrigdoppler-panel .control-button:disabled {
-    background-color: #ccc;
-    color: #666;
-    cursor: not-allowed;
-}
-
-.qtrigdoppler-panel .rx-offset-controls {
-    display: flex;
-    gap: 5px;
-    margin: 5px 0;
-}
-
-.qtrigdoppler-panel .rx-offset-controls input {
-    flex: 1;
-    padding: 6px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-}
-
-.qtrigdoppler-panel .rx-offset-buttons {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 5px;
-    margin-top: 5px;
-}
-
-.qtrigdoppler-panel.minimized .qtrigdoppler-panel-content {
-    display: none;
+    font-size: 0.9em;
 }
 
 /* Custom loading indicator for select elements */
@@ -2095,4 +2139,29 @@ button:hover {
     color: #666;
     font-size: 11px;
     font-style: italic;
+}
+
+.qtrigdoppler-panel .radio-settings-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.qtrigdoppler-panel .radio-settings-group label {
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+
+.qtrigdoppler-panel .radio-settings-group select,
+.qtrigdoppler-panel .radio-settings-group input[type="number"] {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #ffffff;
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.qtrigdoppler-panel .radio-settings-group .control-button {
+    margin-bottom: 12px;
 }

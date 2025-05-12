@@ -214,14 +214,14 @@
                 </div>
             </div>
         </div>
-        
-        <!-- QTRigDoppler Panel - Moved outside map-container -->
+          <!-- QTRigDoppler Panel - Moved outside map-container -->
         <div id="qtrigdoppler-panel" class="qtrigdoppler-panel">
             <div class="info-header">
                 <h3 id="qtrigdoppler-panel-title">QTRigDoppler Control</h3>
-                <div style="display: flex; align-items: center;">
+                <div class="server-info">
                     <span class="server-status" id="qtrigdoppler-connection-badge"></span>
                     <span id="qtrigdoppler-server-status">Not connected</span>
+                    <button id="configure-server" class="control-button" style="margin-left: 10px;">Configure Server</button>
                 </div>
                 <div class="panel-controls">
                     <button id="minimize-qtrigdoppler-panel" class="minimize-button">−</button>
@@ -233,73 +233,97 @@
                 <div id="qtrigdoppler-controls">
                     <div class="control-section">
                         <h4>Tracking Control</h4>
-                        <button id="qtrigdoppler-start-tracking" class="control-button" disabled>Start Tracking</button>
-                        <button id="qtrigdoppler-stop-tracking" class="control-button" disabled>Stop Tracking</button>
+                        <div class="button-group">
+                            <button id="qtrigdoppler-start-tracking" class="control-button" disabled>Start Tracking</button>
+                            <button id="qtrigdoppler-stop-tracking" class="control-button" disabled>Stop Tracking</button>
+                            <button id="qtrigdoppler-get-status" class="control-button">Get Status</button>
+                        </div>
                     </div>
                     
                     <div class="control-section">
                         <h4>Satellite Selection</h4>
-                        <div style="display: flex; gap: 5px; margin-bottom: 8px;">
-                            <select id="qtrigdoppler-satellite" class="control-select" style="flex: 1;">
-                                <option value="">Choose a satellite...</option>
-                            </select>
-                            <button id="qtrigdoppler-refresh-sats" class="control-button" style="width: 30px; min-width: 30px; padding: 0; flex: 0 0 auto; background-color: #2196F3; color: white; border: none; border-radius: 4px;" title="Refresh satellite list">🔄</button>
+                        <div class="selection-group">
+                            <div style="display: flex; gap: 5px; margin-bottom: 8px;">
+                                <select id="qtrigdoppler-satellite" class="control-select" style="flex: 1;">
+                                    <option value="">Choose a satellite...</option>
+                                </select>
+                                <button id="qtrigdoppler-refresh-sats" class="control-button refresh-button">🔄</button>
+                            </div>
+                            <button id="qtrigdoppler-select-satellite" class="control-button" disabled>Select Satellite</button>
                         </div>
-                        <button id="qtrigdoppler-select-satellite" class="control-button" disabled style="display: none;">Select Satellite</button>
                         
-                        <div style="display: flex; gap: 5px; margin-bottom: 8px; margin-top: 10px;">
-                            <select id="qtrigdoppler-transponder" class="control-select" style="flex: 1;">
-                                <option value="">Select a satellite first...</option>
-                            </select>
-                            <button id="qtrigdoppler-refresh-transponders" class="control-button" style="width: 30px; min-width: 30px; padding: 0; flex: 0 0 auto; background-color: #2196F3; color: white; border: none; border-radius: 4px;" title="Refresh transponder list">🔄</button>
+                        <div class="selection-group" style="margin-top: 10px;">
+                            <div style="display: flex; gap: 5px; margin-bottom: 8px;">
+                                <select id="qtrigdoppler-transponder" class="control-select" style="flex: 1;">
+                                    <option value="">Select a satellite first...</option>
+                                </select>
+                                <button id="qtrigdoppler-refresh-transponders" class="control-button refresh-button">🔄</button>
+                            </div>
+                            <button id="qtrigdoppler-select-transponder" class="control-button" disabled>Select Transponder</button>
                         </div>
-                        <button id="qtrigdoppler-select-transponder" class="control-button" disabled style="display: none;">Select Transponder</button>
                     </div>
                     
                     <div class="control-section">
                         <h4>Frequency Information</h4>
-                        <div class="freq-info" style="margin-bottom: 15px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <div style="font-weight: bold;">Downlink:</div>
-                                <div style="display: flex; align-items: center;">
-                                    <div id="qtrigdoppler-downlink-freq" style="text-align: right; margin-right: 8px; font-family: 'Courier New', monospace; min-width: 90px;">--</div>
-                                    <div id="qtrigdoppler-downlink-mode" style="background-color: #2196F3; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; min-width: 30px; text-align: center;">--</div>
-                                </div>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div style="font-weight: bold;">Uplink:</div>
-                                <div style="display: flex; align-items: center;">
-                                    <div id="qtrigdoppler-uplink-freq" style="text-align: right; margin-right: 8px; font-family: 'Courier New', monospace; min-width: 90px;">--</div>
-                                    <div id="qtrigdoppler-uplink-mode" style="background-color: #4CAF50; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; min-width: 30px; text-align: center;">--</div>
-                                </div>
-                            </div>
+                        <div class="freq-info">
+                            <table class="info-table">
+                                <tr>
+                                    <td>Downlink</td>
+                                    <td>
+                                        <span id="qtrigdoppler-downlink-freq" class="freq-value">--</span>
+                                        <span id="qtrigdoppler-downlink-mode" class="mode-badge mode-badge-rx">--</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Uplink</td>
+                                    <td>
+                                        <span id="qtrigdoppler-uplink-freq" class="freq-value">--</span>
+                                        <span id="qtrigdoppler-uplink-mode" class="mode-badge mode-badge-tx">--</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Doppler</td>
+                                    <td><span id="qtrigdoppler-doppler">--</span></td>
+                                </tr>
+                            </table>
                         </div>
                     </div>
                     
                     <div class="control-section">
                         <h4>Radio Settings</h4>
-                        <label for="qtrigdoppler-subtone">Subtone:</label>
-                        <select id="qtrigdoppler-subtone" class="control-select">
-                            <option value="None">None</option>
-                            <option value="67.0 Hz">67 Hz</option>
-                            <option value="71.9 Hz">71.9 Hz</option>
-                            <option value="74.4 Hz">74.4 Hz</option>
-                            <option value="141.3 Hz">141.3 Hz</option>
-                        </select>
-                        
-                        <label for="qtrigdoppler-rxoffset">RX Offset (Hz):</label>
-                        <div class="rx-offset-controls">
-                            <input type="number" id="qtrigdoppler-rxoffset" value="0">
-                            <button onclick="setQTRigDopplerRxOffset()">Set</button>
-                            <button onclick="resetQTRigDopplerRxOffset()">Reset</button>
+                        <div class="radio-settings-group">
+                            <label for="qtrigdoppler-subtone">Subtone:</label>
+                            <select id="qtrigdoppler-subtone" class="control-select" aria-label="Select subtone frequency">
+                                <option value="None">None</option>
+                                <option value="67 Hz">67 Hz</option>
+                                <option value="71.9 Hz">71.9 Hz</option>
+                                <option value="74.4 Hz">74.4 Hz</option>
+                                <option value="141.3 Hz">141.3 Hz</option>
+                            </select>
+                            <button id="qtrigdoppler-set-subtone" class="control-button" aria-label="Apply selected subtone">Set Subtone</button>
+                            
+                            <label for="qtrigdoppler-rxoffset">RX Offset (Hz):</label>
+                            <div class="rx-offset-controls">
+                                <input type="number" id="qtrigdoppler-rxoffset" value="0" aria-label="Enter RX offset in Hz">
+                                <button onclick="setQTRigDopplerRxOffset()" aria-label="Apply RX offset value">Set</button>
+                                <button onclick="resetQTRigDopplerRxOffset()" aria-label="Reset RX offset to zero">Reset</button>
+                            </div>
+                            <div class="rx-offset-buttons">
+                                <button onclick="adjustQTRigDopplerRxOffset(1000)">+1000</button>
+                                <button onclick="adjustQTRigDopplerRxOffset(100)">+100</button>
+                                <button onclick="adjustQTRigDopplerRxOffset(10)">+10</button>
+                                <button onclick="adjustQTRigDopplerRxOffset(-10)">-10</button>
+                                <button onclick="adjustQTRigDopplerRxOffset(-100)">-100</button>
+                                <button onclick="adjustQTRigDopplerRxOffset(-1000)">-1000</button>
+                            </div>
                         </div>
-                        <div class="rx-offset-buttons">
-                            <button onclick="adjustQTRigDopplerRxOffset(1000)">+1000</button>
-                            <button onclick="adjustQTRigDopplerRxOffset(100)">+100</button>
-                            <button onclick="adjustQTRigDopplerRxOffset(10)">+10</button>
-                            <button onclick="adjustQTRigDopplerRxOffset(-10)">-10</button>
-                            <button onclick="adjustQTRigDopplerRxOffset(-100)">-100</button>
-                            <button onclick="adjustQTRigDopplerRxOffset(-1000)">-1000</button>
+                    </div>
+
+                    <div class="control-section">
+                        <h4>Rotator Control</h4>
+                        <div class="button-group" id="qtrigdoppler-rotator-controls">
+                            <button id="qtrigdoppler-park-rotator" class="control-button">Park Rotator</button>
+                            <button id="qtrigdoppler-stop-rotator" class="control-button">Stop Rotation</button>
                         </div>
                     </div>
                 </div>

@@ -78,11 +78,11 @@
 </head>
 <body>
     <h2>QTrigdoppler WebSocket Control</h2>
-    
-    <div class="server-info">
+      <div class="server-info">
         <span class="server-status" id="connectionIndicator"></span>
         <span id="serverDisplay">Server: Not connected</span>
         <button onclick="configureServer()" style="margin-left: 10px;">Configure Server</button>
+        <span id="serverType" style="margin-left: 10px; font-size: 0.8em; color: #666;">(Direct Connection)</span>
     </div>
     
     <div class="control-panel">
@@ -163,8 +163,7 @@
     <textarea id="debug" rows="10" cols="60" readonly style="font-family:monospace;"></textarea>
     <script>
         // Allow user to configure the server URL with localStorage persistence
-        var serverUrl = localStorage.getItem('serverUrl') || "http://localhost:5000";
-        var socket;
+        var serverUrl = localStorage.getItem('serverUrl') || "http://37.27.191.168:5001/";
         var statusDiv = document.getElementById('status');
         var debugArea = document.getElementById('debug');
         var serverDisplay = document.getElementById('serverDisplay');
@@ -202,11 +201,17 @@
         function connectToServer() {
             try {
                 socket = io(serverUrl);
-                
-                socket.on('connect', function() {
+                  socket.on('connect', function() {
                     statusDiv.textContent = 'Status: Connected';
                     connectionIndicator.classList.add('connected');
                     logDebug('Socket connected to ' + serverUrl);
+                    
+                    // Check if this is a remote or direct connection
+                    if (serverUrl.includes('localhost') || serverUrl.includes('127.0.0.1')) {
+                        document.getElementById('serverType').textContent = '(Direct Connection)';
+                    } else {
+                        document.getElementById('serverType').textContent = '(Remote Server)';
+                    }
                     
                     // Request initial data on connect
                     getStatus();
@@ -360,9 +365,8 @@
                     html += '<tr><th colspan="2">Rotator</th></tr>';
                     if (!rotatorEnabled) {
                         html += '<tr><td colspan="2">Rotator is disabled</td></tr>';
-                    } else {
-                        html += '<tr><td>Rotator Azimuth</td><td>' + (rotator.azimuth || 'N/A') + '</td></tr>';
-                        html += '<tr><td>Rotator Elevation</td><td>' + (rotator.elevation || 'N/A') + '</td></tr>';
+                    } else {                        html += '<tr><td>Rotator Azimuth</td><td>📡 ' + (rotator.azimuth ? rotator.azimuth + '°' : 'N/A') + '</td></tr>';
+                        html += '<tr><td>Rotator Elevation</td><td>📡 ' + (rotator.elevation ? rotator.elevation + '°' : 'N/A') + '</td></tr>';
                     }
                 }
                 if (doppler.downlink || doppler.uplink) {
