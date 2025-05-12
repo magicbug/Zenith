@@ -1942,6 +1942,7 @@ button:hover {
     bottom: 20px;
     left: 100px;
     width: 450px;
+    max-height: 400px;
     background-color: #ffffff;
     border-radius: 5px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
@@ -2164,4 +2165,14 @@ button:hover {
 
 .qtrigdoppler-panel .radio-settings-group .control-button {
     margin-bottom: 12px;
+}
+
+.qtrigdoppler-panel.minimized {
+    height: auto;
+}
+.qtrigdoppler-panel.minimized .qtrigdoppler-panel-content {
+    display: none;
+}
+.qtrigdoppler-panel.minimized .minimize-button {
+    transform: rotate(180deg);
 }
