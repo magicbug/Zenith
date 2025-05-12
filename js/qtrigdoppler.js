@@ -69,6 +69,8 @@ class QTRigDopplerPanel {
             enableQTRigDoppler: false,
             serverAddress: 'http://localhost:5001'
         };
+
+        this.satelliteListLoaded = false;
     }
 
     initializeWebSocket() {
@@ -191,6 +193,7 @@ class QTRigDopplerPanel {
         // Refresh buttons
         this.refreshSatellitesBtn.addEventListener('click', () => {
             if (this.socket?.connected) {
+                this.satelliteListLoaded = false; // allow reload
                 this.satelliteSelect.classList.add('select-loading');
                 this.getSatelliteList();
                 this.updateStatus('Refreshing satellite list...', 'info');
@@ -291,11 +294,11 @@ class QTRigDopplerPanel {
     // Panel actions
     show() {
         this.panel.style.display = 'flex';
-        if (this.socket?.connected && this.satelliteSelect.value) {
-            this.selectSatellite(true);
-        } else {
-            this.getStatus();
+        if (!this.satelliteListLoaded) {
+            this.getSatelliteList();
+            this.satelliteListLoaded = true;
         }
+        this.getStatus();
     }
 
     hide() {
