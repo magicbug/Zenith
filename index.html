@@ -8,11 +8,12 @@
     <link rel="icon" type="image/x-icon" href="zenith.ico">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4a90e2">
+    <meta name="msapplication-TileColor" content="#4a90e2">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Zenith">
     <link rel="apple-touch-icon" href="assets/pwa_icons/ios/Icon-60@2x.png">
-    
+
     <style>
         .server-status {
             display: inline-block;
@@ -22,11 +23,12 @@
             background-color: red;
             margin-right: 10px;
         }
+
         .server-status.connected {
             background-color: green;
         }
     </style>
-    
+
     <link rel="stylesheet" href="css/style.css">
 
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -37,7 +39,8 @@
 <body>
     <div class="container">
         <header>
-            <img src="assets/pwa_icons/windows/Square44x44Logo.scale-125.png" alt="Zenith Satellite Tracker" class="zenith-logo">
+            <img src="assets/pwa_icons/windows/Square44x44Logo.scale-125.png" alt="Zenith Satellite Tracker"
+                class="zenith-logo">
             <h1>Zenith Satellite Tracker</h1>
             <div class="header-buttons">
                 <button id="open-sat-panel-btn" class="sat-button-header">CSN Panel</button>
@@ -162,8 +165,8 @@
                     <div id="sat-panel-content" class="sat-panel-content">
                         <!-- S.A.T information will be displayed here -->
                         <div id="sat-status-message" class="sat-status"></div>
-                        <div id="sat-selected" class="sat-selected" style="display: none;"></div>
-                        
+                        <div id="sat-selected" class="sat-selected hidden"></div>
+
                         <!-- Rotator status table -->
                         <div class="sat-rotator-info">
                             <table>
@@ -175,7 +178,7 @@
                                 </tr>
                             </table>
                         </div>
-                        
+
                         <!-- Transponder information -->
                         <div id="sat-transponder-info" class="sat-transponder-info">
                             <h4>Transponder</h4>
@@ -184,14 +187,14 @@
                                 <div class="freq-label">Uplink:</div>
                                 <div id="sat-uplink-freq">--</div>
                                 <div id="sat-uplink-mode">--</div>
-                                
+
                                 <div class="freq-label">Downlink:</div>
                                 <div id="sat-downlink-freq">--</div>
                                 <div id="sat-downlink-mode">--</div>
                             </div>
-                            <div id="sat-ctcss-container" style="display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid #ccc;">
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <div class="freq-label">CTCSS:</div>
+                            <div id="sat-ctcss-container" class="hidden-ctcss-container">
+                                <div class="ctcss-container">
+                                    <div class="freq-label"><label for="sat-ctcss-select">CTCSS:</label></div>
                                     <select id="sat-ctcss-select">
                                         <option value="0">Off</option>
                                         <option value="67">67</option>
@@ -214,14 +217,14 @@
                 </div>
             </div>
         </div>
-          <!-- QTRigDoppler Panel - Moved outside map-container -->
+        <!-- QTRigDoppler Panel - Moved outside map-container -->
         <div id="qtrigdoppler-panel" class="qtrigdoppler-panel">
             <div class="info-header">
                 <h3 id="qtrigdoppler-panel-title">QTRigDoppler Control</h3>
                 <div class="server-info">
                     <span class="server-status" id="qtrigdoppler-connection-badge"></span>
                     <span id="qtrigdoppler-server-status">Not connected</span>
-                    <button id="configure-server" class="control-button" style="margin-left: 10px;">Configure Server</button>
+                    <button id="configure-server" class="control-button configure-server">Configure Server</button>
                 </div>
                 <div class="panel-controls">
                     <button id="minimize-qtrigdoppler-panel" class="minimize-button">−</button>
@@ -234,35 +237,41 @@
                     <div class="control-section">
                         <h4>Tracking Control</h4>
                         <div class="button-group">
-                            <button id="qtrigdoppler-start-tracking" class="control-button" disabled>Start Tracking</button>
-                            <button id="qtrigdoppler-stop-tracking" class="control-button" disabled>Stop Tracking</button>
+                            <button id="qtrigdoppler-start-tracking" class="control-button" disabled>Start
+                                Tracking</button>
+                            <button id="qtrigdoppler-stop-tracking" class="control-button" disabled>Stop
+                                Tracking</button>
                             <button id="qtrigdoppler-get-status" class="control-button">Get Status</button>
                         </div>
                     </div>
-                    
+
                     <div class="control-section">
                         <h4>Satellite Selection</h4>
                         <div class="selection-group">
-                            <div style="display: flex; gap: 5px; margin-bottom: 8px;">
-                                <select id="qtrigdoppler-satellite" class="control-select" style="flex: 1;">
+                            <div class="selection-group-container">
+                                <select id="qtrigdoppler-satellite" class="control-select" title="Select a satellite">
                                     <option value="">Choose a satellite...</option>
                                 </select>
                                 <button id="qtrigdoppler-refresh-sats" class="control-button refresh-button">🔄</button>
                             </div>
-                            <button id="qtrigdoppler-select-satellite" class="control-button" disabled>Select Satellite</button>
+                            <button id="qtrigdoppler-select-satellite" class="control-button" disabled>Select
+                                Satellite</button>
                         </div>
-                        
-                        <div class="selection-group" style="margin-top: 10px;">
-                            <div style="display: flex; gap: 5px; margin-bottom: 8px;">
-                                <select id="qtrigdoppler-transponder" class="control-select" style="flex: 1;">
+
+                        <div class="selection-group margin-top-10">
+                            <div class="selection-group-container">
+                                <select id="qtrigdoppler-transponder" class="control-select"
+                                    title="Select a transponder">
                                     <option value="">Select a satellite first...</option>
                                 </select>
-                                <button id="qtrigdoppler-refresh-transponders" class="control-button refresh-button">🔄</button>
+                                <button id="qtrigdoppler-refresh-transponders"
+                                    class="control-button refresh-button">🔄</button>
                             </div>
-                            <button id="qtrigdoppler-select-transponder" class="control-button" disabled>Select Transponder</button>
+                            <button id="qtrigdoppler-select-transponder" class="control-button" disabled>Select
+                                Transponder</button>
                         </div>
                     </div>
-                    
+
                     <div class="control-section">
                         <h4>Frequency Information</h4>
                         <div class="freq-info">
@@ -288,25 +297,30 @@
                             </table>
                         </div>
                     </div>
-                    
+
                     <div class="control-section">
                         <h4>Radio Settings</h4>
                         <div class="radio-settings-group">
                             <label for="qtrigdoppler-subtone">Subtone:</label>
-                            <select id="qtrigdoppler-subtone" class="control-select" aria-label="Select subtone frequency">
+                            <select id="qtrigdoppler-subtone" class="control-select"
+                                aria-label="Select subtone frequency">
                                 <option value="None">None</option>
                                 <option value="67 Hz">67 Hz</option>
                                 <option value="71.9 Hz">71.9 Hz</option>
                                 <option value="74.4 Hz">74.4 Hz</option>
                                 <option value="141.3 Hz">141.3 Hz</option>
                             </select>
-                            <button id="qtrigdoppler-set-subtone" class="control-button" aria-label="Apply selected subtone">Set Subtone</button>
-                            
+                            <button id="qtrigdoppler-set-subtone" class="control-button"
+                                aria-label="Apply selected subtone">Set Subtone</button>
+
                             <label for="qtrigdoppler-rxoffset">RX Offset (Hz):</label>
                             <div class="rx-offset-controls">
-                                <input type="number" id="qtrigdoppler-rxoffset" value="0" aria-label="Enter RX offset in Hz">
-                                <button onclick="window.qtrigdopplerPanel.setRxOffset()" aria-label="Apply RX offset value">Set</button>
-                                <button onclick="window.qtrigdopplerPanel.resetRxOffset()" aria-label="Reset RX offset to zero">Reset</button>
+                                <input type="number" id="qtrigdoppler-rxoffset" value="0"
+                                    aria-label="Enter RX offset in Hz">
+                                <button onclick="window.qtrigdopplerPanel.setRxOffset()"
+                                    aria-label="Apply RX offset value">Set</button>
+                                <button onclick="window.qtrigdopplerPanel.resetRxOffset()"
+                                    aria-label="Reset RX offset to zero">Reset</button>
                             </div>
                             <div class="rx-offset-buttons">
                                 <button onclick="window.qtrigdopplerPanel.adjustRxOffset(1000)">+1000</button>
@@ -329,7 +343,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- APRS Panel -->
         <div id="aprs-panel" class="aprs-panel">
             <div class="info-header">
@@ -425,7 +439,7 @@
                     <div class="tab-pane" id="general-tab">
                         <div class="general-settings">
                             <h3>General Settings</h3>
-                            
+
                             <div class="notifications-section">
                                 <h4>Notifications</h4>
                                 <div class="form-group">
@@ -433,14 +447,16 @@
                                         <input type="checkbox" id="enable-notifications">
                                         Enable Pass Notifications
                                     </label>
-                                    <p class="help-text">You will receive notifications 15 minutes before a satellite pass begins.</p>
+                                    <p class="help-text">You will receive notifications 15 minutes before a satellite
+                                        pass begins.</p>
                                 </div>
                                 <div class="form-group notification-test">
                                     <button id="test-notification" class="button secondary">Test Notification</button>
-                                    <p class="help-text">Send a sample notification to see how they will appear on your device.</p>
+                                    <p class="help-text">Send a sample notification to see how they will appear on your
+                                        device.</p>
                                 </div>
                             </div>
-                            
+
                             <!-- Additional general settings can be added here in the future -->
                         </div>
                     </div>
@@ -473,9 +489,9 @@
                                 </div>
                                 <div class="location-actions">
                                     <button id="use-geolocation" title="Use your current location">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                            stroke-linejoin="round">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
                                             <circle cx="12" cy="12" r="10"></circle>
                                             <point x="12" y="12" r="3"></point>
                                         </svg>
@@ -490,7 +506,7 @@
                     <div class="tab-pane" id="radio-tab">
                         <div class="radio-settings">
                             <h3>Radio Settings</h3>
-                            
+
                             <!-- CSN Technologies S.A.T Configuration -->
                             <div class="sat-config-section">
                                 <h4>CSN Technologies S.A.T</h4>
@@ -499,7 +515,8 @@
                                         <input type="checkbox" id="enable-csn-sat" name="enable-csn-sat">
                                         Enable CSN Technologies S.A.T
                                     </label>
-                                    <input type="text" id="csn-sat-address" name="csn-sat-address" placeholder="Enter CSN S.A.T server address">
+                                    <input type="text" id="csn-sat-address" name="csn-sat-address"
+                                        placeholder="Enter CSN S.A.T server address">
                                 </div>
 
                                 <!-- QTRigDoppler Settings -->
@@ -508,7 +525,8 @@
                                         <input type="checkbox" id="enable-qtrigdoppler" name="enable-qtrigdoppler">
                                         Enable QTRigDoppler
                                     </label>
-                                    <input type="text" id="qtrigdoppler-address" name="qtrigdoppler-address" placeholder="Enter QTRigDoppler server address">
+                                    <input type="text" id="qtrigdoppler-address" name="qtrigdoppler-address"
+                                        placeholder="Enter QTRigDoppler server address">
                                 </div>
                             </div>
 
@@ -544,7 +562,8 @@
                                 <div class="form-group">
                                     <label for="hams-at-api-key">Hams.at API Key:</label>
                                     <input type="text" id="hams-at-api-key" placeholder="Enter your Hams.at API key">
-                                    <p class="help-text">Get your API key from <a href="https://hams.at/users/settings" target="_blank">hams.at account settings</a></p>
+                                    <p class="help-text">Get your API key from <a href="https://hams.at/users/settings"
+                                            target="_blank" rel="noopener">hams.at account settings</a></p>
                                 </div>
                                 <div class="form-group">
                                     <label>
@@ -605,8 +624,8 @@
                     AO-91 (FOX-1B)<br>
                     1 43017U 17073E 23150.09546759 .00001976 00000-0 15688-3 0 9996<br>
                     2 43017 97.7000 182.9558 0025675 32.2147 328.1059 14.78059046296268</p>
-                <textarea id="tles-textarea" rows="15"></textarea>
-                <p>You can get TLEs from <a href="https://tle.oscarwatch.org"
+                <textarea id="tles-textarea" rows="15" title="Enter TLE data here" placeholder="Paste TLE data in 3-line format"></textarea>
+                <p>You can get TLEs from <a href="https://tle.oscarwatch.org" rel="noopener"
                         target="_blank">https://tle.oscarwatch.org</a> or any other source.</p>
                 <div class="modal-actions">
                     <button id="submit-manual-tle">Submit TLEs</button>
@@ -741,10 +760,12 @@
                 <div class="help-content">
                     <section class="help-section">
                         <h3>Getting Started</h3>
-                        <p>Zenith is a satellite tracking application that helps you monitor satellite passes, plan contacts, and track amateur radio satellites.</p>
+                        <p>Zenith is a satellite tracking application that helps you monitor satellite passes, plan
+                            contacts, and track amateur radio satellites.</p>
                         <p>To get started:</p>
                         <ol>
-                            <li>Click the <strong>Options</strong> button to configure your location and select satellites to track.</li>
+                            <li>Click the <strong>Options</strong> button to configure your location and select
+                                satellites to track.</li>
                             <li>Browse the map to see real-time satellite positions and footprints.</li>
                             <li>View upcoming passes in the sidebar panel on the left.</li>
                         </ol>
@@ -756,7 +777,8 @@
                         <ul>
                             <li><strong>Zoom</strong>: Use the scroll wheel or +/- buttons</li>
                             <li><strong>Pan</strong>: Click and drag the map</li>
-                            <li><strong>Satellite Info</strong>: Click on a satellite marker for detailed information</li>
+                            <li><strong>Satellite Info</strong>: Click on a satellite marker for detailed information
+                            </li>
                         </ul>
                     </section>
 
@@ -779,12 +801,14 @@
                             <li><strong>Yellow</strong>: Upcoming passes</li>
                             <li><strong>Blue</strong>: Passes that will be visible soon</li>
                         </ul>
-                        <p>Click on a pass to view detailed information about the satellite and to see a polar radar visualization of the pass.</p>
+                        <p>Click on a pass to view detailed information about the satellite and to see a polar radar
+                            visualization of the pass.</p>
                     </section>
 
                     <section class="help-section">
                         <h3>Schedule View</h3>
-                        <p>Click the <strong>Schedule</strong> button to see a detailed table of all upcoming passes. You can:</p>
+                        <p>Click the <strong>Schedule</strong> button to see a detailed table of all upcoming passes.
+                            You can:</p>
                         <ul>
                             <li>Filter passes by satellite</li>
                             <li>Choose how many days to show in the schedule</li>
@@ -794,7 +818,8 @@
 
                     <section class="help-section">
                         <h3>Sked Planning</h3>
-                        <p>Use the <strong>Sked Planning</strong> feature to find mutual visibility windows with another station:</p>
+                        <p>Use the <strong>Sked Planning</strong> feature to find mutual visibility windows with another
+                            station:</p>
                         <ol>
                             <li>Enter the remote station's grid square</li>
                             <li>Select which satellites to include</li>
@@ -815,7 +840,8 @@
 
                     <section class="help-section">
                         <h3>Radio Integration</h3>
-                        <p>Zenith supports integration with CSN Technologies S.A.T for automatic satellite tracking with compatible rotators and radios.</p>
+                        <p>Zenith supports integration with CSN Technologies S.A.T for automatic satellite tracking with
+                            compatible rotators and radios.</p>
                         <p>To configure:</p>
                         <ol>
                             <li>Go to <strong>Options</strong> > "Radio" tab</li>
@@ -830,11 +856,12 @@
 
     <!-- Load Scripts -->
     <!-- <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script> -->
-    
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/4.0.0/satellite.min.js"></script>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.js"></script>
+    <script type="text/javascript" charset="utf8"
+        src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.js"></script>
     <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
     <script src="js/map_d3.js"></script>
     <script src="js/aprs.js"></script>
