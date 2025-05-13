@@ -274,6 +274,11 @@ button:hover {
     max-height: calc(100% - 40px); /* Account for heading */
 }
 
+#upcoming-passes {
+    margin: 0px;
+    padding: 0px;
+}   
+
 .pass-item, .rove-item {
     padding: 8px;
     margin-bottom: 8px;
@@ -761,7 +766,8 @@ button:hover {
 }
 
 #upcoming-roves {
-    margin-top: 10px;
+    margin: 0px;
+    padding: 0px;
 }
 
 .rove-item {
