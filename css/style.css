@@ -748,10 +748,33 @@ button:hover {
 .pass-item {
     cursor: pointer;
     transition: background-color 0.2s;
+    position: relative;
 }
 
 .pass-item:hover {
     background-color: #f0f0f0;
+}
+
+/* Countdown timer for upcoming passes */
+.pass-countdown {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    background: #222;
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.95em;
+    font-weight: bold;
+    z-index: 2;
+    opacity: 0.92;
+    pointer-events: none;
+    transition: background 0.2s;
+}
+
+.pass-active .pass-countdown {
+    background: #28a745;
+    color: #fff;
 }
 
 /* Add to your existing CSS file */
