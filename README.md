@@ -29,19 +29,34 @@ A modern web-based satellite tracking application designed for amateur radio ope
       - Radio control panel with VFO management
       - Transponder information display
       - CTCSS tone selection
+  - QTRigDoppler integration for advanced radio and rotator control
+      - Satellite and transponder selection
+      - Frequency and mode display
+      - RX offset and subtone control
+      - Rotator parking and stop functions
+  - Cloudlog API integration for automatic QSO logging
 
 - **APRS Integration**
   - APRS message interface
   - Pre-defined message macros
   - Position reporting
   - Message history tracking
-  - Requires [Zenith APRS](https://github.com/magicbug/zenith_aprs) for full functionality
-    - Please refer to the Zenith APRS documentation for setup instructions
+  - APRS panel for sending/receiving messages, CQ, and position
+  - WebSocket server configuration in Options
+  - Requires [Zenith APRS](https://github.com/magicbug/zenith_aprs) for full functionality (see its documentation)
 
 - **Roves Integration**
   - [Hams.at](https://hams.at/) API integration for rover activations
   - Upcoming roves display
   - Direct links to [Hams.at](https://hams.at/) for detailed information
+
+- **Partner View**
+  - Visualize a contact's grid square and elevation overlay on the map
+  - Enter partner grid and label for real-time visualization
+
+- **Manual TLE Input**
+  - Add or update satellites by pasting 3-line TLE data
+  - Access via the Satellites tab in Options
 
 ## Requirements
 
@@ -91,6 +106,10 @@ A modern web-based satellite tracking application designed for amateur radio ope
      - Radio settings
      - API keys ([Hams.at](https://hams.at/), Cloudlog)
      - Notification preferences
+     - QTRigDoppler and CSN S.A.T server addresses
+     - APRS WebSocket server and port
+     
+   - Use the "Input TLEs Manually" button in the Satellites tab to add custom satellites
 
 4. **Basic Usage**
    - Browse the map to see satellite positions
@@ -98,6 +117,11 @@ A modern web-based satellite tracking application designed for amateur radio ope
    - Click on satellites for detailed information
    - Use the schedule view for pass planning
    - Configure radio integration if available
+   - Use the QTRigDoppler panel for advanced radio/rotator control
+   - Use the APRS panel to send/receive APRS messages and position reports
+   - Use Partner View to visualize a contact's grid and elevation
+   - Log QSOs automatically to Cloudlog if enabled
+   - Add custom satellites using manual TLE input
 
 ## Dependencies
 
