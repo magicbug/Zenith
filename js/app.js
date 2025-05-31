@@ -2916,18 +2916,25 @@ function selectSatelliteInQTRigDoppler(satName) {
     if (!window.qtrigdopplerPanel.socket?.connected) {
         // Show the panel first to establish connection
         window.qtrigdopplerPanel.show();
-        
         // Try selecting the satellite after a delay to allow connection
         setTimeout(() => {
-            selectSatInQTRigDoppler();
+            stopAndSelect();
         }, 1000);
     } else {
-        selectSatInQTRigDoppler();
+        stopAndSelect();
     }
-    
+
+    function stopAndSelect() {
+        // Always stop tracking first before selecting a satellite
+        window.qtrigdopplerPanel.stopTracking();
+        // Wait a short time to allow the stop command to be processed
+        setTimeout(() => {
+            selectSatInQTRigDoppler();
+        }, 500);
+    }
+
     function selectSatInQTRigDoppler() {
         const satelliteSelect = window.qtrigdopplerPanel.satelliteSelect;
-        
         // Ensure we have the satellite list loaded
         if (satelliteSelect.options.length <= 1) {
             // If the satellite list isn't loaded yet, try to get it and try again after a delay
@@ -2938,7 +2945,6 @@ function selectSatelliteInQTRigDoppler(satName) {
         } else {
             attemptSelection();
         }
-        
         function attemptSelection() {
             // Look for the satellite in the dropdown
             let found = false;
@@ -2948,24 +2954,26 @@ function selectSatelliteInQTRigDoppler(satName) {
                     satelliteSelect.options[i].text === satName ||
                     satelliteSelect.options[i].value.includes(satName) || 
                     satelliteSelect.options[i].text.includes(satName)) {
-                    
                     // Select this option
                     satelliteSelect.selectedIndex = i;
                     found = true;
                     break;
                 }
             }
-            
             if (found) {
                 // Trigger satellite selection with user click experience
                 window.qtrigdopplerPanel.selectSatellite(true);
                 console.log(`Selected satellite ${satName} in QTRigDoppler`);
+                // After a short delay, re-enable tracking and get status
+                setTimeout(() => {
+                    window.qtrigdopplerPanel.startTracking();
+                    window.qtrigdopplerPanel.getStatus();
+                }, 500);
             } else {
                 console.log(`Satellite ${satName} not found in QTRigDoppler satellite list`);
             }
         }
     }
-    
     // Show the QTRigDoppler panel
     window.qtrigdopplerPanel.show();
 }

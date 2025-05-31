@@ -426,11 +426,19 @@ class QTRigDopplerPanel {
             let freqText = '--';
             if (satInfo.downlink_freq) {
                 freqText = this.formatFreq(satInfo.downlink_freq);
-                if (dopplerInfo.downlink) {
-                    freqText += ` (${dopplerInfo.downlink > 0 ? '+' : ''}${dopplerInfo.downlink} Hz)`;
-                }
             }
             this.downlinkFreqElement.textContent = freqText;
+        }
+        // New: update downlink offset
+        const downlinkOffsetEl = document.getElementById('qtrigdoppler-downlink-offset');
+        if (downlinkOffsetEl) {
+            if (dopplerInfo.downlink) {
+                let val = dopplerInfo.downlink;
+                let sign = val > 0 ? '+' : '';
+                downlinkOffsetEl.textContent = `${sign}${val.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} Hz`;
+            } else {
+                downlinkOffsetEl.textContent = '--';
+            }
         }
 
         if (this.downlinkModeElement) {
@@ -442,11 +450,19 @@ class QTRigDopplerPanel {
             let freqText = '--';
             if (satInfo.uplink_freq) {
                 freqText = this.formatFreq(satInfo.uplink_freq);
-                if (dopplerInfo.uplink) {
-                    freqText += ` (${dopplerInfo.uplink > 0 ? '+' : ''}${dopplerInfo.uplink} Hz)`;
-                }
             }
             this.uplinkFreqElement.textContent = freqText;
+        }
+        // New: update uplink offset
+        const uplinkOffsetEl = document.getElementById('qtrigdoppler-uplink-offset');
+        if (uplinkOffsetEl) {
+            if (dopplerInfo.uplink) {
+                let val = dopplerInfo.uplink;
+                let sign = val > 0 ? '+' : '';
+                uplinkOffsetEl.textContent = `${sign}${val.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} Hz`;
+            } else {
+                uplinkOffsetEl.textContent = '--';
+            }
         }
 
         if (this.uplinkModeElement) {
@@ -597,12 +613,28 @@ class QTRigDopplerPanel {
             this.transponderSelect.classList.remove('select-loading');
             return;
         }
-        
-        this.currentSelectedTransponder = tpx;
-        this.transponderSelect.classList.add('select-loading');
-        this.selectTransponderBtn.disabled = true;
-        this.socket.emit('select_transponder', { transponder: tpx });
-        this.transponderDirty = false;
+
+        // --- New logic: Stop tracking, change transponder, then re-enable tracking if needed ---
+        // Save current tracking state
+        const wasTracking = !this.startTrackingBtn.disabled;
+        // Stop tracking first
+        this.stopTracking();
+        // Wait a short time to allow stop command to be processed
+        setTimeout(() => {
+            // Now change the transponder
+            this.currentSelectedTransponder = tpx;
+            this.transponderSelect.classList.add('select-loading');
+            this.selectTransponderBtn.disabled = true;
+            this.socket.emit('select_transponder', { transponder: tpx });
+            this.transponderDirty = false;
+            // Wait again, then re-enable tracking if it was active
+            if (wasTracking) {
+                setTimeout(() => {
+                    this.startTracking();
+                    this.getStatus();
+                }, 400);
+            }
+        }, 400);
     }
 
     setSubtone() {
@@ -621,6 +653,10 @@ class QTRigDopplerPanel {
         this.socket.emit('set_subtone', { subtone: tone });
         this.currentSelectedSubtone = tone;
         this.subtoneDirty = false;
+        // After a short delay, get status to refresh UI
+        setTimeout(() => {
+            this.getStatus();
+        }, 300);
     }
 
     setRxOffset() {
@@ -628,6 +664,10 @@ class QTRigDopplerPanel {
         const offset = parseInt(this.rxOffsetInput.value, 10) || 0;
         this.socket.emit('set_rx_offset', { offset });
         this.rxOffsetDirty = false;
+        // After a short delay, get status to refresh UI
+        setTimeout(() => {
+            this.getStatus();
+        }, 300);
     }
 
     resetRxOffset() {
