@@ -1540,22 +1540,21 @@ function displayPasses(passes, container, visibleSats = []) {
     filteredPasses.forEach(pass => {
         const passItem = document.createElement('div');
         passItem.className = 'pass-item';
-        let isActive = now >= pass.start && now <= pass.end;
-        if (visibleSats.includes(pass.satellite) && !isActive) {
-            if (now < pass.start) {
-                pass.start = new Date(now);
-                isActive = true;
-            }
-        }
+        const isActive = now >= pass.start && now <= pass.end;
+        const isVisible = visibleSats.includes(pass.satellite);
         const timeToPass = (pass.start - now) / (60 * 1000);
+
+        // Only add 'pass-active' if this pass is currently active
         if (isActive) {
             passItem.classList.add('pass-active');
         } else if (timeToPass > 0 && timeToPass <= 15) {
             passItem.classList.add('pass-upcoming');
         }
-        if (isActive && visibleSats.includes(pass.satellite)) {
+        // Add 'pass-visible' if the satellite is visible and this is the current pass
+        if (isActive && isVisible) {
             passItem.classList.add('pass-visible');
         }
+
         const startTime = formatDate(pass.start);
         const endTime = formatDate(pass.end);
         const duration = Math.round((pass.end - pass.start) / (60 * 1000));
