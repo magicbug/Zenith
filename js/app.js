@@ -894,6 +894,20 @@ function updateSelectedSatellites() {
     
     // Update satellite display on map
     updateSatelliteDisplay();
+
+    // Also update schedule and sked planning UI
+    if (typeof populateSatelliteFilter === 'function') {
+        populateSatelliteFilter();
+    }
+    if (typeof generateScheduleTable === 'function') {
+        generateScheduleTable();
+    }
+    if (typeof populateSkedSatelliteFilter === 'function') {
+        populateSkedSatelliteFilter();
+    }
+    if (typeof generateSkedPlanningTable === 'function') {
+        generateSkedPlanningTable();
+    }
 }
 
 // Update the observer location
@@ -2198,6 +2212,7 @@ function saveOptions() {
     }
     
     // Update and save selected satellites
+    // This now also updates the schedule and sked planning UI
     updateSelectedSatellites();
     
     // Close the modal
