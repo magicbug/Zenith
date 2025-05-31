@@ -256,11 +256,15 @@
                     <div class="control-section">
                         <h4>Tracking Control</h4>
                         <div class="button-group">
-                            <button id="qtrigdoppler-start-tracking" class="control-button" disabled>Start
-                                Tracking</button>
-                            <button id="qtrigdoppler-stop-tracking" class="control-button" disabled>Stop
-                                Tracking</button>
-                            <button id="qtrigdoppler-get-status" class="control-button">Get Status</button>
+                            <button id="qtrigdoppler-start-tracking" class="control-button" disabled>
+                                <i class="fa-solid fa-play"></i> Start Tracking
+                            </button>
+                            <button id="qtrigdoppler-stop-tracking" class="control-button" disabled>
+                                <i class="fa-solid fa-stop"></i> Stop Tracking
+                            </button>
+                            <button id="qtrigdoppler-get-status" class="control-button">
+                                <i class="fa-solid fa-signal"></i> Get Status
+                            </button>
                         </div>
                     </div>
 
@@ -271,25 +275,27 @@
                                 <select id="qtrigdoppler-satellite" class="control-select" title="Select a satellite">
                                     <option value="">Choose a satellite...</option>
                                 </select>
-                                <button id="qtrigdoppler-refresh-sats" class="control-button refresh-button">
+                                <button id="qtrigdoppler-refresh-sats" class="control-button refresh-button" title="Refresh Satellites">
                                     <i class="fa-solid fa-rotate-right"></i>
                                 </button>
                             </div>
-                            <button id="qtrigdoppler-select-satellite" class="control-button" disabled>Select
-                                Satellite</button>
+                            <button id="qtrigdoppler-select-satellite" class="control-button" disabled>
+                                <i class="fa-solid fa-check"></i> Select Satellite
+                            </button>
                         </div>
 
                         <div class="selection-group margin-top-10">
                             <div class="selection-group-container">
-                                <select id="qtrigdoppler-transponder" class="control-select"
-                                    title="Select a transponder">
+                                <select id="qtrigdoppler-transponder" class="control-select" title="Select a transponder">
                                     <option value="">Select a satellite first...</option>
                                 </select>
-                                <button id="qtrigdoppler-refresh-transponders"
-                                    class="control-button refresh-button">🔄</button>
+                                <button id="qtrigdoppler-refresh-transponders" class="control-button refresh-button" title="Refresh Transponders">
+                                    <i class="fa-solid fa-rotate-right"></i>
+                                </button>
                             </div>
-                            <button id="qtrigdoppler-select-transponder" class="control-button" disabled>Select
-                                Transponder</button>
+                            <button id="qtrigdoppler-select-transponder" class="control-button" disabled>
+                                <i class="fa-solid fa-check"></i> Select Transponder
+                            </button>
                         </div>
                     </div>
 
@@ -298,7 +304,7 @@
                         <div class="freq-info">
                             <table class="info-table">
                                 <tr>
-                                    <td>Downlink</td>
+                                    <td><i class="fa-solid fa-arrow-down" style="color:#4a90e2;"></i> Downlink</td>
                                     <td style="vertical-align: top;">
                                         <div style="display: flex; flex-direction: row; align-items: flex-start; justify-content: space-between; min-width: 180px;">
                                             <div style="display: flex; flex-direction: column; align-items: flex-start;">
@@ -310,7 +316,7 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td>Uplink</td>
+                                    <td><i class="fa-solid fa-arrow-up" style="color:#388e3c;"></i> Uplink</td>
                                     <td style="vertical-align: top;">
                                         <div style="display: flex; flex-direction: row; align-items: flex-start; justify-content: space-between; min-width: 180px;">
                                             <div style="display: flex; flex-direction: column; align-items: flex-start;">
@@ -329,25 +335,28 @@
                         <h4>Radio Settings</h4>
                         <div class="radio-settings-group">
                             <label for="qtrigdoppler-subtone">Subtone:</label>
-                            <select id="qtrigdoppler-subtone" class="control-select"
-                                aria-label="Select subtone frequency">
-                                <option value="None">None</option>
-                                <option value="67 Hz">67 Hz</option>
-                                <option value="71.9 Hz">71.9 Hz</option>
-                                <option value="74.4 Hz">74.4 Hz</option>
-                                <option value="141.3 Hz">141.3 Hz</option>
-                            </select>
-                            <button id="qtrigdoppler-set-subtone" class="control-button"
-                                aria-label="Apply selected subtone">Set Subtone</button>
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                <select id="qtrigdoppler-subtone" class="control-select" aria-label="Select subtone frequency">
+                                    <option value="None">None</option>
+                                    <option value="67 Hz">67 Hz</option>
+                                    <option value="71.9 Hz">71.9 Hz</option>
+                                    <option value="74.4 Hz">74.4 Hz</option>
+                                    <option value="141.3 Hz">141.3 Hz</option>
+                                </select>
+                                <button id="qtrigdoppler-set-subtone" class="control-button" aria-label="Apply selected subtone">
+                                   Set Subtone
+                                </button>
+                            </div>
 
-                            <label for="qtrigdoppler-rxoffset">RX Offset (Hz):</label>
+                            <label for="qtrigdoppler-rxoffset"><i class="fa-solid fa-sliders-h"></i> RX Offset (Hz):</label>
                             <div class="rx-offset-controls">
-                                <input type="number" id="qtrigdoppler-rxoffset" value="0"
-                                    aria-label="Enter RX offset in Hz">
-                                <button onclick="window.qtrigdopplerPanel.setRxOffset()"
-                                    aria-label="Apply RX offset value">Set</button>
-                                <button onclick="window.qtrigdopplerPanel.resetRxOffset()"
-                                    aria-label="Reset RX offset to zero">Reset</button>
+                                <input type="number" id="qtrigdoppler-rxoffset" value="0" aria-label="Enter RX offset in Hz">
+                                <button onclick="window.qtrigdopplerPanel.setRxOffset()" aria-label="Apply RX offset value">
+                                    Set
+                                </button>
+                                <button onclick="window.qtrigdopplerPanel.resetRxOffset()" aria-label="Reset RX offset to zero">
+                                    Reset
+                                </button>
                             </div>
                             <div class="rx-offset-buttons">
                                 <button onclick="window.qtrigdopplerPanel.adjustRxOffset(1000)">+1000</button>
@@ -363,8 +372,12 @@
                     <div class="control-section">
                         <h4>Rotator Control</h4>
                         <div class="button-group" id="qtrigdoppler-rotator-controls">
-                            <button id="qtrigdoppler-park-rotator" class="control-button">Park Rotator</button>
-                            <button id="qtrigdoppler-stop-rotator" class="control-button">Stop Rotation</button>
+                            <button id="qtrigdoppler-park-rotator" class="control-button">
+                                <i class="fa-solid fa-parking"></i> Park Rotator
+                            </button>
+                            <button id="qtrigdoppler-stop-rotator" class="control-button">
+                                <i class="fa-solid fa-ban"></i> Stop Rotation
+                            </button>
                         </div>
                     </div>
                 </div>
