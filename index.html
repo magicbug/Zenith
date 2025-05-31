@@ -14,6 +14,13 @@
     <meta name="apple-mobile-web-app-title" content="Zenith">
     <link rel="apple-touch-icon" href="assets/pwa_icons/ios/Icon-60@2x.png">
 
+    <link href="/assets/font_awesome/css/fontawesome.css" rel="stylesheet" />
+    <link href="/assets/font_awesome/css/brands.css" rel="stylesheet" />
+    <link href="/assets/font_awesome/css/solid.css" rel="stylesheet" />
+    <link href="/assets/font_awesome/css/sharp-thin.css" rel="stylesheet" />
+    <link href="/assets/font_awesome/css/duotone-thin.css" rel="stylesheet" />
+    <link href="/assets/font_awesome/css/sharp-duotone-thin.css" rel="stylesheet" />
+
     <style>
         .server-status {
             display: inline-block;
@@ -43,12 +50,24 @@
                 class="zenith-logo">
             <h1>Zenith Satellite Tracker</h1>
             <div class="header-buttons">
-                <button id="open-sat-panel-btn" class="sat-button-header">CSN Panel</button>
-                <button id="open-schedule" class="schedule-button">Schedule</button>
-                <button id="open-sked-planning" class="schedule-button">Sked Planning</button>
-                <button id="open-aprs" class="aprs-button">APRS</button>
-                <button id="open-options" class="options-button">Options</button>
-                <button id="open-help" class="help-button">Help</button>
+                <button id="open-sat-panel-btn" class="sat-button-header">
+                    <i class="fa-solid fa-satellite-dish" style="margin-right: 6px;"></i>CSN Panel
+                </button>
+                <button id="open-schedule" class="schedule-button">
+                    <i class="fa-solid fa-calendar-days" style="margin-right: 6px;"></i>Schedule
+                </button>
+                <button id="open-sked-planning" class="schedule-button">
+                    <i class="fa-solid fa-user-group" style="margin-right: 6px;"></i>Sked Planning
+                </button>
+                <button id="open-aprs" class="aprs-button">
+                    <i class="fa-solid fa-wave-square" style="margin-right: 6px;"></i>APRS
+                </button>
+                <button id="open-options" class="options-button">
+                    <i class="fa-solid fa-gear" style="margin-right: 6px;"></i>Options
+                </button>
+                <button id="open-help" class="help-button">
+                    <i class="fa-solid fa-circle-question" style="margin-right: 6px;"></i>Help
+                </button>
             </div>
         </header>
 
@@ -224,7 +243,7 @@
                 <div class="server-info">
                     <span class="server-status" id="qtrigdoppler-connection-badge"></span>
                     <span id="qtrigdoppler-server-status">Not connected</span>
-                    <button id="configure-server" class="control-button configure-server">Configure Server</button>
+                    <button id="configure-server" class="control-button configure-server"><i class="fa-solid fa-gear" style="color: #ffffff;"></i></button>
                 </div>
                 <div class="panel-controls">
                     <button id="minimize-qtrigdoppler-panel" class="minimize-button">−</button>
@@ -232,7 +251,7 @@
                 </div>
             </div>
             <div id="qtrigdoppler-panel-content" class="qtrigdoppler-panel-content">
-                <div id="qtrigdoppler-status-message" class="qtrigdoppler-status"></div>
+               <div id="qtrigdoppler-status-message" class="qtrigdoppler-status"></div>
                 <div id="qtrigdoppler-controls">
                     <div class="control-section">
                         <h4>Tracking Control</h4>
@@ -252,7 +271,9 @@
                                 <select id="qtrigdoppler-satellite" class="control-select" title="Select a satellite">
                                     <option value="">Choose a satellite...</option>
                                 </select>
-                                <button id="qtrigdoppler-refresh-sats" class="control-button refresh-button">🔄</button>
+                                <button id="qtrigdoppler-refresh-sats" class="control-button refresh-button">
+                                    <i class="fa-solid fa-rotate-right"></i>
+                                </button>
                             </div>
                             <button id="qtrigdoppler-select-satellite" class="control-button" disabled>Select
                                 Satellite</button>
@@ -459,8 +480,11 @@
 
                     <!-- Observer Location Tab -->
                     <div class="tab-pane" id="location-tab">
-                        <div class="location-settings">
-                            <h3>Observer Location</h3>
+                        <div class="settings-section-card">
+                            <h3 style="display: flex; align-items: center; gap: 8px; margin-top: 0;">
+                                <i class="fa-solid fa-location-dot" style="color: #2c3e50; font-size: 1.2em;"></i>
+                                Observer Location
+                            </h3>
                             <div class="location-form">
                                 <div class="form-group">
                                     <label for="callsign">Callsign:</label>
@@ -481,16 +505,11 @@
                                 <div class="form-group">
                                     <label for="min-elevation">Minimum Elevation (°):</label>
                                     <input type="number" id="min-elevation" value="0" min="0" max="90">
-                                    <p class="help-text">Only show passes above this elevation angle</p>
+                                    <p class="help-text small-muted">Only show passes above this elevation angle</p>
                                 </div>
-                                <div class="location-actions">
+                                <div class="location-actions" style="margin-top: 18px;">
                                     <button id="use-geolocation" title="Use your current location">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                            stroke-linecap="round" stroke-linejoin="round">
-                                            <circle cx="12" cy="12" r="10"></circle>
-                                            <point x="12" y="12" r="3"></point>
-                                        </svg>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><point x="12" y="12" r="3"></point></svg>
                                         Use My Location
                                     </button>
                                 </div>
@@ -504,7 +523,7 @@
                             <h3>Radio Settings</h3>
 
                             <!-- CSN Technologies S.A.T Configuration -->
-                            <div class="sat-config-section">
+                            <div class="settings-section-card">
                                 <h4>CSN Technologies S.A.T</h4>
                                 <div class="form-group">
                                     <label>
@@ -514,8 +533,11 @@
                                     <input type="text" id="csn-sat-address" name="csn-sat-address"
                                         placeholder="Enter CSN S.A.T server address">
                                 </div>
-
-                                <!-- QTRigDoppler Settings -->
+                            </div>
+                            <hr>
+                            <!-- QTRigDoppler Settings -->
+                            <div class="settings-section-card">
+                                <h4>QTRigDoppler</h4>
                                 <div class="form-group">
                                     <label>
                                         <input type="checkbox" id="enable-qtrigdoppler" name="enable-qtrigdoppler">
@@ -525,9 +547,9 @@
                                         placeholder="Enter QTRigDoppler server address">
                                 </div>
                             </div>
-
+                            <hr>
                             <!-- Cloudlog API Configuration -->
-                            <div class="cloudlog-config-section">
+                            <div class="settings-section-card">
                                 <h4>Cloudlog API</h4>
                                 <div class="form-group">
                                     <label>
