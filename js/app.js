@@ -1514,13 +1514,28 @@ function calculateUpcomingPasses() {
     
     // Sort passes by start time
     passes.sort((a, b) => a.start - b.start);
-    
+
+    // Improved deduplication: merge passes for the same satellite with the same start time
+    const mergedPassesMap = new Map();
+    passes.forEach(pass => {
+        const key = `${pass.satellite}__${pass.start.toISOString()}`;
+        if (!mergedPassesMap.has(key)) {
+            mergedPassesMap.set(key, { ...pass });
+        } else {
+            // Merge: take the latest end time and highest max elevation
+            const existing = mergedPassesMap.get(key);
+            existing.end = pass.end > existing.end ? pass.end : existing.end;
+            existing.maxElevation = Math.max(existing.maxElevation, pass.maxElevation);
+        }
+    });
+    const uniquePasses = Array.from(mergedPassesMap.values());
+
     // Cache the calculated passes
-    window.cachedPasses = passes;
+    window.cachedPasses = uniquePasses;
     window.lastPassCalculation = now;
-    
+
     // Display passes
-    displayPasses(passes, passesContainer, currentlyVisibleSats);
+    displayPasses(uniquePasses, passesContainer, currentlyVisibleSats);
 }
 
 // Separate function to display passes
