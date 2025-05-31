@@ -59,7 +59,7 @@ window.tleData = {};
 // Constants
 const TLE_URL = 'api/fetch_tle.php';  // Changed to use our PHP proxy script
 const UPDATE_INTERVAL_MS = 3000; // Increase update interval from 5s to 10s
-const PASS_UPDATE_INTERVAL_MS = 600000; // Increase pass update interval from 5min to 10min
+const PASS_UPDATE_INTERVAL_MS = 60000; // Refresh pass list every 1 minute
 const PASS_PREDICTION_HOURS = 24; // Predict passes for the next 24 hours
 const FOOTPRINT_POINTS = 36; // Number of points to draw the footprint circle
 
@@ -1511,45 +1511,39 @@ function calculateUpcomingPasses() {
 // Separate function to display passes
 function displayPasses(passes, container, visibleSats = []) {
     const now = new Date();
-    
-    if (passes.length === 0) {
+    // Remove passes that have ended
+    const filteredPasses = passes.filter(pass => pass.end > now);
+    if (filteredPasses.length === 0) {
         container.innerHTML = `<p>No passes found in the next ${PASS_PREDICTION_HOURS} hours that reach ${observer.minElevation}° elevation</p>`;
+        window._allPassItems = [];
+        window._passCountdowns = [];
         return;
     }
-    
-    passes.forEach(pass => {
+    container.innerHTML = '';
+    window._allPassItems = [];
+    window._passCountdowns = [];
+    filteredPasses.forEach(pass => {
         const passItem = document.createElement('div');
         passItem.className = 'pass-item';
-        
-        // Check if pass is active now
         let isActive = now >= pass.start && now <= pass.end;
-        
-        // Force active state if satellite is currently visible (above min elevation)
         if (visibleSats.includes(pass.satellite) && !isActive) {
-            // If satellite is visible but not marked as active, adjust pass times
             if (now < pass.start) {
                 pass.start = new Date(now);
                 isActive = true;
             }
         }
-        
-        const timeToPass = (pass.start - now) / (60 * 1000); // Time to pass in minutes
-        
+        const timeToPass = (pass.start - now) / (60 * 1000);
         if (isActive) {
             passItem.classList.add('pass-active');
         } else if (timeToPass > 0 && timeToPass <= 15) {
-            passItem.classList.add('pass-upcoming'); // Light orange for upcoming passes within 15 minutes
+            passItem.classList.add('pass-upcoming');
         }
-
-        // Check if the satellite is within the observer's footprint (only for active passes)
         if (isActive && visibleSats.includes(pass.satellite)) {
-            passItem.classList.add('pass-visible'); // Light green for visible passes
+            passItem.classList.add('pass-visible');
         }
-        
         const startTime = formatDate(pass.start);
         const endTime = formatDate(pass.end);
         const duration = Math.round((pass.end - pass.start) / (60 * 1000));
-        
         passItem.innerHTML = `
             <div class="pass-satellite-name">${pass.satellite}</div>
             <div class="pass-time">
@@ -1559,19 +1553,88 @@ function displayPasses(passes, container, visibleSats = []) {
                 Duration: ${duration} min | Max Elevation: ${Math.round(pass.maxElevation)}°
             </div>
         `;
-        
-        // Update click handler to show both info and polar radar
+        // Add countdown timer if pass is within 10 minutes
+        const msToStart = pass.start - now;
+        let countdownDiv = null;
+        if (!isActive && msToStart > 0 && msToStart <= 10 * 60 * 1000) {
+            countdownDiv = document.createElement('div');
+            countdownDiv.className = 'pass-countdown';
+            countdownDiv.textContent = formatCountdown(msToStart);
+            passItem.appendChild(countdownDiv);
+            window._passCountdowns.push({
+                el: countdownDiv,
+                pass,
+                mode: 'countdown',
+                passItem
+            });
+        } else if (isActive) {
+            countdownDiv = document.createElement('div');
+            countdownDiv.className = 'pass-countdown';
+            countdownDiv.textContent = 'Passing';
+            passItem.appendChild(countdownDiv);
+            window._passCountdowns.push({
+                el: countdownDiv,
+                pass,
+                mode: 'passing',
+                passItem
+            });
+        }
         passItem.addEventListener('click', () => {
             showSatelliteInfo(pass.satellite);
             showPolarRadarForPass(pass);
-            
-            // Attempt to select the satellite in QTRigDoppler if it's enabled
             selectSatelliteInQTRigDoppler(pass.satellite);
         });
-        
         container.appendChild(passItem);
+        window._allPassItems.push({
+            pass,
+            passItem,
+            countdownDiv
+        });
     });
 }
+
+// Enhanced interval: check all passes for countdown eligibility every second
+window.passCountdownInterval = setInterval(() => {
+    const now = new Date();
+    // Remove ended passes from DOM and from _allPassItems
+    window._allPassItems = window._allPassItems.filter(obj => {
+        if (now > obj.pass.end) {
+            if (obj.passItem && obj.passItem.parentNode) {
+                obj.passItem.parentNode.removeChild(obj.passItem);
+            }
+            return false;
+        }
+        // If pass is now within 10 minutes and doesn't have a countdown, add it
+        const msToStart = obj.pass.start - now;
+        const isActive = now >= obj.pass.start && now <= obj.pass.end;
+        if (!isActive && msToStart > 0 && msToStart <= 10 * 60 * 1000 && !obj.countdownDiv) {
+            // Add countdown div
+            const countdownDiv = document.createElement('div');
+            countdownDiv.className = 'pass-countdown';
+            countdownDiv.textContent = formatCountdown(msToStart);
+            obj.passItem.appendChild(countdownDiv);
+            obj.countdownDiv = countdownDiv;
+        }
+        // If pass is now active and countdownDiv exists, switch to 'Passing'
+        if (isActive && obj.countdownDiv && obj.countdownDiv.textContent !== 'Passing') {
+            obj.countdownDiv.textContent = 'Passing';
+            obj.countdownDiv.classList.add('pass-active');
+            obj.passItem.classList.add('pass-active');
+        }
+        // If pass is in countdown, update the timer
+        if (!isActive && obj.countdownDiv) {
+            if (msToStart > 0) {
+                obj.countdownDiv.textContent = formatCountdown(msToStart);
+            } else {
+                // Switch to 'Passing' when pass starts
+                obj.countdownDiv.textContent = 'Passing';
+                obj.countdownDiv.classList.add('pass-active');
+                obj.passItem.classList.add('pass-active');
+            }
+        }
+        return true;
+    });
+}, 1000);
 
 // Function to highlight a satellite briefly
 function highlightSatellite(satName) {
@@ -2997,3 +3060,14 @@ function saveQTRigDopplerSettings() {
         window.qtrigdopplerPanel.initializeWebSocket();
     }
 }
+
+// Helper to format mm:ss
+function formatCountdown(ms) {
+    const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+// Store all pass DOM elements and their data for countdown and state updates
+window._allPassItems = [];
