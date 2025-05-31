@@ -1600,28 +1600,6 @@ button:hover {
 }
 
 /* AMSAT Status Button */
-#amsat-status-button {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 4px;
-    padding: 8px;
-    cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    z-index: 1000;
-}
-
-#amsat-status-button:hover {
-    background: rgba(255, 255, 255, 1);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-#amsat-status-button svg {
-    display: block;
-    width: 24px;
-    height: 24px;
-}
 
 /* AMSAT Status Dialog */
 #amsat-status-dialog .modal-content {
@@ -1933,19 +1911,6 @@ button:hover {
     width: 100%;
     height: 100%;
     /* The canvas drawing will be scaled by the browser based on container size */
-}
-
-/* Ensure map controls are visible above the canvas */
-.map-control-button {
-    position: absolute; /* Position relative to map-container */
-    z-index: 10; /* Make sure it's above the canvas */
-    /* Add specific positioning (e.g., top, right) as needed */
-    top: 10px;
-    right: 10px;
-    background-color: white;
-    padding: 5px;
-    border: 1px solid #aaa;
-    cursor: pointer;
 }
 
 /* Style for the new connection badge */

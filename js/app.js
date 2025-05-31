@@ -96,6 +96,7 @@ let aprsPort = 8765;
 // --- Make showSatelliteInfo globally accessible for D3 map clicks ---
 window.showSatelliteInfo = function(satName) {
     currentInfoSatellite = satName;
+    window.selectedSatellite = satName;
     // Find the satellite object to get TLE data if needed for display
     const satData = window.tleData[satName];
     if (!satData) {

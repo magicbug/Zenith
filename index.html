@@ -31,6 +31,15 @@
         .server-status.connected {
             background-color: green;
         }
+        
+        .map-controls-topright {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            display: flex;
+            flex-direction: row;
+            gap: 8px;
+        }
     </style>
 
     <link rel="stylesheet" href="css/style.css">
@@ -86,25 +95,58 @@
             </div>
 
             <div class="map-container">
-                <!-- Replace Leaflet div with Canvas -->
-                <div id="map-container">
+                <div id="map-container" style="position: relative;">
                     <canvas id="satellite-canvas" width="3600" height="1800"></canvas>
                     <!-- Keep existing controls inside -->
-                    <div id="amsat-status-button" class="map-control-button" title="Report Satellite Status to AMSAT">
-                        Report Status
+                    <div class="map-controls-topright">
+                        <button id="amsat-status-button" class="map-control-button" title="Report Satellite Status to AMSAT">
+                            Report Status
+                        </button>
+                        <button id="open-partner-view" class="map-control-button" title="Partner View">
+                            <i class="fa-solid fa-user-friends"></i>
+                        </button>
                     </div>
-                    <!-- Add other map controls if needed -->
+                    <!-- Partner View Modal (added) -->
+                    <div id="partner-view-modal" class="modal" style="display:none; z-index:1002;">
+                        <div class="modal-content" style="max-width:340px;">
+                            <div class="modal-header">
+                                <h2>Partner View</h2>
+                                <span class="partner-view-close close" style="cursor:pointer;">&times;</span>
+                            </div>
+                            <div class="modal-body">
+                                <div id="partner-view-error" class="error-message" style="color:#d00; margin-bottom:8px;"></div>
+                                <div class="form-group">
+                                    <label for="partner-grid">Partner Grid Square:</label>
+                                    <input type="text" id="partner-grid" maxlength="8" placeholder="e.g. IO91wm">
+                                </div>
+                                <div class="form-group">
+                                    <label for="partner-label">Label (optional):</label>
+                                    <input type="text" id="partner-label" maxlength="24" placeholder="e.g. John, M0ABC">
+                                </div>
+                                <div class="modal-actions" style="margin-top:16px; display:flex; gap:10px;">
+                                    <button id="show-partner-on-map" class="button primary">Show on Map</button>
+                                    <button id="cancel-partner-view" class="button secondary">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Partner Elevation Overlay (hidden by default) -->
+                    <div id="partner-elevation-overlay" class="partner-elevation-overlay" style="display:none; position:absolute; top:20px; left:20px; z-index:1001; background:#fff; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.15); padding:10px 16px 10px 14px; min-width:150px; max-width:280px; font-size:1em;">
+                        <button id="close-partner-overlay" style="position:absolute; top:6px; right:8px; background:none; border:none; font-size:1.2em; color:#888; cursor:pointer; padding:0; line-height:1; opacity:0.7; transition:opacity 0.2s;" title="Close">&times;</button>
+                        <div style="display:flex; flex-direction:column; gap:2px;">
+                            <div>
+                                <strong id="partner-overlay-label">Partner</strong>
+                                <span id="partner-overlay-grid" style="color:#888; font-size:0.95em; margin-left:6px;"></span>
+                            </div>
+                            <div style="margin-top:6px;">
+                                <span>Elevation: </span><span id="partner-overlay-elevation" style="font-weight:bold;">--</span>°
+                            </div>
+                        </div>
+                        <style>
+                        #close-partner-overlay:hover { color: #d00; opacity: 1; }
+                        </style>
+                    </div>
                 </div>
-                <!-- Original map div commented out for reference
-                <div id="satellite-map">
-
-                <div id="amsat-status-button" class="map-control-button" title="Report Satellite Status to AMSAT">
-                    Report Status
-                </div>
-
-                </div>
-                -->
-
 
                 <!-- Add AMSAT status dialog -->
                 <div id="amsat-status-dialog" class="modal">
@@ -911,6 +953,7 @@
     <script src="js/polar_plot.js"></script>
     <script src="js/qtrigdoppler.js"></script>
     <script src="js/app.js"></script>
+    <script src="js/partner_view.js"></script>
 </body>
 
 </html>
