@@ -1225,8 +1225,19 @@ function updateSatelliteInfoDisplay(satName) {
             </div>
         ` : `<div class="info-unavailable">Next pass prediction unavailable</div>`;
     
+        // AO-91 eclipse warning for info panel
+        let eclipseWarningPanel = '';
+        if (satName === 'AO-91' && inEclipse) {
+            eclipseWarningPanel = `
+                <div class="ao91-eclipse-warning" style="background:#fff3cd; color:#856404; border:1px solid #ffeeba; border-radius:5px; padding:8px 12px; margin-bottom:12px; display:flex; align-items:center; gap:8px; font-weight:bold; font-size:1em;">
+                    <i class='fa-solid fa-exclamation-triangle' style='color:#e67e22; font-size:1.2em;'></i>
+                    Warning: Do not use AO-91 while in eclipse (in Earth's shadow).
+                </div>
+            `;
+        }
         // Set the panel content
         const newContent = `
+            ${eclipseWarningPanel}
             <div class="info-section">
                 <h4>Current Position</h4>
                 ${positionHtml}
@@ -1558,8 +1569,27 @@ function displayPasses(passes, container, visibleSats = []) {
         const startTime = formatDate(pass.start);
         const endTime = formatDate(pass.end);
         const duration = Math.round((pass.end - pass.start) / (60 * 1000));
+        // AO-91 eclipse warning logic
+        let eclipseWarningHtml = '';
+        if (pass.satellite === 'AO-91') {
+            // Check eclipse at pass start time
+            let inEclipse = false;
+            try {
+                // Temporarily override Date.now for isInEclipse
+                const originalDateNow = Date.now;
+                Date.now = () => pass.start.getTime();
+                inEclipse = isInEclipse('AO-91');
+                Date.now = originalDateNow;
+            } catch (e) {
+                // fallback: check at current time (less accurate)
+                inEclipse = isInEclipse('AO-91');
+            }
+            if (inEclipse) {
+                eclipseWarningHtml = ` <i class="fa-solid fa-exclamation-triangle" style="color:#e67e22; margin-left:6px; cursor:pointer;" title="Do not use AO-91 while in eclipse (in Earth's shadow)"></i>`;
+            }
+        }
         passItem.innerHTML = `
-            <div class="pass-satellite-name">${pass.satellite}</div>
+            <div class="pass-satellite-name">${pass.satellite}${eclipseWarningHtml}</div>
             <div class="pass-time">
                 <span>${startTime}</span> to <span>${endTime}</span>
             </div>
