@@ -1235,9 +1235,35 @@ function updateSatelliteInfoDisplay(satName) {
                 </div>
             `;
         }
+        // SO-124 digital only warning for info panel
+        let digitalOnlyWarningPanel = '';
+        if (satName === 'SO-124') {
+            const today = (new Date()).getDay();
+            if (today === 3) {
+                digitalOnlyWarningPanel = `
+                    <div class="so124-digital-warning" style="background:#d1ecf1; color:#0c5460; border:1px solid #bee5eb; border-radius:5px; padding:8px 12px; margin-bottom:12px; display:flex; align-items:center; gap:8px; font-weight:bold; font-size:1em;">
+                        <i class='fa-solid fa-exclamation-triangle' style='color:#e67e22; font-size:1.2em;'></i>
+                        Digital Only: SO-124 transponder is digital only on Wednesdays.
+                    </div>
+                `;
+            }
+        }
+        // SO-125 weekend-only warning for info panel
+        let so125WeekendWarningPanel = '';
+        if (satName === 'SO-125') {
+            const today = (new Date()).getDay();
+            if (![5, 6, 0].includes(today)) {
+                so125WeekendWarningPanel = `
+                    <div class="so125-weekend-warning" style="background:#fff3cd; color:#856404; border:1px solid #ffeeba; border-radius:5px; padding:8px 12px; margin-bottom:12px; display:flex; align-items:center; gap:8px; font-weight:bold; font-size:1em;">
+                        <i class='fa-solid fa-exclamation-triangle' style='color:#e67e22; font-size:1.2em;'></i>
+                        Transponder is only enabled at weekends (Friday-Sunday).
+                    </div>
+                `;
+            }
+        }
         // Set the panel content
         const newContent = `
-            ${eclipseWarningPanel}
+            ${eclipseWarningPanel}${digitalOnlyWarningPanel}${so125WeekendWarningPanel}
             <div class="info-section">
                 <h4>Current Position</h4>
                 ${positionHtml}
@@ -1575,21 +1601,35 @@ function displayPasses(passes, container, visibleSats = []) {
             // Check eclipse at pass start time
             let inEclipse = false;
             try {
-                // Temporarily override Date.now for isInEclipse
                 const originalDateNow = Date.now;
                 Date.now = () => pass.start.getTime();
                 inEclipse = isInEclipse('AO-91');
                 Date.now = originalDateNow;
             } catch (e) {
-                // fallback: check at current time (less accurate)
                 inEclipse = isInEclipse('AO-91');
             }
             if (inEclipse) {
-                eclipseWarningHtml = ` <i class="fa-solid fa-exclamation-triangle" style="color:#e67e22; margin-left:6px; cursor:pointer;" title="Do not use AO-91 while in eclipse (in Earth's shadow)"></i>`;
+                eclipseWarningHtml = ` <i class=\"fa-solid fa-exclamation-triangle\" style=\"color:#e67e22; margin-left:6px; cursor:pointer;\" title=\"Do not use AO-91 while in eclipse (in Earth's shadow)\"></i>`;
+            }
+        }
+        // SO-124 digital only warning on Wednesdays
+        let digitalOnlyWarningHtml = '';
+        if (pass.satellite === 'SO-124') {
+            const passDay = pass.start.getDay(); // 0=Sunday, 1=Monday, ..., 3=Wednesday
+            if (passDay === 3) {
+                digitalOnlyWarningHtml = ` <i class=\"fa-solid fa-exclamation-triangle\" style=\"color:#e67e22; margin-left:6px; cursor:pointer;\" title=\"Digital Only: SO-124 transponder is digital only on Wednesdays.\"></i>`;
+            }
+        }
+        // SO-125 weekend-only warning in upcoming passes
+        let so125WeekendWarningHtml = '';
+        if (pass.satellite === 'SO-125') {
+            const passDay = pass.start.getDay(); // 0=Sunday, 5=Friday, 6=Saturday
+            if (![5, 6, 0].includes(passDay)) {
+                so125WeekendWarningHtml = ` <i class=\"fa-solid fa-exclamation-triangle\" style=\"color:#e67e22; margin-left:6px; cursor:pointer;\" title=\"Transponder is only enabled at weekends (Friday-Sunday).\"></i>`;
             }
         }
         passItem.innerHTML = `
-            <div class="pass-satellite-name">${pass.satellite}${eclipseWarningHtml}</div>
+            <div class="pass-satellite-name">${pass.satellite}${eclipseWarningHtml}${digitalOnlyWarningHtml}${so125WeekendWarningHtml}</div>
             <div class="pass-time">
                 <span>${startTime}</span> to <span>${endTime}</span>
             </div>
