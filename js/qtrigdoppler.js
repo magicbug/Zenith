@@ -432,10 +432,18 @@ class QTRigDopplerPanel {
         // New: update downlink offset
         const downlinkOffsetEl = document.getElementById('qtrigdoppler-downlink-offset');
         if (downlinkOffsetEl) {
-            if (dopplerInfo.downlink) {
+            if (dopplerInfo.downlink !== undefined && dopplerInfo.downlink !== null) {
                 let val = dopplerInfo.downlink;
-                let sign = val > 0 ? '+' : '';
-                downlinkOffsetEl.textContent = `${sign}${val.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} Hz`;
+                if (typeof val === 'number') {
+                    let sign = val > 0 ? '+' : '';
+                    downlinkOffsetEl.textContent = `${sign}${val.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} Hz`;
+                } else if (typeof val === 'string' && val.toLowerCase().includes('hz')) {
+                    downlinkOffsetEl.textContent = val;
+                } else if (typeof val === 'string') {
+                    downlinkOffsetEl.textContent = val + ' Hz';
+                } else {
+                    downlinkOffsetEl.textContent = '--';
+                }
             } else {
                 downlinkOffsetEl.textContent = '--';
             }
@@ -456,10 +464,18 @@ class QTRigDopplerPanel {
         // New: update uplink offset
         const uplinkOffsetEl = document.getElementById('qtrigdoppler-uplink-offset');
         if (uplinkOffsetEl) {
-            if (dopplerInfo.uplink) {
+            if (dopplerInfo.uplink !== undefined && dopplerInfo.uplink !== null) {
                 let val = dopplerInfo.uplink;
-                let sign = val > 0 ? '+' : '';
-                uplinkOffsetEl.textContent = `${sign}${val.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} Hz`;
+                if (typeof val === 'number') {
+                    let sign = val > 0 ? '+' : '';
+                    uplinkOffsetEl.textContent = `${sign}${val.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} Hz`;
+                } else if (typeof val === 'string' && val.toLowerCase().includes('hz')) {
+                    uplinkOffsetEl.textContent = val;
+                } else if (typeof val === 'string') {
+                    uplinkOffsetEl.textContent = val + ' Hz';
+                } else {
+                    uplinkOffsetEl.textContent = '--';
+                }
             } else {
                 uplinkOffsetEl.textContent = '--';
             }
