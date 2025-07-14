@@ -364,8 +364,10 @@ document.addEventListener('DOMContentLoaded', () => {
         testNotificationBtn.addEventListener('click', showTestNotification);
     }
     
-    // Initialize S.A.T control buttons
-    initSatControlButtons();
+    // Initialize S.A.T control buttons only if CSN features are enabled
+    if (window.ZenithConfig && window.ZenithConfig.enableCsnFeatures && typeof initSatControlButtons === 'function') {
+        initSatControlButtons();
+    }
 
     // Help modal functionality
     const helpModal = document.getElementById('help-modal');
