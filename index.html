@@ -585,7 +585,7 @@
                             <h3>Radio Settings</h3>
 
                             <!-- CSN Technologies S.A.T Configuration -->
-                            <div class="settings-section-card">
+                            <div class="settings-section-card" data-csn-config>
                                 <h4>CSN Technologies S.A.T</h4>
                                 <div class="form-group">
                                     <label>
@@ -918,7 +918,7 @@
                         </ul>
                     </section>
 
-                    <section class="help-section">
+                    <section class="help-section" data-csn-help>
                         <h3>Radio Integration</h3>
                         <p>Zenith supports integration with CSN Technologies S.A.T for automatic satellite tracking with
                             compatible rotators and radios.</p>
@@ -990,13 +990,19 @@
     <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
     <script src="js/map_d3.js"></script>
     <script src="js/aprs.js"></script>
-    <script src="js/csn.js"></script>
+    <!-- CSN script only loaded if CSN features are enabled -->
+    <script>
+        if (window.ZenithConfig && window.ZenithConfig.enableCsnFeatures) {
+            document.write('<script src="js/csn.js"><\/script>');
+        }
+    </script>
     <script src="js/cloudlog.js"></script>
     <script src="js/amsat_reporting.js"></script>
     <script src="js/notification.js"></script>
     <script src="js/pass_skeds.js"></script>
     <script src="js/polar_plot.js"></script>
     <script src="js/qtrigdoppler.js"></script>
+    <script src="js/config.js"></script>
     <script src="js/app.js"></script>
     <script src="js/partner_view.js"></script>
 </body>

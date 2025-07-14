@@ -134,8 +134,8 @@ window.showSatelliteInfo = function(satName) {
             }
         }, SAT_INFO_UPDATE_INTERVAL_MS);
 
-        // Also update the S.A.T Panel if enabled
-        if (enableCsnSat && satAPIAvailable) {
+        // Also update the S.A.T Panel if enabled and CSN features are enabled
+        if (window.ZenithConfig && window.ZenithConfig.enableCsnFeatures && enableCsnSat && satAPIAvailable) {
             updateSatPanelForSelection(satName);
         }
         
@@ -221,7 +221,12 @@ document.addEventListener('DOMContentLoaded', () => {
     loadObserverFromLocalStorage();
     loadSelectedSatellitesFromLocalStorage();
     loadHamsAtSettingsFromLocalStorage();
-    loadCsnSatSettingsFromLocalStorage();
+    
+    // Only load CSN settings if CSN features are enabled in config
+    if (window.ZenithConfig && window.ZenithConfig.enableCsnFeatures) {
+        loadCsnSatSettingsFromLocalStorage();
+    }
+    
     loadQTRigDopplerSettingsFromLocalStorage(); // Add QTRigDoppler settings loading
     if (typeof loadCloudlogSettingsFromLocalStorage === 'function') {
         loadCloudlogSettingsFromLocalStorage();
@@ -233,8 +238,8 @@ document.addEventListener('DOMContentLoaded', () => {
     updateQTRigDopplerButtonVisibility(); // Add QTRigDoppler button visibility update
     updateAPRSButtonVisibility();
     
-    // Check S.A.T API availability
-    if (enableCsnSat && csnSatAddress) {
+    // Check S.A.T API availability only if CSN features are enabled
+    if (window.ZenithConfig && window.ZenithConfig.enableCsnFeatures && enableCsnSat && csnSatAddress) {
         checkSATAPIAvailability();
     }
     
@@ -302,31 +307,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Add event listeners for CSN SAT settings
-    document.getElementById('enable-csn-sat').addEventListener('change', function() {
-        enableCsnSat = this.checked;
-        saveCsnSatSettingsToLocalStorage();
-        updateSatPanelButtonVisibility(); // Update button visibility when setting changes
-        
-        // Check API availability when enabled
-        if (enableCsnSat && csnSatAddress) {
-            checkSATAPIAvailability();
-        }
-    });
-    
-    document.getElementById('csn-sat-address').addEventListener('input', function() {
-        csnSatAddress = this.value.trim();
-        saveCsnSatSettingsToLocalStorage();
-        
-        // Check API availability if enabled and address field has content
-        if (enableCsnSat && csnSatAddress) {
-            // Use debounce to avoid making too many API calls while typing
-            clearTimeout(window.satAddressTimeout);
-            window.satAddressTimeout = setTimeout(() => {
+    // Add event listeners for CSN SAT settings only if CSN features are enabled
+    if (window.ZenithConfig && window.ZenithConfig.enableCsnFeatures) {
+        document.getElementById('enable-csn-sat').addEventListener('change', function() {
+            enableCsnSat = this.checked;
+            saveCsnSatSettingsToLocalStorage();
+            updateSatPanelButtonVisibility(); // Update button visibility when setting changes
+            
+            // Check API availability when enabled
+            if (enableCsnSat && csnSatAddress) {
                 checkSATAPIAvailability();
-            }, 1000); // Wait 1 second after typing stops
-        }
-    });
+            }
+        });
+        
+        document.getElementById('csn-sat-address').addEventListener('input', function() {
+            csnSatAddress = this.value.trim();
+            saveCsnSatSettingsToLocalStorage();
+            
+            // Check API availability if enabled and address field has content
+            if (enableCsnSat && csnSatAddress) {
+                // Use debounce to avoid making too many API calls while typing
+                clearTimeout(window.satAddressTimeout);
+                window.satAddressTimeout = setTimeout(() => {
+                    checkSATAPIAvailability();
+                }, 1000); // Wait 1 second after typing stops
+            }
+        });
+    }
 
     // Tab switching functionality
     const tabButtons = document.querySelectorAll('.tab-button');
@@ -2255,8 +2262,10 @@ function saveOptions() {
     // Save API settings
     saveApiSettings();
     
-    // Save CSN SAT settings
-    saveCsnSatSettingsToLocalStorage();
+    // Save CSN SAT settings only if CSN features are enabled
+    if (window.ZenithConfig && window.ZenithConfig.enableCsnFeatures) {
+        saveCsnSatSettingsToLocalStorage();
+    }
     
     // Save notification settings
     const notificationCheckbox = document.getElementById('enable-notifications');
@@ -2960,6 +2969,12 @@ function updateSatPanelButtonVisibility() {
     const satPanelButton = document.getElementById('open-sat-panel-btn');
     if (!satPanelButton) {
         console.error("S.A.T Panel button not found.");
+        return;
+    }
+
+    // Check if CSN features are disabled in config
+    if (!window.ZenithConfig || !window.ZenithConfig.enableCsnFeatures) {
+        satPanelButton.style.display = 'none'; // Hide button if CSN features are disabled
         return;
     }
 
