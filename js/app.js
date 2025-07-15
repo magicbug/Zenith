@@ -2871,24 +2871,33 @@ function updateObserverLocation(location) {
 
 // Add this function to convert lat/long to grid square
 function latLonToGridSquare(lat, lon) {
-    // Implementation of lat/long to grid square conversion
-    // This is a simplified version - you may want to use a more accurate implementation
-    const gridSize = 10; // 10 degrees per grid square
-    const latOffset = 90;
-    const lonOffset = 180;
+    // Ensure lat/lon are within valid ranges
+    lat = Math.max(-90, Math.min(90, lat));
+    lon = Math.max(-180, Math.min(180, lon));
     
-    const latGrid = Math.floor((lat + latOffset) / gridSize);
-    const lonGrid = Math.floor((lon + lonOffset) / gridSize);
+    // Convert to positive values
+    lat += 90;
+    lon += 180;
     
-    const latRemainder = ((lat + latOffset) % gridSize) / gridSize;
-    const lonRemainder = ((lon + lonOffset) % gridSize) / gridSize;
+    // Calculate first two letters (field)
+    const field1 = Math.floor(lon / 20);
+    const field2 = Math.floor(lat / 10);
     
-    const subLat = Math.floor(latRemainder * 10);
-    const subLon = Math.floor(lonRemainder * 10);
+    // Calculate second two digits (square)
+    const square1 = Math.floor((lon % 20) / 2);
+    const square2 = Math.floor(lat % 10);
     
-    const gridSquare = String.fromCharCode(65 + lonGrid) + 
-                      String.fromCharCode(65 + latGrid) + 
-                      subLon + subLat;
+    // Calculate subsquare letters (optional, for 6-character precision)
+    const subsquare1 = Math.floor((lon % 2) * 12);
+    const subsquare2 = Math.floor((lat % 1) * 24);
+    
+    // Return 6-character grid square
+    const gridSquare = String.fromCharCode(65 + field1) + 
+                      String.fromCharCode(65 + field2) + 
+                      square1 + 
+                      square2 + 
+                      String.fromCharCode(97 + subsquare1) + 
+                      String.fromCharCode(97 + subsquare2);
     
     return gridSquare;
 }

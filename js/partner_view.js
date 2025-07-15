@@ -6,18 +6,24 @@
     function gridToLatLon(grid) {
         // Basic 4/6/8 char Maidenhead conversion
         if (!grid || typeof grid !== 'string' || grid.length < 4) return null;
-        grid = grid.toUpperCase();
+        
+        // Convert only first 4 characters to uppercase for processing
+        grid = grid.substring(0, 4).toUpperCase() + grid.substring(4);
+        
         let lon = (grid.charCodeAt(0) - 65) * 20 - 180;
         let lat = (grid.charCodeAt(1) - 65) * 10 - 90;
         lon += parseInt(grid[2]) * 2;
         lat += parseInt(grid[3]) * 1;
         if (grid.length >= 6) {
-            lon += (grid.charCodeAt(4) - 65) * 5 / 60;
-            lat += (grid.charCodeAt(5) - 65) * 2.5 / 60;
+            // Use lowercase characters for proper calculation
+            const char4 = grid.charAt(4).toLowerCase();
+            const char5 = grid.charAt(5).toLowerCase();
+            lon += (char4.charCodeAt(0) - 97) * 5 / 60;
+            lat += (char5.charCodeAt(0) - 97) * 2.5 / 60;
         }
         if (grid.length >= 8) {
-            lon += parseInt(grid[6]) * 5 / 600;
-            lat += parseInt(grid[7]) * 2.5 / 600;
+            lon += parseInt(grid[6]) * 0.5 / 60;
+            lat += parseInt(grid[7]) * 0.25 / 60;
         }
         // Center of the square
         lon += 1;

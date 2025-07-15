@@ -312,7 +312,11 @@ function gridSquareToLatLon(gridSquare) {
         return { latitude: 0, longitude: 0 };
     }
     
-    gridSquare = gridSquare.toUpperCase();
+    // Store original case for third pair processing
+    const originalGridSquare = gridSquare;
+    
+    // Convert only first 4 characters to uppercase for processing
+    gridSquare = gridSquare.substring(0, 4).toUpperCase() + gridSquare.substring(4);
     
     // Basic validation - grid squares must be an even length of 2-8 characters
     if (gridSquare.length % 2 !== 0 || gridSquare.length > 8) {
@@ -332,9 +336,12 @@ function gridSquareToLatLon(gridSquare) {
         }
         
         // Third pair (letters): 5 minute increments (0.0833°)
+        // Use lowercase characters for proper calculation
         if (gridSquare.length >= 6) {
-            longitude += (gridSquare.charCodeAt(4) - 97) * 5 / 60;
-            latitude += (gridSquare.charCodeAt(5) - 97) * 2.5 / 60;
+            const char4 = gridSquare.charAt(4).toLowerCase();
+            const char5 = gridSquare.charAt(5).toLowerCase();
+            longitude += (char4.charCodeAt(0) - 97) * 5 / 60;
+            latitude += (char5.charCodeAt(0) - 97) * 2.5 / 60;
         }
         
         // Fourth pair (numbers): 30 second and 15 second increments (0.0083°, 0.0042°)
