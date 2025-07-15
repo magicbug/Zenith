@@ -1214,7 +1214,7 @@ function updateSatelliteInfoDisplay(satName) {
             <div class="info-grid">
                 <div>Azimuth:</div><div>${lookAngles.azimuth.toFixed(1)}°</div>
                 <div>Elevation:</div><div>${lookAngles.elevation.toFixed(1)}°</div>
-                <div>Range:</div><div>${(lookAngles.range * 1000).toFixed(0)} km</div>
+                <div>Range:</div><div>${lookAngles.range.toFixed(1)} km</div>
                 <div>Visibility:</div><div>${lookAngles.visible ? '<span class="visible-indicator">Visible</span>' : '<span class="not-visible-indicator">Not visible</span>'}</div>
             </div>
         ` : `<div class="info-unavailable">Look angles unavailable (TLE issue?)</div>`;
