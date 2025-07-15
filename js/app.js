@@ -315,8 +315,19 @@ document.addEventListener('DOMContentLoaded', () => {
             updateSatPanelButtonVisibility(); // Update button visibility when setting changes
             
             // Check API availability when enabled
-            if (enableCsnSat && csnSatAddress) {
-                checkSATAPIAvailability();
+            if (enableCsnSat) {
+                if (csnSatAddress) {
+                    // Check API availability if address is provided
+                    if (typeof checkSATAPIAvailability === 'function') {
+                        checkSATAPIAvailability();
+                    }
+                } else {
+                    // Reset API availability if no address
+                    satAPIAvailable = false;
+                }
+            } else {
+                // Reset API availability when disabled
+                satAPIAvailable = false;
             }
         });
         

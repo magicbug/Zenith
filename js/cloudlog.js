@@ -7,15 +7,30 @@ document.addEventListener('DOMContentLoaded', () => {
         openSatPanelBtn.addEventListener('click', () => {
             const satPanel = document.getElementById('sat-panel');
             if (satPanel) {
-                // Only show the panel if CSN S.A.T is enabled and the API is available
-                if (enableCsnSat && satAPIAvailable) {
+                // Show the panel if CSN S.A.T is enabled
+                if (enableCsnSat) {
                     satPanel.style.display = 'flex';
                     
-                    // Start tracking data polling when panel is shown
-                    startSatTrackPolling();
+                    // Start tracking data polling if API is available
+                    if (satAPIAvailable) {
+                        startSatTrackPolling();
+                    } else {
+                        // Show status about API availability in the panel
+                        if (typeof showSATPanel === 'function') {
+                            if (!csnSatAddress) {
+                                showSATPanel('Please configure CSN S.A.T server address in Options > Radio tab', 'error');
+                            } else {
+                                showSATPanel('Connecting to CSN S.A.T server...', 'pending');
+                                // Try to check API availability
+                                if (typeof checkSATAPIAvailability === 'function') {
+                                    checkSATAPIAvailability();
+                                }
+                            }
+                        }
+                    }
                 } else {
                     // If S.A.T is not enabled, show a message and direct them to options
-                    alert('CSN Technologies S.A.T is not enabled or not available. Please check your settings in the Options panel under the Radio tab.');
+                    alert('CSN Technologies S.A.T is not enabled. Please enable it in the Options panel under the Radio tab.');
                     
                     // Open the options modal to the Radio tab
                     const optionsModal = document.getElementById('options-modal');
