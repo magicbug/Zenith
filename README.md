@@ -228,6 +228,7 @@ For more information, see the [full license text](LICENSE) or visit [gnu.org/lic
 - AMSAT for satellite information
 - [Hams.at](https://hams.at/) for rover data
 - [CSN Technologies](http://www.csntechnologies.net/sat) for S.A.T integration
+- Brian M5ADQ - The loan of the CSN S.A.T for testing & development.
 - All contributors and users of the project
 
 ## Support the Project
