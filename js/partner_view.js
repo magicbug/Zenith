@@ -63,6 +63,13 @@
         if (e.target === modal) modal.style.display = 'none';
     });
 
+    // Close modal when ESC key is pressed
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.style.display === 'block') {
+            modal.style.display = 'none';
+        }
+    });
+
     // Overlay close
     closeOverlayBtn.addEventListener('click', () => {
         overlay.style.display = 'none';

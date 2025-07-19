@@ -555,6 +555,50 @@ function setupEventListeners() {
         }
     });
 
+    // Close modals and panels when ESC key is pressed
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            // Get all modal elements
+            const modals = [
+                document.getElementById('options-modal'),
+                document.getElementById('manual-tle-input'),
+                document.getElementById('schedule-modal'),
+                document.getElementById('sked-planning-modal'),
+                document.getElementById('help-modal'),
+                document.getElementById('amsat-status-dialog'),
+                document.getElementById('partner-view-modal')
+            ];
+
+            // Get all panel elements
+            const panels = [
+                document.getElementById('satellite-info-panel'),
+                document.getElementById('sat-panel'),
+                document.getElementById('qtrigdoppler-panel'),
+                document.getElementById('aprs-panel'),
+                document.getElementById('polar-radar-panel')
+            ];
+
+            // Close any visible modal
+            modals.forEach(modalElement => {
+                if (modalElement && modalElement.style.display === 'block') {
+                    modalElement.style.display = 'none';
+                }
+            });
+
+            // Close any visible panel
+            panels.forEach(panelElement => {
+                if (panelElement && panelElement.style.display === 'block') {
+                    panelElement.style.display = 'none';
+                    
+                    // Set satellite info panel closed flag if it's the satellite info panel
+                    if (panelElement.id === 'satellite-info-panel') {
+                        window.satelliteInfoPanelClosed = true;
+                    }
+                }
+            });
+        }
+    });
+
     // Satellite selection
     selectAllBtn.addEventListener('click', selectAllSatellites);
     deselectAllBtn.addEventListener('click', deselectAllSatellites);
