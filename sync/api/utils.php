@@ -57,6 +57,20 @@ function setCorsHeaders() {
         strpos($origin, 'https://127.0.0.1') === 0
     );
     
+    // Check for .local domains (common for local network deployments)
+    // Matches: http://satellites.local, http://app.local, etc.
+    $isLocalDomain = false;
+    if (!empty($origin)) {
+        // Extract the host part (remove protocol)
+        $hostPart = preg_replace('#^https?://#', '', $origin);
+        // Remove port if present
+        $hostPart = preg_replace('/:\d+$/', '', $hostPart);
+        // Check if it ends with .local
+        if (substr($hostPart, -6) === '.local') {
+            $isLocalDomain = true;
+        }
+    }
+    
     // Check for IP address origins (common for local network deployments)
     // Matches: http://192.168.x.x, http://10.x.x.x, http://172.16-31.x.x, etc.
     $isIpAddress = false;
@@ -76,8 +90,8 @@ function setCorsHeaders() {
     if (!empty($origin)) {
         if (in_array($origin, $allowedOrigins)) {
             $allowOrigin = true;
-        } else if ($isLocalhost || $isIpAddress) {
-            // Always allow localhost and IP addresses for development/local network
+        } else if ($isLocalhost || $isLocalDomain || $isIpAddress) {
+            // Always allow localhost, .local domains, and IP addresses for development/local network
             $allowOrigin = true;
         } else if (defined('ENVIRONMENT') && ENVIRONMENT !== 'production') {
             // In non-production, allow all origins for easier development
@@ -113,15 +127,21 @@ function setCorsHeaders() {
                 strpos($origin, 'https://127.0.0.1') === 0
             );
             
-            // Check for IP address
-            $isIpAddressCheck = false;
+            // Check for .local domain
+            $isLocalDomainCheck = false;
             $hostPart = preg_replace('#^https?://#', '', $origin);
             $hostPart = preg_replace('/:\d+$/', '', $hostPart);
+            if (substr($hostPart, -6) === '.local') {
+                $isLocalDomainCheck = true;
+            }
+            
+            // Check for IP address
+            $isIpAddressCheck = false;
             if (filter_var($hostPart, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
                 $isIpAddressCheck = true;
             }
             
-            $isAllowed = in_array($origin, $allowedOrigins) || $isLocalhostCheck || $isIpAddressCheck || (defined('ENVIRONMENT') && ENVIRONMENT !== 'production');
+            $isAllowed = in_array($origin, $allowedOrigins) || $isLocalhostCheck || $isLocalDomainCheck || $isIpAddressCheck || (defined('ENVIRONMENT') && ENVIRONMENT !== 'production');
             
             if ($isAllowed) {
                 // Return the exact origin for preflight
