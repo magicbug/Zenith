@@ -207,20 +207,192 @@ h3 {
 }
 
 .form-group {
-    margin-bottom: 0.5rem;
+    margin-bottom: 1rem;
     display: flex;
     flex-direction: column;
 }
 
-label {
-    margin-bottom: 0.25rem;
-    font-weight: bold;
+.settings-section-card .form-group,
+.general-settings .form-group {
+    margin-bottom: 1.25rem;
 }
 
-input[type="number"], input[type="text"] {
+label {
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    font-size: 14px;
+    color: #24292f;
+    display: block;
+}
+
+.settings-section-card label,
+.general-settings label {
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    font-size: 14px;
+    color: #24292f;
+}
+
+.settings-section-card label:has(input[type="checkbox"]),
+.general-settings label:has(input[type="checkbox"]) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-bottom: 0.75rem;
+}
+
+.settings-section-card label:has(input[type="checkbox"]) input[type="checkbox"],
+.general-settings label:has(input[type="checkbox"]) input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    accent-color: #4a90e2;
+}
+
+input[type="number"], input[type="text"], input[type="email"], input[type="password"] {
     padding: 0.5rem;
     border: 1px solid #ddd;
     border-radius: 3px;
+}
+
+/* Enhanced input styling for General tab and settings */
+.settings-section-card input[type="text"],
+.settings-section-card input[type="email"],
+.settings-section-card input[type="password"],
+.settings-section-card input[type="number"],
+.settings-section-card select,
+.general-settings input[type="text"],
+.general-settings input[type="email"],
+.general-settings input[type="password"],
+.general-settings input[type="number"],
+.general-settings select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d0d7de;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    background-color: #ffffff;
+    color: #24292f;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 0 rgba(208, 215, 222, 0.2) inset;
+}
+
+.settings-section-card input[type="text"]:focus,
+.settings-section-card input[type="email"]:focus,
+.settings-section-card input[type="password"]:focus,
+.settings-section-card input[type="number"]:focus,
+.settings-section-card select:focus,
+.general-settings input[type="text"]:focus,
+.general-settings input[type="email"]:focus,
+.general-settings input[type="password"]:focus,
+.general-settings input[type="number"]:focus,
+.general-settings select:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+.settings-section-card input[type="text"]:hover,
+.settings-section-card input[type="email"]:hover,
+.settings-section-card input[type="password"]:hover,
+.settings-section-card input[type="number"]:hover,
+.settings-section-card select:hover,
+.general-settings input[type="text"]:hover,
+.general-settings input[type="email"]:hover,
+.general-settings input[type="password"]:hover,
+.general-settings input[type="number"]:hover,
+.general-settings select:hover {
+    border-color: #a8b3bc;
+}
+
+.settings-section-card input[type="text"]:disabled,
+.settings-section-card input[type="email"]:disabled,
+.settings-section-card input[type="password"]:disabled,
+.settings-section-card input[type="number"]:disabled,
+.settings-section-card select:disabled,
+.general-settings input[type="text"]:disabled,
+.general-settings input[type="email"]:disabled,
+.general-settings input[type="password"]:disabled,
+.general-settings input[type="number"]:disabled,
+.general-settings select:disabled {
+    background-color: #f6f8fa;
+    color: #8c959f;
+    cursor: not-allowed;
+}
+
+.settings-section-card input[type="text"]::placeholder,
+.settings-section-card input[type="email"]::placeholder,
+.settings-section-card input[type="password"]::placeholder,
+.general-settings input[type="text"]::placeholder,
+.general-settings input[type="email"]::placeholder,
+.general-settings input[type="password"]::placeholder {
+    color: #8c959f;
+}
+
+.settings-section-card select,
+.general-settings select {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+/* Range input styling */
+.settings-section-card input[type="range"],
+.general-settings input[type="range"] {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: #e1e4e8;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.settings-section-card input[type="range"]::-webkit-slider-thumb,
+.general-settings input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #4a90e2;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+}
+
+.settings-section-card input[type="range"]::-webkit-slider-thumb:hover,
+.general-settings input[type="range"]::-webkit-slider-thumb:hover {
+    background: #357abd;
+    transform: scale(1.1);
+}
+
+.settings-section-card input[type="range"]::-moz-range-thumb,
+.general-settings input[type="range"]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #4a90e2;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+}
+
+.settings-section-card input[type="range"]::-moz-range-thumb:hover,
+.general-settings input[type="range"]::-moz-range-thumb:hover {
+    background: #357abd;
+    transform: scale(1.1);
 }
 
 button {
@@ -236,6 +408,74 @@ button {
 
 button:hover {
     background-color: #2980b9;
+}
+
+/* Enhanced button styling for General tab */
+.settings-section-card .button,
+.general-settings .button {
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    margin-top: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.settings-section-card .button.primary,
+.general-settings .button.primary {
+    background-color: #4a90e2;
+    color: #ffffff;
+}
+
+.settings-section-card .button.primary:hover,
+.general-settings .button.primary:hover {
+    background-color: #357abd;
+    box-shadow: 0 2px 4px rgba(74, 144, 226, 0.3);
+    transform: translateY(-1px);
+}
+
+.settings-section-card .button.primary:active,
+.general-settings .button.primary:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(74, 144, 226, 0.2);
+}
+
+.settings-section-card .button.secondary,
+.general-settings .button.secondary {
+    background-color: #f6f8fa;
+    color: #24292f;
+    border: 1px solid #d0d7de;
+}
+
+.settings-section-card .button.secondary:hover,
+.general-settings .button.secondary:hover {
+    background-color: #f3f4f6;
+    border-color: #a8b3bc;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.settings-section-card .button.secondary:active,
+.general-settings .button.secondary:active {
+    background-color: #eaeef2;
+}
+
+.settings-section-card .button:disabled,
+.general-settings .button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+.settings-section-card .button i,
+.general-settings .button i {
+    font-size: 14px;
 }
 
 #satellite-list {
@@ -2265,6 +2505,24 @@ button:hover {
     max-height: 0;
     padding-top: 0;
     opacity: 0;
+}
+
+/* Help text styling */
+.help-text,
+p.help-text {
+    font-size: 12px;
+    color: #656d76;
+    margin-top: 4px;
+    margin-bottom: 0;
+    line-height: 1.4;
+}
+
+.settings-section-card .help-text,
+.general-settings .help-text {
+    font-size: 12px;
+    color: #656d76;
+    margin-top: 6px;
+    margin-bottom: 0;
 }
 
 .qtrigdoppler-panel .configure-server {
