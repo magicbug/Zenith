@@ -10,9 +10,25 @@ require_once __DIR__ . '/../config.php';
  * Send JSON response
  */
 function sendJsonResponse($data, $statusCode = 200) {
+    // Clear any previous output
+    if (ob_get_level() > 0) {
+        ob_clean();
+    }
+    
     http_response_code($statusCode);
     header('Content-Type: application/json; charset=utf-8');
-    echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    
+    $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    if ($json === false) {
+        // Fallback if JSON encoding fails
+        $json = json_encode([
+            'success' => false,
+            'error' => 'Failed to encode response',
+            'code' => 'JSON_ENCODE_ERROR'
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
+    
+    echo $json;
     exit;
 }
 
@@ -20,6 +36,10 @@ function sendJsonResponse($data, $statusCode = 200) {
  * Send error response
  */
 function sendErrorResponse($message, $statusCode = 400, $code = null) {
+    // Ensure message is not empty
+    if (empty($message)) {
+        $message = 'An error occurred';
+    }
     $response = ['success' => false, 'error' => $message];
     if ($code !== null) {
         $response['code'] = $code;
@@ -229,14 +249,29 @@ function logError($message, $context = []) {
 
 /**
  * Get JSON request body
+ * Note: php://input can only be read once, so we cache the result
  */
 function getJsonBody() {
+    static $cachedJsonBody = null;
+    
+    // Return cached body if already read
+    if ($cachedJsonBody !== null) {
+        return $cachedJsonBody;
+    }
+    
     $body = file_get_contents('php://input');
+    if ($body === false || $body === '') {
+        sendErrorResponse('Empty request body', 400, 'EMPTY_BODY');
+    }
+    
     $data = json_decode($body, true);
     
     if (json_last_error() !== JSON_ERROR_NONE) {
-        sendErrorResponse('Invalid JSON', 400, 'INVALID_JSON');
+        sendErrorResponse('Invalid JSON: ' . json_last_error_msg(), 400, 'INVALID_JSON');
     }
+    
+    // Cache the result
+    $cachedJsonBody = $data;
     
     return $data;
 }
@@ -255,7 +290,7 @@ function getApiKey() {
         return $_GET['api_key'];
     }
     
-    // Check POST body
+    // Check POST body (will use cached body if already read)
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $body = getJsonBody();
         if (isset($body['api_key'])) {

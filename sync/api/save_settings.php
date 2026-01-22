@@ -11,19 +11,22 @@ require_once __DIR__ . '/rate_limit.php';
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/utils.php';
 
-// Set headers
+// Set headers first (before any output)
 setCorsHeaders();
 setSecurityHeaders();
+
+// Wrap everything in try-catch to catch any unhandled exceptions
+try {
 
 // Only allow POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     sendErrorResponse('Method not allowed', 405, 'METHOD_NOT_ALLOWED');
 }
 
-// Get request body
+// Get request body (cache it so it can be reused)
 $data = getJsonBody();
 
-// Get API key
+// Get API key (use from data first, then try getApiKey which will use cached body)
 $apiKey = $data['api_key'] ?? getApiKey();
 if (empty($apiKey)) {
     sendErrorResponse('API key required', 401, 'API_KEY_REQUIRED');
@@ -93,8 +96,23 @@ try {
         $currentSettings = json_decode($currentData['settings_json'], true);
         if (json_last_error() === JSON_ERROR_NONE) {
             // Compare settings (excluding version/timestamp differences)
-            $currentNormalized = json_encode($currentSettings, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_SORT_KEYS);
-            $newNormalized = json_encode($data['settings'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_SORT_KEYS);
+            // Use recursive ksort to sort keys manually (JSON_SORT_KEYS may not be available in older PHP)
+            $currentSorted = $currentSettings;
+            $newSorted = $data['settings'];
+            $sortArray = function(&$array) use (&$sortArray) {
+                if (is_array($array)) {
+                    ksort($array);
+                    foreach ($array as $key => $value) {
+                        if (is_array($value)) {
+                            $sortArray($array[$key]);
+                        }
+                    }
+                }
+            };
+            $sortArray($currentSorted);
+            $sortArray($newSorted);
+            $currentNormalized = json_encode($currentSorted, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            $newNormalized = json_encode($newSorted, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             $settingsChanged = ($currentNormalized !== $newNormalized);
         }
     }
@@ -108,29 +126,38 @@ try {
         
         // Cleanup: Keep only the last 10 versions per user to prevent unlimited growth
         // Only cleanup if we have more than 10 records
-        $countStmt = $db->query(
-            "SELECT COUNT(*) as count FROM user_settings WHERE user_id = ?",
-            [$user['id']]
-        );
-        $countData = $countStmt->fetch();
-        $totalRecords = (int)$countData['count'];
-        
-        if ($totalRecords > 10) {
-            // Get IDs to keep
-            $keepStmt = $db->query(
-                "SELECT id FROM user_settings WHERE user_id = ? ORDER BY id DESC LIMIT 10",
+        try {
+            $countStmt = $db->query(
+                "SELECT COUNT(*) as count FROM user_settings WHERE user_id = ?",
                 [$user['id']]
             );
-            $keepRows = $keepStmt->fetchAll();
-            $keepIds = array_column($keepRows, 'id');
+            $countData = $countStmt->fetch();
+            $totalRecords = (int)$countData['count'];
             
-            if (!empty($keepIds) && count($keepIds) > 0) {
-                $placeholders = implode(',', array_fill(0, count($keepIds), '?'));
-                $db->query(
-                    "DELETE FROM user_settings WHERE user_id = ? AND id NOT IN ($placeholders)",
-                    array_merge([$user['id']], $keepIds)
+            if ($totalRecords > 10) {
+                // Get IDs to keep
+                $keepStmt = $db->query(
+                    "SELECT id FROM user_settings WHERE user_id = ? ORDER BY id DESC LIMIT 10",
+                    [$user['id']]
                 );
+                $keepRows = $keepStmt->fetchAll();
+                $keepIds = array_column($keepRows, 'id');
+                
+                if (!empty($keepIds) && count($keepIds) > 0) {
+                    $placeholders = implode(',', array_fill(0, count($keepIds), '?'));
+                    $db->query(
+                        "DELETE FROM user_settings WHERE user_id = ? AND id NOT IN ($placeholders)",
+                        array_merge([$user['id']], $keepIds)
+                    );
+                }
             }
+        } catch (Exception $cleanupError) {
+            // Log cleanup error but don't fail the save operation
+            logError("Cleanup failed (non-fatal)", [
+                'user_id' => $user['id'],
+                'error' => $cleanupError->getMessage()
+            ]);
+            // Continue with the save operation even if cleanup fails
         }
     } else {
         // Settings unchanged - just update the timestamp of the latest record
@@ -155,14 +182,44 @@ try {
         [$user['id']]
     );
     
-    $db->commit();
+    // Commit transaction
+    if (!$db->commit()) {
+        throw new Exception('Failed to commit transaction');
+    }
 } catch (Exception $e) {
     $db->rollback();
-    logError("Failed to save settings", ['user_id' => $user['id'], 'error' => $e->getMessage()]);
-    sendErrorResponse('Failed to save settings', 500, 'SAVE_ERROR');
+    $errorMessage = $e->getMessage();
+    $errorTrace = $e->getTraceAsString();
+    logError("Failed to save settings", [
+        'user_id' => $user['id'] ?? 'unknown',
+        'error' => $errorMessage,
+        'trace' => $errorTrace
+    ]);
+    
+    // Send error response with more details in development, generic in production
+    $errorResponse = 'Failed to save settings';
+    if (defined('ENVIRONMENT') && ENVIRONMENT !== 'production') {
+        $errorResponse .= ': ' . $errorMessage;
+    }
+    sendErrorResponse($errorResponse, 500, 'SAVE_ERROR');
 }
 
-sendSuccessResponse([
-    'version' => $newVersion,
-    'last_sync_at' => date('Y-m-d\TH:i:s\Z')
-]);
+    sendSuccessResponse([
+        'version' => $newVersion,
+        'last_sync_at' => date('Y-m-d\TH:i:s\Z')
+    ]);
+} catch (Throwable $e) {
+    // Catch any unhandled exceptions or errors
+    logError("Unhandled exception in save_settings.php", [
+        'error' => $e->getMessage(),
+        'file' => $e->getFile(),
+        'line' => $e->getLine(),
+        'trace' => $e->getTraceAsString()
+    ]);
+    
+    $errorResponse = 'An unexpected error occurred';
+    if (defined('ENVIRONMENT') && ENVIRONMENT !== 'production') {
+        $errorResponse .= ': ' . $e->getMessage();
+    }
+    sendErrorResponse($errorResponse, 500, 'UNEXPECTED_ERROR');
+}

@@ -3869,12 +3869,9 @@ function initSettingsSyncUI() {
     const disconnectBtn = document.getElementById('disconnect-sync');
     if (disconnectBtn) {
         disconnectBtn.addEventListener('click', async () => {
-            if (confirm('Are you sure you want to disconnect? Your settings will no longer sync across devices.')) {
-                try {
-                    await SettingsSync.revokeApiKey();
-                } catch (error) {
-                    console.error('Error revoking API key:', error);
-                }
+            if (confirm('Are you sure you want to disconnect? This will only disconnect this device. Your API key will remain active for other devices.')) {
+                // Just remove the key locally - don't revoke it on the server
+                // This allows other devices to continue using the same API key
                 SettingsSync.removeApiKey();
                 updateSyncUI();
             }
