@@ -1,7 +1,4 @@
-﻿# Zenith Settings Sync - Security Headers and URL Rewriting
-# Apache 2.4 syntax
-
-# Enable rewrite engine
+﻿# Enable rewrite engine
 RewriteEngine On
 
 # Security Headers
