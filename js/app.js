@@ -2761,15 +2761,26 @@ function loadCsnSatSettingsFromLocalStorage() {
         const settings = JSON.parse(savedSettings);
         enableCsnSat = settings.enableCsnSat;
         csnSatAddress = settings.serverAddress;
+    } else {
+        // Fallback: check individual localStorage keys (backwards compatibility)
+        const savedEnableCsnSat = localStorage.getItem('enableCsnSat');
+        const savedCsnSatAddress = localStorage.getItem('csnSatAddress');
         
-        // Update UI elements
-        const enableCsnSatCheckbox = document.getElementById('enable-csn-sat');
-        const csnSatAddressInput = document.getElementById('csn-sat-address');
-        if (enableCsnSatCheckbox) enableCsnSatCheckbox.checked = enableCsnSat;
-        if (csnSatAddressInput) csnSatAddressInput.value = csnSatAddress;
-        
-        updateSatPanelButtonVisibility();
+        if (savedEnableCsnSat !== null) {
+            enableCsnSat = savedEnableCsnSat === 'true';
+        }
+        if (savedCsnSatAddress !== null) {
+            csnSatAddress = savedCsnSatAddress;
+        }
     }
+    
+    // Update UI elements
+    const enableCsnSatCheckbox = document.getElementById('enable-csn-sat');
+    const csnSatAddressInput = document.getElementById('csn-sat-address');
+    if (enableCsnSatCheckbox) enableCsnSatCheckbox.checked = enableCsnSat;
+    if (csnSatAddressInput) csnSatAddressInput.value = csnSatAddress;
+    
+    updateSatPanelButtonVisibility();
 }
 
 // Save CSN SAT settings to local storage
