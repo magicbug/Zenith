@@ -200,15 +200,36 @@ const SettingsSync = {
                 mode: 'cors' // Explicitly enable CORS
             });
             
-            const data = await response.json();
-            
+            // Check if response is ok before trying to parse JSON
             if (!response.ok) {
+                const errorText = await response.text();
+                let errorData;
+                try {
+                    errorData = JSON.parse(errorText);
+                } catch {
+                    errorData = { error: errorText || `HTTP ${response.status}: ${response.statusText}` };
+                }
+                
                 if (response.status === 401 || response.status === 403) {
                     // Invalid or revoked API key
                     this.removeApiKey();
                     throw new Error('API key invalid or revoked. Please reconnect.');
                 }
-                throw new Error(data.error || 'Failed to sync settings');
+                throw new Error(errorData.error || `Failed to sync settings (${response.status})`);
+            }
+            
+            // Parse JSON only if response is OK
+            const responseText = await response.text();
+            if (!responseText || responseText.trim() === '') {
+                throw new Error('Empty response from server');
+            }
+            
+            let data;
+            try {
+                data = JSON.parse(responseText);
+            } catch (parseError) {
+                console.error('Failed to parse JSON response:', responseText);
+                throw new Error('Invalid response from server: ' + parseError.message);
             }
             
             this.lastSyncTime = new Date().toISOString();
@@ -250,15 +271,36 @@ const SettingsSync = {
                 mode: 'cors' // Explicitly enable CORS
             });
             
-            const data = await response.json();
-            
+            // Check if response is ok before trying to parse JSON
             if (!response.ok) {
+                const errorText = await response.text();
+                let errorData;
+                try {
+                    errorData = JSON.parse(errorText);
+                } catch {
+                    errorData = { error: errorText || `HTTP ${response.status}: ${response.statusText}` };
+                }
+                
                 if (response.status === 401 || response.status === 403) {
                     // Invalid or revoked API key
                     this.removeApiKey();
                     throw new Error('API key invalid or revoked. Please reconnect.');
                 }
-                throw new Error(data.error || 'Failed to sync settings');
+                throw new Error(errorData.error || `Failed to sync settings (${response.status})`);
+            }
+            
+            // Parse JSON only if response is OK
+            const responseText = await response.text();
+            if (!responseText || responseText.trim() === '') {
+                throw new Error('Empty response from server');
+            }
+            
+            let data;
+            try {
+                data = JSON.parse(responseText);
+            } catch (parseError) {
+                console.error('Failed to parse JSON response:', responseText);
+                throw new Error('Invalid response from server: ' + parseError.message);
             }
             
             if (data.settings && Object.keys(data.settings).length > 0) {
@@ -457,10 +499,30 @@ const SettingsSync = {
                 mode: 'cors' // Explicitly enable CORS
             });
             
-            const data = await response.json();
-            
+            // Check if response is ok before trying to parse JSON
             if (!response.ok) {
-                throw new Error(data.error || 'Failed to revoke API key');
+                const errorText = await response.text();
+                let errorData;
+                try {
+                    errorData = JSON.parse(errorText);
+                } catch {
+                    errorData = { error: errorText || `HTTP ${response.status}: ${response.statusText}` };
+                }
+                throw new Error(errorData.error || `Failed to revoke API key (${response.status})`);
+            }
+            
+            // Parse JSON only if response is OK
+            const responseText = await response.text();
+            if (!responseText || responseText.trim() === '') {
+                throw new Error('Empty response from server');
+            }
+            
+            let data;
+            try {
+                data = JSON.parse(responseText);
+            } catch (parseError) {
+                console.error('Failed to parse JSON response:', responseText);
+                throw new Error('Invalid response from server: ' + parseError.message);
             }
             
             this.removeApiKey();

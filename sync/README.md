@@ -83,7 +83,12 @@ Set up these cron jobs for maintenance:
 
 # Cleanup old rate limit records (weekly)
 0 3 * * 0 php /path/to/sync/cleanup_rate_limits.php
+
+# Cleanup old settings records (weekly) - keeps last 10 versions per user
+0 4 * * 0 php /path/to/sync/cleanup_old_settings.php
 ```
+
+**Note:** The `save_settings.php` endpoint now automatically keeps only the last 10 versions per user when saving, so manual cleanup is optional but recommended for existing data.
 
 ## Security
 

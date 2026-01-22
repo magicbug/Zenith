@@ -74,10 +74,10 @@ if (json_last_error() !== JSON_ERROR_NONE) {
     sendErrorResponse('Invalid JSON structure', 400, 'INVALID_JSON');
 }
 
-// Get current version
+// Get current version and latest settings
 $db = DB::getInstance();
 $stmt = $db->query(
-    "SELECT version FROM user_settings WHERE user_id = ? ORDER BY id DESC LIMIT 1",
+    "SELECT id, version, settings_json FROM user_settings WHERE user_id = ? ORDER BY id DESC LIMIT 1",
     [$user['id']]
 );
 $currentData = $stmt->fetch();
@@ -87,11 +87,67 @@ $newVersion = $currentData ? ((int)$currentData['version']) + 1 : 1;
 try {
     $db->beginTransaction();
     
-    // Insert new settings record
-    $db->query(
-        "INSERT INTO user_settings (user_id, settings_json, version) VALUES (?, ?, ?)",
-        [$user['id'], $settingsJson, $newVersion]
-    );
+    // Check if settings actually changed (to avoid unnecessary version increments)
+    $settingsChanged = true;
+    if ($currentData) {
+        $currentSettings = json_decode($currentData['settings_json'], true);
+        if (json_last_error() === JSON_ERROR_NONE) {
+            // Compare settings (excluding version/timestamp differences)
+            $currentNormalized = json_encode($currentSettings, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_SORT_KEYS);
+            $newNormalized = json_encode($data['settings'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_SORT_KEYS);
+            $settingsChanged = ($currentNormalized !== $newNormalized);
+        }
+    }
+    
+    if ($settingsChanged) {
+        // Settings changed - insert new record
+        $db->query(
+            "INSERT INTO user_settings (user_id, settings_json, version) VALUES (?, ?, ?)",
+            [$user['id'], $settingsJson, $newVersion]
+        );
+        
+        // Cleanup: Keep only the last 10 versions per user to prevent unlimited growth
+        // Only cleanup if we have more than 10 records
+        $countStmt = $db->query(
+            "SELECT COUNT(*) as count FROM user_settings WHERE user_id = ?",
+            [$user['id']]
+        );
+        $countData = $countStmt->fetch();
+        $totalRecords = (int)$countData['count'];
+        
+        if ($totalRecords > 10) {
+            // Get IDs to keep
+            $keepStmt = $db->query(
+                "SELECT id FROM user_settings WHERE user_id = ? ORDER BY id DESC LIMIT 10",
+                [$user['id']]
+            );
+            $keepRows = $keepStmt->fetchAll();
+            $keepIds = array_column($keepRows, 'id');
+            
+            if (!empty($keepIds) && count($keepIds) > 0) {
+                $placeholders = implode(',', array_fill(0, count($keepIds), '?'));
+                $db->query(
+                    "DELETE FROM user_settings WHERE user_id = ? AND id NOT IN ($placeholders)",
+                    array_merge([$user['id']], $keepIds)
+                );
+            }
+        }
+    } else {
+        // Settings unchanged - just update the timestamp of the latest record
+        if ($currentData) {
+            $db->query(
+                "UPDATE user_settings SET updated_at = NOW() WHERE id = ?",
+                [$currentData['id']]
+            );
+            $newVersion = $currentData['version']; // Keep same version
+        } else {
+            // No existing record, insert first one
+            $db->query(
+                "INSERT INTO user_settings (user_id, settings_json, version) VALUES (?, ?, ?)",
+                [$user['id'], $settingsJson, $newVersion]
+            );
+        }
+    }
     
     // Update last_sync_at
     $db->query(
