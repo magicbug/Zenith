@@ -48,6 +48,14 @@ let allSkedPasses = [];
 let SKED_PREDICTION_DAYS = 1;
 let SKED_MIN_ELEVATION = 5;
 let passesPopupWindow = null; // Track the popup window for passes
+let speechEnabled = false; // Speech announcements enabled
+let speechVoice = null; // Selected voice
+let speechRate = 1.0; // Speech rate
+let speechPitch = 1.0; // Speech pitch
+let speechVolume = 1.0; // Speech volume
+let speechUseNatoPhonetics = true; // Use NATO phonetics for satellite names
+let announcedPasses = new Set(); // Track which passes have been announced
+let speechSynthesis = null; // Speech synthesis instance
 // Notification-related variables
 let notifiedPasses = new Map(); // Store IDs of passes we've notified for
 let notificationCheckInterval;
@@ -80,7 +88,10 @@ let showUnworkableRoves = false;
 
 // CSN Technologies S.A.T configuration
 let enableCsnSat = false;
-let csnSatAddress = '';
+let csnSatAddress = ''; // CSN S.A.T server address
+// Make CSN variables globally accessible for csn.js
+window.enableCsnSat = enableCsnSat;
+window.csnSatAddress = csnSatAddress;
 let satAPIAvailable = false;
 let currentSelectedSatelliteForSAT = '';
 
@@ -326,7 +337,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Clear interval after 5 seconds
                     setTimeout(() => clearInterval(checkPopupReady), 5000);
                 }
-            }
         });
     }
     
@@ -403,6 +413,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.ZenithConfig && window.ZenithConfig.enableCsnFeatures) {
         document.getElementById('enable-csn-sat').addEventListener('change', function() {
             enableCsnSat = this.checked;
+            window.enableCsnSat = enableCsnSat; // Update global reference
             saveCsnSatSettingsToLocalStorage();
             updateSatPanelButtonVisibility(); // Update button visibility when setting changes
             
@@ -425,6 +436,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         document.getElementById('csn-sat-address').addEventListener('input', function() {
             csnSatAddress = this.value.trim();
+            window.csnSatAddress = csnSatAddress; // Update global reference
             saveCsnSatSettingsToLocalStorage();
             
             // Check API availability if enabled and address field has content
@@ -461,10 +473,90 @@ document.addEventListener('DOMContentLoaded', () => {
         initNotifications();
     }
     
+    // Initialize speech synthesis
+    initSpeechSynthesis();
+    
+    // Load speech settings
+    loadSpeechSettings();
+    
     // Test notification button
     const testNotificationBtn = document.getElementById('test-notification');
     if (testNotificationBtn) {
         testNotificationBtn.addEventListener('click', showTestNotification);
+    }
+    
+    // Speech settings event listeners
+    const speechCheckbox = document.getElementById('enable-speech');
+    if (speechCheckbox) {
+        speechCheckbox.addEventListener('change', function() {
+            speechEnabled = this.checked;
+            localStorage.setItem('speechEnabled', speechEnabled.toString());
+        });
+    }
+    
+    const speechNatoCheckbox = document.getElementById('speech-use-nato');
+    if (speechNatoCheckbox) {
+        speechNatoCheckbox.addEventListener('change', function() {
+            speechUseNatoPhonetics = this.checked;
+            localStorage.setItem('speechUseNatoPhonetics', speechUseNatoPhonetics.toString());
+        });
+    }
+    
+    const speechVoiceSelect = document.getElementById('speech-voice');
+    if (speechVoiceSelect) {
+        speechVoiceSelect.addEventListener('change', function() {
+            if (speechSynthesis) {
+                const voices = speechSynthesis.getVoices();
+                const selectedIndex = parseInt(this.value);
+                if (voices[selectedIndex]) {
+                    speechVoice = voices[selectedIndex];
+                    localStorage.setItem('speechVoiceIndex', selectedIndex.toString());
+                }
+            }
+        });
+    }
+    
+    const speechRateInput = document.getElementById('speech-rate');
+    if (speechRateInput) {
+        speechRateInput.addEventListener('input', function() {
+            speechRate = parseFloat(this.value);
+            updateSpeechRateValue();
+            localStorage.setItem('speechRate', speechRate.toString());
+        });
+    }
+    
+    const speechPitchInput = document.getElementById('speech-pitch');
+    if (speechPitchInput) {
+        speechPitchInput.addEventListener('input', function() {
+            speechPitch = parseFloat(this.value);
+            updateSpeechPitchValue();
+            localStorage.setItem('speechPitch', speechPitch.toString());
+        });
+    }
+    
+    const speechVolumeInput = document.getElementById('speech-volume');
+    if (speechVolumeInput) {
+        speechVolumeInput.addEventListener('input', function() {
+            speechVolume = parseFloat(this.value);
+            updateSpeechVolumeValue();
+            localStorage.setItem('speechVolume', speechVolume.toString());
+        });
+    }
+    
+    const testSpeechBtn = document.getElementById('test-speech');
+    if (testSpeechBtn) {
+        testSpeechBtn.addEventListener('click', function() {
+            if (speechSynthesis) {
+                speechSynthesis.cancel();
+                const testSatName = formatSatelliteNameForSpeech('AO-91');
+                const utterance = new SpeechSynthesisUtterance(`${testSatName} is rising`);
+                if (speechVoice) utterance.voice = speechVoice;
+                utterance.rate = speechRate;
+                utterance.pitch = speechPitch;
+                utterance.volume = speechVolume;
+                speechSynthesis.speak(utterance);
+            }
+        });
     }
     
     // Initialize S.A.T control buttons only if CSN features are enabled
@@ -1740,6 +1832,8 @@ function displayPasses(passes, container, visibleSats = []) {
         // Only add 'pass-active' if this pass is currently active
         if (isActive) {
             passItem.classList.add('pass-active');
+            // Announce when pass is active (if not already announced)
+            announcePassStart(pass);
         } else if (timeToPass > 0 && timeToPass <= 15) {
             passItem.classList.add('pass-upcoming');
         }
@@ -1874,6 +1968,8 @@ window.passCountdownInterval = setInterval(() => {
             obj.countdownDiv.textContent = 'Passing';
             obj.countdownDiv.classList.add('pass-active');
             obj.passItem.classList.add('pass-active');
+            // Announce when pass becomes active
+            announcePassStart(obj.pass);
         }
         // If pass is in countdown, update the timer
         if (!isActive && obj.countdownDiv) {
@@ -1884,11 +1980,125 @@ window.passCountdownInterval = setInterval(() => {
                 obj.countdownDiv.textContent = 'Passing';
                 obj.countdownDiv.classList.add('pass-active');
                 obj.passItem.classList.add('pass-active');
+                // Announce when pass becomes active
+                announcePassStart(obj.pass);
             }
         }
         return true;
     });
 }, 1000);
+
+// Speech announcement functions
+function initSpeechSynthesis() {
+    if ('speechSynthesis' in window) {
+        speechSynthesis = window.speechSynthesis;
+        // Load voices when they become available
+        if (speechSynthesis.getVoices().length > 0) {
+            loadSpeechVoices();
+        } else {
+            speechSynthesis.addEventListener('voiceschanged', loadSpeechVoices);
+        }
+    }
+}
+
+function loadSpeechVoices() {
+    if (!speechSynthesis) return;
+    const voices = speechSynthesis.getVoices();
+    const voiceSelect = document.getElementById('speech-voice');
+    if (voiceSelect && voices.length > 0) {
+        voiceSelect.innerHTML = '';
+        voices.forEach((voice, index) => {
+            const option = document.createElement('option');
+            option.value = index;
+            option.textContent = `${voice.name} (${voice.lang})`;
+            if (voice.default) {
+                option.selected = true;
+                speechVoice = voice;
+            }
+            voiceSelect.appendChild(option);
+        });
+        // Load saved voice preference
+        const savedVoiceIndex = localStorage.getItem('speechVoiceIndex');
+        if (savedVoiceIndex !== null && voices[parseInt(savedVoiceIndex)]) {
+            voiceSelect.value = savedVoiceIndex;
+            speechVoice = voices[parseInt(savedVoiceIndex)];
+        }
+    }
+}
+
+function formatSatelliteNameForSpeech(satName) {
+    if (speechUseNatoPhonetics) {
+        // Use NATO phonetics
+        const natoPhonetics = {
+            'A': 'Alpha', 'B': 'Bravo', 'C': 'Charlie', 'D': 'Delta', 'E': 'Echo',
+            'F': 'Foxtrot', 'G': 'Golf', 'H': 'Hotel', 'I': 'India', 'J': 'Juliet',
+            'K': 'Kilo', 'L': 'Lima', 'M': 'Mike', 'N': 'November', 'O': 'Oscar',
+            'P': 'Papa', 'Q': 'Quebec', 'R': 'Romeo', 'S': 'Sierra', 'T': 'Tango',
+            'U': 'Uniform', 'V': 'Victor', 'W': 'Whiskey', 'X': 'X-ray',
+            'Y': 'Yankee', 'Z': 'Zulu',
+            '0': 'Zero', '1': 'One', '2': 'Two', '3': 'Three', '4': 'Four',
+            '5': 'Five', '6': 'Six', '7': 'Seven', '8': 'Eight', '9': 'Nine',
+            '.': 'Point', '_': 'Underscore'
+        };
+        
+        return satName.split('').map(char => {
+            const upperChar = char.toUpperCase();
+            // Skip dashes/hyphens in NATO phonetics mode
+            if (char === '-' || char === '–' || char === '—') {
+                return null;
+            }
+            return natoPhonetics[upperChar] || char;
+        }).filter(word => word !== null).join(' ');
+    } else {
+        // Break up the satellite name character by character with spaces
+        // e.g., "AO-91" becomes "A O - 9 1"
+        return satName.split('').join(' ');
+    }
+}
+
+function announcePassStart(pass) {
+    if (!speechEnabled || !speechSynthesis) return;
+    
+    // Create unique key for this pass to avoid duplicate announcements
+    const passKey = `${pass.satellite}_${pass.start.getTime()}`;
+    if (announcedPasses.has(passKey)) return;
+    
+    announcedPasses.add(passKey);
+    
+    // Clean up old announcements (older than 1 hour)
+    const oneHourAgo = Date.now() - (60 * 60 * 1000);
+    announcedPasses.forEach(key => {
+        const parts = key.split('_');
+        if (parts.length === 2 && parseInt(parts[1]) < oneHourAgo) {
+            announcedPasses.delete(key);
+        }
+    });
+    
+    // Stop any current speech
+    speechSynthesis.cancel();
+    
+    // Format satellite name with spaces between characters
+    const formattedSatName = formatSatelliteNameForSpeech(pass.satellite);
+    
+    // Create announcement text
+    const announcement = `${formattedSatName} is rising`;
+    
+    // Create utterance
+    const utterance = new SpeechSynthesisUtterance(announcement);
+    
+    // Set voice
+    if (speechVoice) {
+        utterance.voice = speechVoice;
+    }
+    
+    // Set speech parameters
+    utterance.rate = speechRate;
+    utterance.pitch = speechPitch;
+    utterance.volume = speechVolume;
+    
+    // Speak
+    speechSynthesis.speak(utterance);
+}
 
 // Function to highlight a satellite briefly
 function highlightSatellite(satName) {
@@ -2445,6 +2655,47 @@ function saveOptions() {
         }
     }
     
+    // Save speech settings
+    const speechCheckbox = document.getElementById('enable-speech');
+    if (speechCheckbox) {
+        speechEnabled = speechCheckbox.checked;
+        localStorage.setItem('speechEnabled', speechEnabled.toString());
+    }
+    
+    const speechVoiceSelect = document.getElementById('speech-voice');
+    if (speechVoiceSelect && speechSynthesis) {
+        const voices = speechSynthesis.getVoices();
+        const selectedIndex = parseInt(speechVoiceSelect.value);
+        if (voices[selectedIndex]) {
+            speechVoice = voices[selectedIndex];
+            localStorage.setItem('speechVoiceIndex', selectedIndex.toString());
+        }
+    }
+    
+    const speechRateInput = document.getElementById('speech-rate');
+    if (speechRateInput) {
+        speechRate = parseFloat(speechRateInput.value);
+        localStorage.setItem('speechRate', speechRate.toString());
+    }
+    
+    const speechPitchInput = document.getElementById('speech-pitch');
+    if (speechPitchInput) {
+        speechPitch = parseFloat(speechPitchInput.value);
+        localStorage.setItem('speechPitch', speechPitch.toString());
+    }
+    
+    const speechVolumeInput = document.getElementById('speech-volume');
+    if (speechVolumeInput) {
+        speechVolume = parseFloat(speechVolumeInput.value);
+        localStorage.setItem('speechVolume', speechVolume.toString());
+    }
+    
+    const speechNatoCheckbox = document.getElementById('speech-use-nato');
+    if (speechNatoCheckbox) {
+        speechUseNatoPhonetics = speechNatoCheckbox.checked;
+        localStorage.setItem('speechUseNatoPhonetics', speechUseNatoPhonetics.toString());
+    }
+    
     // Update roves if enabled
     if (enableRoves && hamsAtApiKey) {
         fetchUpcomingRoves();
@@ -2773,6 +3024,10 @@ function loadCsnSatSettingsFromLocalStorage() {
             csnSatAddress = savedCsnSatAddress;
         }
     }
+    
+    // Update global references
+    window.enableCsnSat = enableCsnSat;
+    window.csnSatAddress = csnSatAddress;
     
     // Update UI elements
     const enableCsnSatCheckbox = document.getElementById('enable-csn-sat');
@@ -3129,6 +3384,84 @@ function saveAPRSSettingsToLocalStorage() {
         aprsPort: aprsPort
     };
     localStorage.setItem('aprsSettings', JSON.stringify(settings));
+}
+
+// Load speech settings from localStorage
+function loadSpeechSettings() {
+    const savedEnabled = localStorage.getItem('speechEnabled');
+    if (savedEnabled === 'true') {
+        speechEnabled = true;
+        const checkbox = document.getElementById('enable-speech');
+        if (checkbox) checkbox.checked = true;
+    }
+    
+    const savedRate = localStorage.getItem('speechRate');
+    if (savedRate !== null) {
+        speechRate = parseFloat(savedRate);
+        const rateInput = document.getElementById('speech-rate');
+        if (rateInput) {
+            rateInput.value = speechRate;
+            updateSpeechRateValue();
+        }
+    }
+    
+    const savedPitch = localStorage.getItem('speechPitch');
+    if (savedPitch !== null) {
+        speechPitch = parseFloat(savedPitch);
+        const pitchInput = document.getElementById('speech-pitch');
+        if (pitchInput) {
+            pitchInput.value = speechPitch;
+            updateSpeechPitchValue();
+        }
+    }
+    
+    const savedVolume = localStorage.getItem('speechVolume');
+    if (savedVolume !== null) {
+        speechVolume = parseFloat(savedVolume);
+        const volumeInput = document.getElementById('speech-volume');
+        if (volumeInput) {
+            volumeInput.value = speechVolume;
+            updateSpeechVolumeValue();
+        }
+    }
+    
+    const savedNato = localStorage.getItem('speechUseNatoPhonetics');
+    if (savedNato !== null) {
+        speechUseNatoPhonetics = savedNato === 'true';
+        const natoCheckbox = document.getElementById('speech-use-nato');
+        if (natoCheckbox) {
+            natoCheckbox.checked = speechUseNatoPhonetics;
+        }
+    }
+    
+    // Voice will be loaded when voices are available
+    if (speechSynthesis && speechSynthesis.getVoices().length > 0) {
+        loadSpeechVoices();
+    }
+}
+
+function updateSpeechRateValue() {
+    const rateInput = document.getElementById('speech-rate');
+    const rateValue = document.getElementById('speech-rate-value');
+    if (rateInput && rateValue) {
+        rateValue.textContent = parseFloat(rateInput.value).toFixed(1);
+    }
+}
+
+function updateSpeechPitchValue() {
+    const pitchInput = document.getElementById('speech-pitch');
+    const pitchValue = document.getElementById('speech-pitch-value');
+    if (pitchInput && pitchValue) {
+        pitchValue.textContent = parseFloat(pitchInput.value).toFixed(1);
+    }
+}
+
+function updateSpeechVolumeValue() {
+    const volumeInput = document.getElementById('speech-volume');
+    const volumeValue = document.getElementById('speech-volume-value');
+    if (volumeInput && volumeValue) {
+        volumeValue.textContent = parseFloat(volumeInput.value).toFixed(1);
+    }
 }
 
 function updateAPRSObserverLocation(location) {

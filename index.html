@@ -541,6 +541,46 @@
                                 </div>
                             </div>
 
+                            <div class="speech-section">
+                                <h4>Speech Announcements</h4>
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox" id="enable-speech">
+                                        Enable Speech Announcements
+                                    </label>
+                                    <p class="help-text">Announce when a satellite pass begins (e.g., "AO-91 is rising").</p>
+                                </div>
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox" id="speech-use-nato" checked>
+                                        Use NATO Phonetics
+                                    </label>
+                                    <p class="help-text">Use NATO phonetic alphabet for letters (e.g., "Alpha Oscar - Nine One" instead of "A O - 9 1").</p>
+                                </div>
+                                <div class="form-group">
+                                    <label for="speech-voice">Voice:</label>
+                                    <select id="speech-voice">
+                                        <option value="">Loading voices...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="speech-rate">Rate: <span id="speech-rate-value">1.0</span></label>
+                                    <input type="range" id="speech-rate" min="0.5" max="2" step="0.1" value="1.0">
+                                </div>
+                                <div class="form-group">
+                                    <label for="speech-pitch">Pitch: <span id="speech-pitch-value">1.0</span></label>
+                                    <input type="range" id="speech-pitch" min="0" max="2" step="0.1" value="1.0">
+                                </div>
+                                <div class="form-group">
+                                    <label for="speech-volume">Volume: <span id="speech-volume-value">1.0</span></label>
+                                    <input type="range" id="speech-volume" min="0" max="1" step="0.1" value="1.0">
+                                </div>
+                                <div class="form-group">
+                                    <button id="test-speech" class="button secondary">Test Speech</button>
+                                    <p class="help-text">Test the speech announcement with current settings.</p>
+                                </div>
+                            </div>
+
                             <!-- Additional general settings can be added here in the future -->
                         </div>
                     </div>

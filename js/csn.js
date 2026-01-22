@@ -23,13 +23,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Check if S.A.T API is available through our proxy
 function checkSATAPIAvailability() {
+    const enableCsnSat = window.enableCsnSat || false;
+    let csnSatAddress = (window.csnSatAddress || '').replace(/\/+$/, '');
     if (!enableCsnSat || !csnSatAddress) {
         satAPIAvailable = false;
         return Promise.resolve(false);
     }
-
-    // Remove trailing slash from address if present
-    csnSatAddress = csnSatAddress.replace(/\/+$/, '');
 
     console.log('Checking CSN S.A.T API availability through proxy for:', csnSatAddress);
     
@@ -70,6 +69,8 @@ function checkSATAPIAvailability() {
 
 // Send satellite selection to the S.A.T API
 function selectSatelliteForSAT(satName) {
+    const enableCsnSat = window.enableCsnSat || false;
+    const csnSatAddress = window.csnSatAddress || '';
     if (!enableCsnSat || !csnSatAddress || !satAPIAvailable) {
         return Promise.resolve(false);
     }
@@ -192,17 +193,17 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('close-sat-panel').addEventListener('click', closeSATPanel);
     
     document.getElementById('enable-csn-sat').addEventListener('change', function() {
-        enableCsnSat = this.checked;
+        window.enableCsnSat = this.checked;
         saveCsnSatSettingsToLocalStorage();
         updateSatPanelButtonVisibility();
         
-        if (enableCsnSat && csnSatAddress) {
+        if (window.enableCsnSat && window.csnSatAddress) {
             checkSATAPIAvailability();
         }
     });
     
     document.getElementById('csn-sat-address').addEventListener('input', function() {
-        csnSatAddress = this.value.trim().replace(/\/+$/, ''); // Trim and remove trailing slashes
+        window.csnSatAddress = this.value.trim().replace(/\/+$/, ''); // Trim and remove trailing slashes
         saveCsnSatSettingsToLocalStorage();
     });
 });
@@ -290,6 +291,8 @@ function initSatControlButtons() {
 
 // Send a command to the S.A.T system
 function sendSatCommand(command) {
+    const enableCsnSat = window.enableCsnSat || false;
+    const csnSatAddress = window.csnSatAddress || '';
     if (!enableCsnSat || !csnSatAddress || !satAPIAvailable) {
         showSATPanel('Error: S.A.T is not available', 'error');
         return false;
@@ -364,6 +367,8 @@ function stopSatTrackPolling() {
 
 // Fetch tracking data from the S.A.T system
 function fetchSatTrackData() {
+    const enableCsnSat = window.enableCsnSat || false;
+    const csnSatAddress = window.csnSatAddress || '';
     if (!enableCsnSat || !csnSatAddress || !satAPIAvailable) {
         return;
     }
@@ -425,6 +430,8 @@ function fetchSatTrackData() {
 
 // Initialize CSN tracking
 function initializeCsnTracking() {
+    const enableCsnSat = window.enableCsnSat || false;
+    const csnSatAddress = window.csnSatAddress || '';
     if (enableCsnSat && csnSatAddress) {
         checkSATAPIAvailability()
             .then(available => {
