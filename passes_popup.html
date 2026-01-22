@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upcoming Passes - Zenith</title>
+    <link rel="icon" type="image/x-icon" href="zenith.ico">
+    <link href="/assets/font_awesome/css/fontawesome.css" rel="stylesheet" />
+    <link href="/assets/font_awesome/css/brands.css" rel="stylesheet" />
+    <link href="/assets/font_awesome/css/solid.css" rel="stylesheet" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            padding: 15px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            margin: 0;
+        }
+
+        .passes-container {
+            display: flex;
+            flex-direction: row;
+            gap: 12px;
+            padding: 0;
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+
+        .pass-item {
+            min-width: 300px;
+            max-width: 300px;
+            padding: 14px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid #4a76ce;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            flex-shrink: 0;
+        }
+
+        .pass-item:hover {
+            background-color: #e9ecef;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .pass-active {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+
+        .pass-upcoming {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+        }
+
+        .pass-visible {
+            background-color: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+        }
+
+        .pass-satellite-name {
+            font-weight: bold;
+            font-size: 1.15em;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .pass-time {
+            font-size: 1em;
+            color: #555;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .pass-details {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: auto;
+            line-height: 1.4;
+        }
+
+        .pass-countdown {
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            background: #222;
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: bold;
+            z-index: 2;
+            opacity: 0.92;
+        }
+
+        .pass-active .pass-countdown {
+            background: #28a745;
+            color: #fff;
+        }
+
+        .pass-item {
+            position: relative;
+        }
+
+        .no-passes {
+            padding: 20px;
+            text-align: center;
+            color: #777;
+            font-style: italic;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="passes-container" id="passes-container">
+        <div class="no-passes">Waiting for pass data...</div>
+    </div>
+
+    <script>
+        let passCountdownInterval = null;
+        let autoScrollTimer = null;
+        let firstPassElement = null;
+        const AUTO_SCROLL_DELAY = 2 * 60 * 1000; // 2 minutes in milliseconds
+
+        // Listen for messages from the main window
+        window.addEventListener('message', function(event) {
+            // Accept messages from same origin
+            if (event.origin !== window.location.origin) {
+                return;
+            }
+
+            if (event.data.type === 'passes-update') {
+                updatePasses(event.data.passes, event.data.visibleSats);
+            }
+        });
+
+        function formatDate(date) {
+            if (!date) return '--';
+            const d = new Date(date);
+            const hours = d.getHours().toString().padStart(2, '0');
+            const minutes = d.getMinutes().toString().padStart(2, '0');
+            return `${hours}:${minutes}`;
+        }
+
+        function formatCountdown(ms) {
+            const minutes = Math.floor(ms / 60000);
+            const seconds = Math.floor((ms % 60000) / 1000);
+            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+
+        function scrollToFirstPass() {
+            const container = document.getElementById('passes-container');
+            if (firstPassElement && container) {
+                // Scroll to the first pass element smoothly
+                firstPassElement.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'nearest',
+                    inline: 'start'
+                });
+            } else if (container) {
+                // Fallback: scroll to the beginning
+                container.scrollTo({ left: 0, behavior: 'smooth' });
+            }
+        }
+
+        function resetAutoScrollTimer() {
+            // Clear existing timer
+            if (autoScrollTimer) {
+                clearTimeout(autoScrollTimer);
+            }
+            // Set new timer for 2 minutes
+            autoScrollTimer = setTimeout(() => {
+                scrollToFirstPass();
+                resetAutoScrollTimer(); // Reset for another 2 minutes
+            }, AUTO_SCROLL_DELAY);
+        }
+
+        function updatePasses(passes, visibleSats = []) {
+            const container = document.getElementById('passes-container');
+            const now = new Date();
+            
+            // Filter out past passes
+            const filteredPasses = passes.filter(pass => {
+                const passEnd = new Date(pass.end);
+                return passEnd > now;
+            });
+
+            if (filteredPasses.length === 0) {
+                container.innerHTML = '<div class="no-passes">No upcoming passes</div>';
+                if (passCountdownInterval) {
+                    clearInterval(passCountdownInterval);
+                    passCountdownInterval = null;
+                }
+                return;
+            }
+
+            container.innerHTML = '';
+            firstPassElement = null; // Reset first pass reference
+
+            filteredPasses.forEach((pass, index) => {
+                const passItem = document.createElement('div');
+                passItem.className = 'pass-item';
+                
+                // Store reference to the first pass (earliest upcoming)
+                if (index === 0) {
+                    firstPassElement = passItem;
+                }
+                
+                const passStart = new Date(pass.start);
+                const passEnd = new Date(pass.end);
+                const isActive = now >= passStart && now <= passEnd;
+                const isVisible = visibleSats.includes(pass.satellite);
+                const timeToPass = (passStart - now) / (60 * 1000);
+
+                if (isActive) {
+                    passItem.classList.add('pass-active');
+                } else if (timeToPass > 0 && timeToPass <= 15) {
+                    passItem.classList.add('pass-upcoming');
+                }
+                if (isActive && isVisible) {
+                    passItem.classList.add('pass-visible');
+                }
+
+                const startTime = formatDate(passStart);
+                const endTime = formatDate(passEnd);
+                const duration = Math.round((passEnd - passStart) / (60 * 1000));
+
+                // Eclipse warnings
+                let eclipseWarningHtml = '';
+                if (pass.satellite === 'AO-91') {
+                    eclipseWarningHtml = ` <i class="fa-solid fa-exclamation-triangle" style="color:#e67e22; margin-left:6px;" title="Do not use AO-91 while in eclipse"></i>`;
+                }
+                
+                let digitalOnlyWarningHtml = '';
+                if (pass.satellite === 'SO-124') {
+                    const passDay = passStart.getDay();
+                    if (passDay === 3) {
+                        digitalOnlyWarningHtml = ` <i class="fa-solid fa-exclamation-triangle" style="color:#e67e22; margin-left:6px;" title="Digital Only: SO-124 transponder is digital only on Wednesdays."></i>`;
+                    }
+                }
+                
+                let so125WeekendWarningHtml = '';
+                if (pass.satellite === 'SO-125') {
+                    const passDay = passStart.getDay();
+                    if (![5, 6, 0].includes(passDay)) {
+                        so125WeekendWarningHtml = ` <i class="fa-solid fa-exclamation-triangle" style="color:#e67e22; margin-left:6px;" title="Transponder is only enabled at weekends (Friday-Sunday)."></i>`;
+                    }
+                }
+
+                passItem.innerHTML = `
+                    <div class="pass-satellite-name">${pass.satellite}${eclipseWarningHtml}${digitalOnlyWarningHtml}${so125WeekendWarningHtml}</div>
+                    <div class="pass-time">
+                        <span>${startTime}</span> to <span>${endTime}</span>
+                    </div>
+                    <div class="pass-details">
+                        Duration: ${duration} min | Max Elevation: ${Math.round(pass.maxElevation)}°
+                    </div>
+                `;
+
+                // Add countdown timer
+                const msToStart = passStart - now;
+                let countdownDiv = null;
+                if (!isActive && msToStart > 0 && msToStart <= 10 * 60 * 1000) {
+                    countdownDiv = document.createElement('div');
+                    countdownDiv.className = 'pass-countdown';
+                    countdownDiv.textContent = formatCountdown(msToStart);
+                    passItem.appendChild(countdownDiv);
+                } else if (isActive) {
+                    countdownDiv = document.createElement('div');
+                    countdownDiv.className = 'pass-countdown';
+                    countdownDiv.textContent = 'Passing';
+                    passItem.appendChild(countdownDiv);
+                }
+
+                // Store pass data for countdown updates
+                if (countdownDiv) {
+                    passItem._countdownDiv = countdownDiv;
+                    passItem._pass = pass;
+                    passItem._isActive = isActive;
+                }
+
+                container.appendChild(passItem);
+            });
+
+            // Reset auto-scroll timer after content update
+            resetAutoScrollTimer();
+
+            // Update countdowns every second
+            if (passCountdownInterval) {
+                clearInterval(passCountdownInterval);
+            }
+            
+            passCountdownInterval = setInterval(() => {
+                const now = new Date();
+                const passItems = container.querySelectorAll('.pass-item');
+                passItems.forEach(passItem => {
+                    if (passItem._countdownDiv && passItem._pass) {
+                        const passStart = new Date(passItem._pass.start);
+                        const msToStart = passStart - now;
+                        
+                        if (passItem._isActive) {
+                            passItem._countdownDiv.textContent = 'Passing';
+                        } else if (msToStart > 0 && msToStart <= 10 * 60 * 1000) {
+                            passItem._countdownDiv.textContent = formatCountdown(msToStart);
+                        } else {
+                            if (passItem._countdownDiv.parentNode) {
+                                passItem._countdownDiv.remove();
+                            }
+                        }
+                    }
+                });
+            }, 1000);
+
+            // Request click handler from parent (if needed)
+            // For now, clicking won't do anything in popup, but we can add it later
+        }
+
+        // Request initial data when window loads
+        window.addEventListener('load', () => {
+            if (window.opener) {
+                window.opener.postMessage({ type: 'popup-ready' }, '*');
+            }
+            
+            // Start auto-scroll timer
+            resetAutoScrollTimer();
+            
+            // Setup scroll listener to reset auto-scroll timer
+            const container = document.getElementById('passes-container');
+            if (container) {
+                let scrollTimeout = null;
+                container.addEventListener('scroll', () => {
+                    // Debounce scroll events
+                    if (scrollTimeout) {
+                        clearTimeout(scrollTimeout);
+                    }
+                    scrollTimeout = setTimeout(() => {
+                        resetAutoScrollTimer();
+                    }, 500);
+                });
+            }
+        });
+
+        // Scroll to first pass when window loses focus
+        window.addEventListener('blur', () => {
+            scrollToFirstPass();
+        });
+
+        // Handle window close
+        window.addEventListener('beforeunload', () => {
+            if (window.opener) {
+                window.opener.postMessage({ type: 'popup-closed' }, '*');
+            }
+            if (passCountdownInterval) {
+                clearInterval(passCountdownInterval);
+            }
+            if (autoScrollTimer) {
+                clearTimeout(autoScrollTimer);
+            }
+        });
+
+    </script>
+</body>
+</html>

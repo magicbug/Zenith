@@ -80,7 +80,12 @@
         <div class="dashboard">
             <div class="sidebar">
                 <div class="passes-panel">
-                    <h2>Upcoming Passes</h2>
+                    <h2 style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>Upcoming Passes</span>
+                        <button id="open-passes-popup" class="popup-button" title="Open in separate window (horizontal layout)" style="background: #4a90e2; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8em; margin-left: 8px;">
+                            <i class="fa-solid fa-window-maximize"></i>
+                        </button>
+                    </h2>
                     <div id="upcoming-passes" class="panel-content">
                         <!-- Pass information will be added here dynamically -->
                     </div>

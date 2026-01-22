@@ -47,6 +47,7 @@ let passesUpdateInterval;
 let allSkedPasses = [];
 let SKED_PREDICTION_DAYS = 1;
 let SKED_MIN_ELEVATION = 5;
+let passesPopupWindow = null; // Track the popup window for passes
 // Notification-related variables
 let notifiedPasses = new Map(); // Store IDs of passes we've notified for
 let notificationCheckInterval;
@@ -276,6 +277,97 @@ document.addEventListener('DOMContentLoaded', () => {
     // Setup Roves panel if enabled
     if (enableRoves) {
         fetchUpcomingRoves();
+    }
+    
+    // Setup passes popup window
+    const openPassesPopupBtn = document.getElementById('open-passes-popup');
+    if (openPassesPopupBtn) {
+        openPassesPopupBtn.addEventListener('click', () => {
+            // Always open a new window with current dimensions
+            // Close existing window if it exists to ensure new dimensions are applied
+            if (passesPopupWindow && !passesPopupWindow.closed) {
+                passesPopupWindow.close();
+            }
+            
+            // Open new popup window
+            const width = 1200;
+            const height = 240; // Fixed height - tall enough to show scrollbar and content
+            const left = (screen.width - width) / 2;
+            const top = (screen.height - height) / 2;
+            
+            // Use unique window name with timestamp to force new window creation with new dimensions
+            const uniqueWindowName = 'passesPopup_' + Date.now();
+            
+            passesPopupWindow = window.open(
+                'passes_popup.html',
+                uniqueWindowName,
+                `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+            );
+                
+                // Send initial data when popup is ready
+                if (passesPopupWindow) {
+                    const checkPopupReady = setInterval(() => {
+                        if (passesPopupWindow.closed) {
+                            clearInterval(checkPopupReady);
+                            passesPopupWindow = null;
+                        } else {
+                            // Send current pass data
+                            if (window.cachedPasses) {
+                                const visibleSats = getCurrentlyVisibleSats();
+                                passesPopupWindow.postMessage({
+                                    type: 'passes-update',
+                                    passes: window.cachedPasses,
+                                    visibleSats: visibleSats
+                                }, '*');
+                            }
+                        }
+                    }, 100);
+                    
+                    // Clear interval after 5 seconds
+                    setTimeout(() => clearInterval(checkPopupReady), 5000);
+                }
+            }
+        });
+    }
+    
+    // Listen for messages from popup window
+    window.addEventListener('message', (event) => {
+        if (event.data.type === 'popup-ready') {
+            // Popup is ready, send current pass data
+            if (window.cachedPasses) {
+                const visibleSats = getCurrentlyVisibleSats();
+                event.source.postMessage({
+                    type: 'passes-update',
+                    passes: window.cachedPasses,
+                    visibleSats: visibleSats
+                }, '*');
+            }
+        } else if (event.data.type === 'popup-closed') {
+            // Popup was closed
+            passesPopupWindow = null;
+        }
+    });
+    
+    // Helper function to get currently visible satellites
+    function getCurrentlyVisibleSats() {
+        const visibleSats = [];
+        const now = new Date();
+        const visibilityCheckLimit = Math.min(selectedSatellites.length, 10);
+        
+        for (let i = 0; i < visibilityCheckLimit; i++) {
+            const satName = selectedSatellites[i];
+            if (!window.tleData[satName]) continue;
+            
+            try {
+                const currentLookAngles = calculateLookAngles(satName);
+                if (currentLookAngles && currentLookAngles.elevation >= observer.minElevation) {
+                    visibleSats.push(satName);
+                }
+            } catch (error) {
+                // Ignore errors
+            }
+        }
+        return visibleSats;
     }
     
     // Add event listeners for API settings
@@ -1739,6 +1831,20 @@ function displayPasses(passes, container, visibleSats = []) {
             countdownDiv
         });
     });
+    
+    // Send passes to popup window if it's open
+    if (passesPopupWindow && !passesPopupWindow.closed) {
+        passesPopupWindow.postMessage({
+            type: 'passes-update',
+            passes: filteredPasses.map(p => ({
+                satellite: p.satellite,
+                start: p.start,
+                end: p.end,
+                maxElevation: p.maxElevation
+            })),
+            visibleSats: visibleSats
+        }, '*');
+    }
 }
 
 // Enhanced interval: check all passes for countdown eligibility every second
