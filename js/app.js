@@ -290,6 +290,12 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchUpcomingRoves();
     }
     
+    // Initialize settings sync
+    if (typeof SettingsSync !== 'undefined') {
+        SettingsSync.init();
+        initSettingsSyncUI();
+    }
+    
     // Setup passes popup window
     const openPassesPopupBtn = document.getElementById('open-passes-popup');
     if (openPassesPopupBtn) {
@@ -2708,6 +2714,11 @@ function saveOptions() {
     // This now also updates the schedule and sked planning UI
     updateSelectedSatellites();
     
+    // Trigger settings sync if enabled
+    if (typeof SettingsSync !== 'undefined' && SettingsSync.isSyncEnabled() && SettingsSync.isAutoSyncEnabled()) {
+        SettingsSync.debouncedSync();
+    }
+    
     // Close the modal
     document.getElementById('options-modal').style.display = 'none';
 }
@@ -3687,3 +3698,246 @@ function formatCountdown(ms) {
 
 // Store all pass DOM elements and their data for countdown and state updates
 window._allPassItems = [];
+
+// Initialize Settings Sync UI
+function initSettingsSyncUI() {
+    if (typeof SettingsSync === 'undefined') {
+        return;
+    }
+    
+    // Update UI state
+    updateSyncUI();
+    
+    // Request magic link button
+    const requestMagicLinkBtn = document.getElementById('request-magic-link');
+    if (requestMagicLinkBtn) {
+        requestMagicLinkBtn.addEventListener('click', async () => {
+            const emailInput = document.getElementById('sync-email');
+            const email = emailInput.value.trim();
+            const statusEl = document.getElementById('magic-link-status');
+            
+            if (!email) {
+                statusEl.textContent = 'Please enter an email address';
+                statusEl.style.color = 'red';
+                return;
+            }
+            
+            if (!SettingsSync.validateEmail(email)) {
+                statusEl.textContent = 'Invalid email address';
+                statusEl.style.color = 'red';
+                return;
+            }
+            
+            requestMagicLinkBtn.disabled = true;
+            requestMagicLinkBtn.textContent = 'Sending...';
+            statusEl.textContent = '';
+            
+            try {
+                await SettingsSync.requestMagicLink(email);
+                statusEl.textContent = 'Magic link sent! Check your email.';
+                statusEl.style.color = 'green';
+            } catch (error) {
+                statusEl.textContent = error.message || 'Failed to send magic link';
+                statusEl.style.color = 'red';
+            } finally {
+                requestMagicLinkBtn.disabled = false;
+                requestMagicLinkBtn.textContent = 'Request Magic Link';
+            }
+        });
+    }
+    
+    // Connect with API key button
+    const connectWithApiKeyBtn = document.getElementById('connect-with-api-key');
+    if (connectWithApiKeyBtn) {
+        connectWithApiKeyBtn.addEventListener('click', async () => {
+            const apiKeyInput = document.getElementById('sync-api-key-manual');
+            const apiKey = apiKeyInput.value.trim();
+            const statusEl = document.getElementById('api-key-status');
+            
+            if (!apiKey) {
+                statusEl.textContent = 'Please enter an API key';
+                statusEl.style.color = 'red';
+                return;
+            }
+            
+            connectWithApiKeyBtn.disabled = true;
+            connectWithApiKeyBtn.textContent = 'Connecting...';
+            statusEl.textContent = '';
+            
+            try {
+                // Validate the API key by trying to fetch settings
+                SettingsSync.setApiKey(apiKey);
+                await SettingsSync.syncSettingsFromServer();
+                statusEl.textContent = 'Connected successfully!';
+                statusEl.style.color = 'green';
+                apiKeyInput.value = ''; // Clear the input
+                updateSyncUI();
+            } catch (error) {
+                SettingsSync.removeApiKey(); // Remove invalid key
+                statusEl.textContent = 'Invalid API key: ' + (error.message || 'Please check your API key and try again');
+                statusEl.style.color = 'red';
+            } finally {
+                connectWithApiKeyBtn.disabled = false;
+                connectWithApiKeyBtn.textContent = 'Connect with API Key';
+            }
+        });
+    }
+    
+    // Toggle API key visibility
+    const toggleApiKeyBtn = document.getElementById('toggle-api-key');
+    if (toggleApiKeyBtn) {
+        toggleApiKeyBtn.addEventListener('click', () => {
+            const apiKeyInput = document.getElementById('sync-api-key');
+            const icon = toggleApiKeyBtn.querySelector('i');
+            if (apiKeyInput.type === 'password') {
+                apiKeyInput.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                apiKeyInput.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+    }
+    
+    // Copy API key
+    const copyApiKeyBtn = document.getElementById('copy-api-key');
+    if (copyApiKeyBtn) {
+        copyApiKeyBtn.addEventListener('click', () => {
+            const apiKeyInput = document.getElementById('sync-api-key');
+            apiKeyInput.select();
+            apiKeyInput.setSelectionRange(0, 99999);
+            document.execCommand('copy');
+            
+            const icon = copyApiKeyBtn.querySelector('i');
+            const originalClass = icon.className;
+            icon.classList.remove('fa-copy');
+            icon.classList.add('fa-check');
+            setTimeout(() => {
+                icon.className = originalClass;
+            }, 2000);
+        });
+    }
+    
+    // Sync now button
+    const syncNowBtn = document.getElementById('sync-now');
+    if (syncNowBtn) {
+        syncNowBtn.addEventListener('click', async () => {
+            syncNowBtn.disabled = true;
+            syncNowBtn.textContent = 'Syncing...';
+            const statusEl = document.getElementById('sync-status-text');
+            
+            try {
+                await SettingsSync.syncSettingsToServer();
+                statusEl.textContent = 'Settings synced successfully';
+                statusEl.style.color = 'green';
+            } catch (error) {
+                statusEl.textContent = 'Sync failed: ' + error.message;
+                statusEl.style.color = 'red';
+            } finally {
+                syncNowBtn.disabled = false;
+                syncNowBtn.textContent = 'Sync Now';
+            }
+        });
+    }
+    
+    // Disconnect button
+    const disconnectBtn = document.getElementById('disconnect-sync');
+    if (disconnectBtn) {
+        disconnectBtn.addEventListener('click', async () => {
+            if (confirm('Are you sure you want to disconnect? Your settings will no longer sync across devices.')) {
+                try {
+                    await SettingsSync.revokeApiKey();
+                } catch (error) {
+                    console.error('Error revoking API key:', error);
+                }
+                SettingsSync.removeApiKey();
+                updateSyncUI();
+            }
+        });
+    }
+    
+    // Auto-sync checkbox
+    const autoSyncCheckbox = document.getElementById('sync-auto-enabled');
+    if (autoSyncCheckbox) {
+        autoSyncCheckbox.addEventListener('change', (e) => {
+            SettingsSync.syncAutoEnabled = e.target.checked;
+            localStorage.setItem('syncAutoEnabled', e.target.checked.toString());
+        });
+    }
+}
+
+// Toggle collapsible sections in General tab
+window.toggleSection = function(header) {
+    const section = header.closest('.collapsible-section');
+    section.classList.toggle('collapsed');
+    
+    // Update chevron icon
+    const icon = header.querySelector('.section-icon');
+    if (section.classList.contains('collapsed')) {
+        icon.classList.remove('fa-chevron-down');
+        icon.classList.add('fa-chevron-right');
+    } else {
+        icon.classList.remove('fa-chevron-right');
+        icon.classList.add('fa-chevron-down');
+    }
+}
+
+// Update sync UI based on current state
+function updateSyncUI() {
+    if (typeof SettingsSync === 'undefined') {
+        return;
+    }
+    
+    const notConnectedDiv = document.getElementById('sync-not-connected');
+    const connectedDiv = document.getElementById('sync-connected');
+    const apiKeyInput = document.getElementById('sync-api-key');
+    const autoSyncCheckbox = document.getElementById('sync-auto-enabled');
+    const statusEl = document.getElementById('sync-status-text');
+    
+    if (SettingsSync.isSyncEnabled()) {
+        // Show connected state
+        if (notConnectedDiv) notConnectedDiv.style.display = 'none';
+        if (connectedDiv) connectedDiv.style.display = 'block';
+        if (apiKeyInput) apiKeyInput.value = SettingsSync.syncApiKey;
+        if (autoSyncCheckbox) autoSyncCheckbox.checked = SettingsSync.isAutoSyncEnabled();
+        
+        // Update status
+        if (statusEl) {
+            if (SettingsSync.lastSyncTime) {
+                const lastSync = new Date(SettingsSync.lastSyncTime);
+                statusEl.textContent = `Last synced: ${lastSync.toLocaleString()}`;
+                statusEl.style.color = 'green';
+            } else {
+                statusEl.textContent = 'Not synced yet';
+                statusEl.style.color = 'gray';
+            }
+        }
+    } else {
+        // Show not connected state
+        if (notConnectedDiv) notConnectedDiv.style.display = 'block';
+        if (connectedDiv) connectedDiv.style.display = 'none';
+    }
+}
+
+// Make updateSyncUI globally accessible for SettingsSync module
+window.updateSyncUI = updateSyncUI;
+
+// Hook into all localStorage setItem calls to trigger auto-sync
+const originalSetItem = Storage.prototype.setItem;
+Storage.prototype.setItem = function(key, value) {
+    originalSetItem.call(this, key, value);
+    
+    // Trigger sync if enabled and key is not excluded
+    if (typeof SettingsSync !== 'undefined' && 
+        SettingsSync.isSyncEnabled() && 
+        SettingsSync.isAutoSyncEnabled() &&
+        !SettingsSync.EXCLUDED_KEYS.includes(key) &&
+        key !== 'syncApiKey' && 
+        key !== 'syncAutoEnabled' && 
+        key !== 'lastSyncTime' &&
+        key !== 'syncLastError') {
+        SettingsSync.debouncedSync();
+    }
+};

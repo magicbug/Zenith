@@ -1,6 +1,6 @@
-const CACHE_NAME = 'zenith-v1.1.11';
-const STATIC_CACHE = 'zenith-static-v2.11';
-const DATA_CACHE = 'zenith-data-v11';
+const CACHE_NAME = 'zenith-v1.1.12';
+const STATIC_CACHE = 'zenith-static-v2.12';
+const DATA_CACHE = 'zenith-data-v12';
 
 // Files to cache immediately
 const STATIC_FILES = [

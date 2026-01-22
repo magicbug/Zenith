@@ -2210,6 +2210,63 @@ button:hover {
     height: 1px;
 }
 
+/* Collapsible Sections for General Tab */
+.collapsible-section {
+    transition: all 0.3s ease;
+}
+
+.section-header {
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    margin-bottom: 0;
+}
+
+.section-header:hover {
+    opacity: 0.8;
+}
+
+.section-header h4 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    flex: 1;
+}
+
+.section-header h4 i:first-child {
+    color: #3498db;
+    width: 20px;
+    text-align: center;
+}
+
+.section-icon {
+    transition: transform 0.3s ease;
+    color: #888;
+    font-size: 0.9em;
+}
+
+.collapsible-section.collapsed .section-icon {
+    transform: rotate(-90deg);
+}
+
+.section-content {
+    max-height: 2000px;
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+    opacity: 1;
+    padding-top: 12px;
+}
+
+.collapsible-section.collapsed .section-content {
+    max-height: 0;
+    padding-top: 0;
+    opacity: 0;
+}
+
 .qtrigdoppler-panel .configure-server {
     background: #2c3e50;
     color: #fff;

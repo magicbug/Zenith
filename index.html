@@ -524,60 +524,150 @@
                         <div class="general-settings">
                             <h3>General Settings</h3>
 
-                            <div class="notifications-section">
-                                <h4>Notifications</h4>
-                                <div class="form-group">
-                                    <label>
-                                        <input type="checkbox" id="enable-notifications">
-                                        Enable Pass Notifications
-                                    </label>
-                                    <p class="help-text">You will receive notifications 15 minutes before a satellite
-                                        pass begins.</p>
+                            <!-- Notifications Section -->
+                            <div class="settings-section-card collapsible-section">
+                                <div class="section-header" onclick="toggleSection(this)">
+                                    <h4>
+                                        <i class="fa-solid fa-bell"></i> Notifications
+                                        <i class="fa-solid fa-chevron-down section-icon"></i>
+                                    </h4>
                                 </div>
-                                <div class="form-group notification-test">
-                                    <button id="test-notification" class="button secondary">Test Notification</button>
-                                    <p class="help-text">Send a sample notification to see how they will appear on your
-                                        device.</p>
+                                <div class="section-content">
+                                    <div class="form-group">
+                                        <label>
+                                            <input type="checkbox" id="enable-notifications">
+                                            Enable Pass Notifications
+                                        </label>
+                                        <p class="help-text">You will receive notifications 15 minutes before a satellite
+                                            pass begins.</p>
+                                    </div>
+                                    <div class="form-group notification-test">
+                                        <button id="test-notification" class="button secondary">Test Notification</button>
+                                        <p class="help-text">Send a sample notification to see how they will appear on your
+                                            device.</p>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div class="speech-section">
-                                <h4>Speech Announcements</h4>
-                                <div class="form-group">
-                                    <label>
-                                        <input type="checkbox" id="enable-speech">
-                                        Enable Speech Announcements
-                                    </label>
-                                    <p class="help-text">Announce when a satellite pass begins (e.g., "AO-91 is rising").</p>
+                            <!-- Speech Announcements Section -->
+                            <div class="settings-section-card collapsible-section">
+                                <div class="section-header" onclick="toggleSection(this)">
+                                    <h4>
+                                        <i class="fa-solid fa-volume-high"></i> Speech Announcements
+                                        <i class="fa-solid fa-chevron-down section-icon"></i>
+                                    </h4>
                                 </div>
-                                <div class="form-group">
-                                    <label>
-                                        <input type="checkbox" id="speech-use-nato" checked>
-                                        Use NATO Phonetics
-                                    </label>
-                                    <p class="help-text">Use NATO phonetic alphabet for letters (e.g., "Alpha Oscar - Nine One" instead of "A O - 9 1").</p>
+                                <div class="section-content">
+                                    <div class="form-group">
+                                        <label>
+                                            <input type="checkbox" id="enable-speech">
+                                            Enable Speech Announcements
+                                        </label>
+                                        <p class="help-text">Announce when a satellite pass begins (e.g., "AO-91 is rising").</p>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>
+                                            <input type="checkbox" id="speech-use-nato" checked>
+                                            Use NATO Phonetics
+                                        </label>
+                                        <p class="help-text">Use NATO phonetic alphabet for letters (e.g., "Alpha Oscar - Nine One" instead of "A O - 9 1").</p>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="speech-voice">Voice:</label>
+                                        <select id="speech-voice">
+                                            <option value="">Loading voices...</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="speech-rate">Rate: <span id="speech-rate-value">1.0</span></label>
+                                        <input type="range" id="speech-rate" min="0.5" max="2" step="0.1" value="1.0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="speech-pitch">Pitch: <span id="speech-pitch-value">1.0</span></label>
+                                        <input type="range" id="speech-pitch" min="0" max="2" step="0.1" value="1.0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="speech-volume">Volume: <span id="speech-volume-value">1.0</span></label>
+                                        <input type="range" id="speech-volume" min="0" max="1" step="0.1" value="1.0">
+                                    </div>
+                                    <div class="form-group">
+                                        <button id="test-speech" class="button secondary">Test Speech</button>
+                                        <p class="help-text">Test the speech announcement with current settings.</p>
+                                    </div>
                                 </div>
-                                <div class="form-group">
-                                    <label for="speech-voice">Voice:</label>
-                                    <select id="speech-voice">
-                                        <option value="">Loading voices...</option>
-                                    </select>
+                            </div>
+
+                            <!-- Settings Sync Section -->
+                            <div class="settings-section-card collapsible-section">
+                                <div class="section-header" onclick="toggleSection(this)">
+                                    <h4>
+                                        <i class="fa-solid fa-cloud-arrow-up"></i> Settings Sync
+                                        <i class="fa-solid fa-chevron-down section-icon"></i>
+                                    </h4>
                                 </div>
-                                <div class="form-group">
-                                    <label for="speech-rate">Rate: <span id="speech-rate-value">1.0</span></label>
-                                    <input type="range" id="speech-rate" min="0.5" max="2" step="0.1" value="1.0">
-                                </div>
-                                <div class="form-group">
-                                    <label for="speech-pitch">Pitch: <span id="speech-pitch-value">1.0</span></label>
-                                    <input type="range" id="speech-pitch" min="0" max="2" step="0.1" value="1.0">
-                                </div>
-                                <div class="form-group">
-                                    <label for="speech-volume">Volume: <span id="speech-volume-value">1.0</span></label>
-                                    <input type="range" id="speech-volume" min="0" max="1" step="0.1" value="1.0">
-                                </div>
-                                <div class="form-group">
-                                    <button id="test-speech" class="button secondary">Test Speech</button>
-                                    <p class="help-text">Test the speech announcement with current settings.</p>
+                                <div class="section-content">
+                                    <p class="help-text" style="margin-bottom: 15px;">
+                                        Sync your settings across devices (optional). Your settings are encrypted and stored securely.
+                                    </p>
+                                    
+                                    <div id="sync-not-connected" class="sync-state">
+                                        <div style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #ddd;">
+                                            <div class="form-group">
+                                                <label for="sync-email">Email Address:</label>
+                                                <input type="email" id="sync-email" placeholder="your@email.com">
+                                                <p class="help-text">Enter your email to receive a magic link for authentication.</p>
+                                            </div>
+                                            <div class="form-group">
+                                                <button id="request-magic-link" class="button primary">Request Magic Link</button>
+                                                <p class="help-text" id="magic-link-status"></p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div style="text-align: center; margin: 15px 0; color: #666;">
+                                            <span style="background: white; padding: 0 10px;">OR</span>
+                                        </div>
+                                        
+                                        <div>
+                                            <div class="form-group">
+                                                <label for="sync-api-key-manual">Enter API Key:</label>
+                                                <input type="password" id="sync-api-key-manual" placeholder="Paste your API key here">
+                                                <p class="help-text">If you already have an API key from another device, paste it here.</p>
+                                            </div>
+                                            <div class="form-group">
+                                                <button id="connect-with-api-key" class="button primary">Connect with API Key</button>
+                                                <p class="help-text" id="api-key-status"></p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div id="sync-connected" class="sync-state" style="display: none;">
+                                        <div class="form-group">
+                                            <label for="sync-api-key">API Key:</label>
+                                            <div style="display: flex; gap: 8px; align-items: center;">
+                                                <input type="password" id="sync-api-key" readonly class="flex-1">
+                                                <button id="toggle-api-key" class="button secondary" title="Show/Hide">
+                                                    <i class="fa-solid fa-eye"></i>
+                                                </button>
+                                                <button id="copy-api-key" class="button secondary" title="Copy">
+                                                    <i class="fa-solid fa-copy"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>
+                                                <input type="checkbox" id="sync-auto-enabled" checked>
+                                                Enable automatic sync
+                                            </label>
+                                            <p class="help-text">Automatically sync settings when they change.</p>
+                                        </div>
+                                        <div class="form-group">
+                                            <button id="sync-now" class="button primary">Sync Now</button>
+                                            <button id="disconnect-sync" class="button secondary">Disconnect</button>
+                                        </div>
+                                        <div id="sync-status" class="sync-status">
+                                            <p class="help-text" id="sync-status-text">Not synced yet</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -1061,6 +1151,7 @@
     <script src="js/pass_skeds.js"></script>
     <script src="js/polar_plot.js"></script>
     <script src="js/qtrigdoppler.js"></script>
+    <script src="js/settings_sync.js"></script>
     <script src="js/app.js"></script>
     <script src="js/partner_view.js"></script>
 </body>

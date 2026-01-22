@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Zenith Settings Sync Magic Link</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+            margin: -30px -30px 30px -30px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: #4a90e2;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .button:hover {
+            background-color: #357abd;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+        }
+        @media only screen and (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Zenith Settings Sync</h1>
+        </div>
+        
+        <h2>Your Magic Link is Ready</h2>
+        
+        <p>You've requested to sync your Zenith settings across devices. Click the button below to verify your email and get your API key:</p>
+        
+        <div style="text-align: center;">
+            <a href="{{MAGIC_LINK}}" class="button">Verify Email & Get API Key</a>
+        </div>
+        
+        <div class="warning">
+            <strong>Important:</strong> This link will expire in 15 minutes. If you didn't request this link, you can safely ignore this email.
+        </div>
+        
+        <p>After clicking the link, you'll receive an API key that you can use to sync your settings across all your devices.</p>
+        
+        <p><strong>Security Notice:</strong> Never share your magic link or API key with anyone. Zenith will never ask you for your API key via email.</p>
+        
+        <div class="footer">
+            <p>This is an automated message from Zenith Satellite Tracker.</p>
+            <p>If you have questions, please contact support.</p>
+        </div>
+    </div>
+</body>
+</html>

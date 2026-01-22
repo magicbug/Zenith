@@ -1,0 +1,36 @@
+﻿# Zenith Settings Sync - Security Headers and URL Rewriting
+# Apache 2.4 syntax
+
+# Enable rewrite engine
+RewriteEngine On
+
+# Security Headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "DENY"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+    
+    # CORS headers (will be set by PHP, but add here as backup)
+    Header set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+    Header set Access-Control-Allow-Headers "Content-Type, X-API-Key"
+</IfModule>
+
+# Protect sensitive files
+<FilesMatch "^(\.env|config\.php|db\.php|composer\.(json|lock))$">
+    Require all denied
+</FilesMatch>
+
+# Protect log files
+<FilesMatch "\.log$">
+    Require all denied
+</FilesMatch>
+
+# PHP settings
+<IfModule mod_php7.c>
+    php_flag display_errors Off
+    php_flag log_errors On
+</IfModule>
+
+# Prevent directory listing
+Options -Indexes

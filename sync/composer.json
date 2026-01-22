@@ -1,0 +1,14 @@
+{
+    "name": "zenith/settings-sync",
+    "description": "Zenith Settings Sync Backend API",
+    "type": "project",
+    "require": {
+        "php": ">=7.4",
+        "aws/aws-sdk-php": "^3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Zenith\\": "src/"
+        }
+    }
+}

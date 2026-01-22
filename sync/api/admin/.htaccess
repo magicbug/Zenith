@@ -1,0 +1,8 @@
+# Prevent directory listing
+# Apache 2.4 syntax
+Options -Indexes
+
+# Allow access to PHP files only
+<FilesMatch "\.php$">
+    Require all granted
+</FilesMatch>
