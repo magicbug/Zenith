@@ -583,12 +583,18 @@ class QTRigDopplerPanel {
         if (!this.socket?.connected) return;
         this.socket.emit('start_tracking');
         this.startTrackingBtn.disabled = true;
+        this.stopTrackingBtn.disabled = false;
+        // Immediately update status for better UX (optimistic update)
+        this.updateStatus('Starting tracking...', 'info');
     }
 
     stopTracking() {
         if (!this.socket?.connected) return;
         this.socket.emit('stop_tracking');
         this.stopTrackingBtn.disabled = true;
+        this.startTrackingBtn.disabled = false;
+        // Immediately update status for better UX (optimistic update)
+        this.updateStatus('Stopping tracking...', 'info');
     }
 
     selectSatellite(fromUserClick = false) {
