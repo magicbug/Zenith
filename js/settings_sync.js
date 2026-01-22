@@ -5,7 +5,13 @@
 
 const SettingsSync = {
     // Configuration
-    API_BASE_URL: 'https://sync.zenithtracker.org/api',
+    // Use config value if available, otherwise default to production
+    get API_BASE_URL() {
+        if (typeof window.ZenithConfig !== 'undefined' && window.ZenithConfig.syncBaseUrl) {
+            return window.ZenithConfig.syncBaseUrl;
+        }
+        return 'https://sync.zenithtracker.org/api';
+    },
     
     // Keys excluded from sync (device-specific)
     EXCLUDED_KEYS: ['notifiedPasses', 'syncApiKey', 'syncAutoEnabled', 'lastSyncTime', 'syncLastError'],
@@ -60,14 +66,58 @@ const SettingsSync = {
     /**
      * Set API key
      */
-    setApiKey(key) {
+    async setApiKey(key) {
         this.syncApiKey = key;
         localStorage.setItem('syncApiKey', key);
-        this.updateSyncUI();
+        
+        // Update UI immediately to show connected state
+        if (typeof window.updateSyncUI === 'function') {
+            window.updateSyncUI();
+        }
         
         // Sync immediately after setting key
         if (this.isAutoSyncEnabled()) {
-            this.syncSettingsFromServer();
+            try {
+                // First, try to get settings from server
+                const serverData = await this.syncSettingsFromServer();
+                
+                // If server has no settings but we have local settings, upload them
+                if ((!serverData.settings || Object.keys(serverData.settings).length === 0)) {
+                    const localSettings = this.getAllSettings();
+                    if (Object.keys(localSettings).length > 0) {
+                        // Server is empty, upload local settings
+                        await this.syncSettingsToServer();
+                    }
+                }
+            } catch (error) {
+                // If server fetch fails, check if it's an auth error
+                if (error.message && (error.message.includes('Invalid') || error.message.includes('revoked'))) {
+                    // Auth error - remove the key and re-throw
+                    this.removeApiKey();
+                    throw error;
+                }
+                
+                // For other errors, try uploading if we have local settings
+                const localSettings = this.getAllSettings();
+                if (Object.keys(localSettings).length > 0) {
+                    try {
+                        await this.syncSettingsToServer();
+                    } catch (uploadError) {
+                        console.error('Failed to upload settings after API key setup:', uploadError);
+                        // If upload also fails with auth error, remove key
+                        if (uploadError.message && (uploadError.message.includes('Invalid') || uploadError.message.includes('revoked'))) {
+                            this.removeApiKey();
+                            throw uploadError;
+                        }
+                        // For other errors, don't fail completely - key is valid
+                    }
+                }
+            }
+        }
+        
+        // Update UI again after sync completes
+        if (typeof window.updateSyncUI === 'function') {
+            window.updateSyncUI();
         }
     },
     
@@ -117,7 +167,8 @@ const SettingsSync = {
             console.error('Error requesting magic link:', error);
             // Provide more helpful error messages
             if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-                throw new Error('Network error: Unable to connect to sync server. Please check your connection and ensure sync.zenithtracker.org is accessible.');
+                const syncUrl = this.API_BASE_URL.replace('/api', '');
+                throw new Error(`Network error: Unable to connect to sync server at ${syncUrl}. Please check your connection and CORS settings.`);
             }
             throw error;
         }
@@ -145,7 +196,8 @@ const SettingsSync = {
                 body: JSON.stringify({
                     api_key: this.syncApiKey,
                     settings: settings
-                })
+                }),
+                mode: 'cors' // Explicitly enable CORS
             });
             
             const data = await response.json();
@@ -167,6 +219,12 @@ const SettingsSync = {
         } catch (error) {
             console.error('Error syncing settings to server:', error);
             localStorage.setItem('syncLastError', error.message);
+            
+            // Provide more helpful error messages
+            if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                const syncUrl = this.API_BASE_URL.replace('/api', '');
+                throw new Error(`Network error: Unable to connect to sync server at ${syncUrl}. Please check your connection and CORS settings.`);
+            }
             throw error;
         } finally {
             this.syncInProgress = false;
@@ -188,7 +246,8 @@ const SettingsSync = {
                 method: 'GET',
                 headers: {
                     'X-API-Key': this.syncApiKey
-                }
+                },
+                mode: 'cors' // Explicitly enable CORS
             });
             
             const data = await response.json();
@@ -203,18 +262,37 @@ const SettingsSync = {
             }
             
             if (data.settings && Object.keys(data.settings).length > 0) {
+                // Check if we have local settings that might conflict
+                const localSettings = this.getAllSettings();
+                const hasLocalSettings = Object.keys(localSettings).length > 0;
+                
                 // Check for conflicts
                 const localVersion = this.getLocalVersion();
                 const serverVersion = data.version || 0;
                 
-                if (localVersion > 0 && localVersion !== serverVersion) {
+                if (hasLocalSettings && localVersion > 0 && localVersion !== serverVersion) {
                     // Conflict detected - let user decide
                     const useServer = await this.handleSyncConflict(localVersion, serverVersion);
                     if (useServer) {
                         this.applyAllSettings(data.settings);
                     }
+                    // If user chose to keep local, we don't apply server settings
+                } else if (hasLocalSettings && !this.lastSyncTime) {
+                    // New device with local settings but no previous sync
+                    // Ask user what to do
+                    const useServer = confirm(
+                        'You have local settings and server settings available.\n\n' +
+                        'Click OK to use server settings (will overwrite local).\n' +
+                        'Click Cancel to keep local settings and upload them to server.'
+                    );
+                    if (useServer) {
+                        this.applyAllSettings(data.settings);
+                    } else {
+                        // Upload local settings to server
+                        await this.syncSettingsToServer();
+                    }
                 } else {
-                    // No conflict, apply server settings
+                    // No conflict or no local settings, apply server settings
                     this.applyAllSettings(data.settings);
                 }
             }
@@ -227,6 +305,12 @@ const SettingsSync = {
         } catch (error) {
             console.error('Error syncing settings from server:', error);
             localStorage.setItem('syncLastError', error.message);
+            
+            // Provide more helpful error messages
+            if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                const syncUrl = this.API_BASE_URL.replace('/api', '');
+                throw new Error(`Network error: Unable to connect to sync server at ${syncUrl}. Please check your connection and CORS settings.`);
+            }
             throw error;
         } finally {
             this.syncInProgress = false;
@@ -336,9 +420,12 @@ const SettingsSync = {
      */
     updateSyncUI() {
         // This will be called from the UI to update status
-        if (typeof window.updateSyncUI === 'function') {
-            window.updateSyncUI();
-        }
+        // Use setTimeout to ensure DOM is ready
+        setTimeout(() => {
+            if (typeof window.updateSyncUI === 'function') {
+                window.updateSyncUI();
+            }
+        }, 0);
     },
     
     /**
@@ -366,7 +453,8 @@ const SettingsSync = {
                 },
                 body: JSON.stringify({
                     api_key: this.syncApiKey
-                })
+                }),
+                mode: 'cors' // Explicitly enable CORS
             });
             
             const data = await response.json();

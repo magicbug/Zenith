@@ -3765,17 +3765,40 @@ function initSettingsSyncUI() {
             statusEl.textContent = '';
             
             try {
-                // Validate the API key by trying to fetch settings
-                SettingsSync.setApiKey(apiKey);
-                await SettingsSync.syncSettingsFromServer();
+                // First, validate the API key by trying to fetch settings
+                // We'll do a quick validation before setting it
+                const testResponse = await fetch(`${SettingsSync.API_BASE_URL}/get_settings.php?api_key=${encodeURIComponent(apiKey)}`, {
+                    method: 'GET',
+                    headers: {
+                        'X-API-Key': apiKey
+                    },
+                    mode: 'cors'
+                });
+                
+                if (!testResponse.ok) {
+                    if (testResponse.status === 401 || testResponse.status === 403) {
+                        throw new Error('Invalid or revoked API key');
+                    }
+                    const errorData = await testResponse.json().catch(() => ({}));
+                    throw new Error(errorData.error || `API key validation failed (${testResponse.status})`);
+                }
+                
+                // API key is valid, now set it
+                await SettingsSync.setApiKey(apiKey);
                 statusEl.textContent = 'Connected successfully!';
                 statusEl.style.color = 'green';
                 apiKeyInput.value = ''; // Clear the input
+                // Force UI update to show connected state
                 updateSyncUI();
             } catch (error) {
-                SettingsSync.removeApiKey(); // Remove invalid key
+                // Don't set the API key if validation failed
+                if (SettingsSync.isSyncEnabled() && SettingsSync.syncApiKey === apiKey) {
+                    SettingsSync.removeApiKey();
+                }
                 statusEl.textContent = 'Invalid API key: ' + (error.message || 'Please check your API key and try again');
                 statusEl.style.color = 'red';
+                // Update UI to show not connected state
+                updateSyncUI();
             } finally {
                 connectWithApiKeyBtn.disabled = false;
                 connectWithApiKeyBtn.textContent = 'Connect with API Key';

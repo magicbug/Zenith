@@ -85,13 +85,24 @@ function setCorsHeaders() {
         }
     }
     
+    // Check for zenithtracker.org subdomains (web.zenithtracker.org, app.zenithtracker.org, etc.)
+    $isZenithSubdomain = false;
+    if (!empty($origin)) {
+        $hostPart = preg_replace('#^https?://#', '', $origin);
+        $hostPart = preg_replace('/:\d+$/', '', $hostPart);
+        // Check if it's a subdomain of zenithtracker.org
+        if (preg_match('/^([a-z0-9-]+\.)?zenithtracker\.org$/i', $hostPart)) {
+            $isZenithSubdomain = true;
+        }
+    }
+    
     // Determine if origin should be allowed
     $allowOrigin = false;
     if (!empty($origin)) {
         if (in_array($origin, $allowedOrigins)) {
             $allowOrigin = true;
-        } else if ($isLocalhost || $isLocalDomain || $isIpAddress) {
-            // Always allow localhost, .local domains, and IP addresses for development/local network
+        } else if ($isLocalhost || $isLocalDomain || $isIpAddress || $isZenithSubdomain) {
+            // Always allow localhost, .local domains, IP addresses, and zenithtracker.org subdomains
             $allowOrigin = true;
         } else if (defined('ENVIRONMENT') && ENVIRONMENT !== 'production') {
             // In non-production, allow all origins for easier development
@@ -141,7 +152,13 @@ function setCorsHeaders() {
                 $isIpAddressCheck = true;
             }
             
-            $isAllowed = in_array($origin, $allowedOrigins) || $isLocalhostCheck || $isLocalDomainCheck || $isIpAddressCheck || (defined('ENVIRONMENT') && ENVIRONMENT !== 'production');
+            // Check for zenithtracker.org subdomains
+            $isZenithSubdomainCheck = false;
+            if (preg_match('/^([a-z0-9-]+\.)?zenithtracker\.org$/i', $hostPart)) {
+                $isZenithSubdomainCheck = true;
+            }
+            
+            $isAllowed = in_array($origin, $allowedOrigins) || $isLocalhostCheck || $isLocalDomainCheck || $isIpAddressCheck || $isZenithSubdomainCheck || (defined('ENVIRONMENT') && ENVIRONMENT !== 'production');
             
             if ($isAllowed) {
                 // Return the exact origin for preflight
