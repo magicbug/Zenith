@@ -408,9 +408,61 @@ const SettingsSync = {
             }
         }
         
-        // Trigger settings reload in app
-        if (typeof window.reloadSettings === 'function') {
-            window.reloadSettings();
+        // Update UI to reflect synced settings
+        this.updateUIFromLocalStorage();
+    },
+    
+    /**
+     * Update UI elements from localStorage after sync
+     */
+    updateUIFromLocalStorage() {
+        // Call all the load functions to update UI
+        if (typeof loadObserverFromLocalStorage === 'function') {
+            loadObserverFromLocalStorage();
+            if (typeof updateObserverDisplay === 'function') {
+                updateObserverDisplay();
+            }
+        }
+        
+        if (typeof loadSelectedSatellitesFromLocalStorage === 'function') {
+            loadSelectedSatellitesFromLocalStorage();
+        }
+        
+        if (typeof loadHamsAtSettingsFromLocalStorage === 'function') {
+            loadHamsAtSettingsFromLocalStorage();
+        }
+        
+        if (window.ZenithConfig && window.ZenithConfig.enableCsnFeatures) {
+            if (typeof loadCsnSatSettingsFromLocalStorage === 'function') {
+                loadCsnSatSettingsFromLocalStorage();
+            }
+        }
+        
+        if (typeof loadQTRigDopplerSettingsFromLocalStorage === 'function') {
+            loadQTRigDopplerSettingsFromLocalStorage();
+        }
+        
+        if (typeof loadCloudlogSettingsFromLocalStorage === 'function') {
+            loadCloudlogSettingsFromLocalStorage();
+        }
+        
+        if (typeof loadAPRSSettingsFromLocalStorage === 'function') {
+            loadAPRSSettingsFromLocalStorage();
+        }
+        
+        if (typeof loadSpeechSettings === 'function') {
+            loadSpeechSettings();
+        }
+        
+        // Update button visibility
+        if (typeof updateSatPanelButtonVisibility === 'function') {
+            updateSatPanelButtonVisibility();
+        }
+        if (typeof updateQTRigDopplerButtonVisibility === 'function') {
+            updateQTRigDopplerButtonVisibility();
+        }
+        if (typeof updateAPRSButtonVisibility === 'function') {
+            updateAPRSButtonVisibility();
         }
     },
     
