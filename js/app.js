@@ -560,7 +560,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 utterance.rate = speechRate;
                 utterance.pitch = speechPitch;
                 utterance.volume = speechVolume;
-                speechSynthesis.speak(utterance);
+                setTimeout(() => speechSynthesis.speak(utterance), 100);
             }
         });
     }
@@ -2033,8 +2033,10 @@ function loadSpeechVoices() {
 }
 
 function formatSatelliteNameForSpeech(satName) {
+    if (typeof satName !== 'string') return satName;
+    const trimmed = satName.trim();
     // Say "International Space Station" for ISS
-    if (typeof satName === 'string' && satName.trim().toUpperCase() === 'ISS') {
+    if (trimmed.toUpperCase() === 'ISS') {
         return 'International Space Station';
     }
     if (speechUseNatoPhonetics) {
@@ -2051,7 +2053,7 @@ function formatSatelliteNameForSpeech(satName) {
             '.': 'Point', '_': 'Underscore'
         };
         
-        return satName.split('').map(char => {
+        return trimmed.split('').map(char => {
             const upperChar = char.toUpperCase();
             // Skip dashes/hyphens in NATO phonetics mode
             if (char === '-' || char === '–' || char === '—') {
@@ -2062,7 +2064,7 @@ function formatSatelliteNameForSpeech(satName) {
     } else {
         // Break up the satellite name character by character with spaces
         // e.g., "AO-91" becomes "A O - 9 1"
-        return satName.split('').join(' ');
+        return trimmed.split('').join(' ');
     }
 }
 
@@ -2093,21 +2095,20 @@ function announcePassStart(pass) {
     // Create announcement text
     const announcement = `${formattedSatName} is rising`;
     
-    // Create utterance
+    // Short delay after cancel() so the engine is ready - avoids clipping the first word (browser quirk)
     const utterance = new SpeechSynthesisUtterance(announcement);
-    
-    // Set voice
     if (speechVoice) {
         utterance.voice = speechVoice;
     }
-    
-    // Set speech parameters
     utterance.rate = speechRate;
     utterance.pitch = speechPitch;
     utterance.volume = speechVolume;
     
-    // Speak
-    speechSynthesis.speak(utterance);
+    setTimeout(() => {
+        if (speechSynthesis) {
+            speechSynthesis.speak(utterance);
+        }
+    }, 100);
 }
 
 // Function to highlight a satellite briefly
