@@ -932,6 +932,10 @@
                     <div class="form-group">
                         <label for="sked-min-elevation">Minimum Elevation (°):</label>
                         <select id="sked-min-elevation">
+                            <option value="-3">-3°</option>
+                            <option value="-2">-2°</option>
+                            <option value="-1">-1°</option>
+                            <option value="0">0°</option>
                             <option value="1">1°</option>
                             <option value="2">2°</option>
                             <option value="3">3°</option>
@@ -939,6 +943,13 @@
                             <option value="10">10°</option>
                             <option value="15">15°</option>
                             <option value="20">20°</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="sked-timezone">Show times in:</label>
+                        <select id="sked-timezone">
+                            <option value="local" selected>Local</option>
+                            <option value="utc">UTC</option>
                         </select>
                     </div>
                     <button id="refresh-sked-planning" class="refresh-button">Find Mutual Passes</button>

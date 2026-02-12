@@ -85,6 +85,23 @@ A modern web-based satellite tracking application designed for amateur radio ope
 - Requires public SSL certificate
 - May require additional configuration for S.A.T integration
 
+## Local development
+
+To run Zenith on your machine for development or testing:
+
+1. **Requirements:** PHP 7.4+ (with CLI) installed and on your PATH.
+2. **From the project root**, start PHP’s built-in web server:
+   ```bash
+   php -S localhost:8000
+   ```
+3. **In your browser** open: **http://localhost:8000**
+
+Notes:
+- The app will load over HTTP. Some features (e.g. geolocation, notifications) may require HTTPS or user approval in the browser.
+- API routes (e.g. `api/fetch_tle.php`) work as long as you use the same origin (e.g. `http://localhost:8000`).
+- To use another port, change `8000` (e.g. `php -S localhost:9000`).
+- To listen on all interfaces: `php -S 0.0.0.0:8000` (then use your machine’s IP from other devices).
+
 ## Getting Started
 
 1. **Server Setup**

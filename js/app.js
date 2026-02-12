@@ -1900,7 +1900,6 @@ function displayPasses(passes, container, visibleSats = []) {
             </div>
         `;
         // Add countdown timer if pass is within 10 minutes
-        const msToStart = pass.start - now;
         let countdownDiv = null;
         if (!isActive && msToStart > 0 && msToStart <= 10 * 60 * 1000) {
             countdownDiv = document.createElement('div');

@@ -238,6 +238,36 @@ function formatDateTimeWithDate(date) {
     return `${day} ${hours}:${minutes}`;
 }
 
+// Format date/time for Sked table: Local or UTC based on user preference
+function formatDateTimeSked(date) {
+    const select = document.getElementById('sked-timezone');
+    const useUtc = select && select.value === 'utc';
+    const now = new Date();
+    if (useUtc) {
+        const day = date.getUTCDate();
+        const month = date.getUTCMonth() + 1;
+        const year = date.getUTCFullYear();
+        const isToday = day === now.getUTCDate() && date.getUTCMonth() === now.getUTCMonth() && year === now.getUTCFullYear();
+        const tomorrowUtc = new Date(now);
+        tomorrowUtc.setUTCDate(tomorrowUtc.getUTCDate() + 1);
+        const isTomorrow = day === tomorrowUtc.getUTCDate() && date.getUTCMonth() === tomorrowUtc.getUTCMonth() && year === tomorrowUtc.getUTCFullYear();
+        const dayLabel = isToday ? 'Today' : isTomorrow ? 'Tomorrow' :
+            `${day}/${month.toString().padStart(2, '0')}/${year.toString().substring(2)}`;
+        const hours = date.getUTCHours().toString().padStart(2, '0');
+        const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+        return `${dayLabel} ${hours}:${minutes} UTC`;
+    }
+    const isToday = date.getDate() === now.getDate() && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const isTomorrow = date.getDate() === tomorrow.getDate() && date.getMonth() === tomorrow.getMonth() && date.getFullYear() === tomorrow.getFullYear();
+    const dayLabel = isToday ? 'Today' : isTomorrow ? 'Tomorrow' :
+        `${date.getDate()}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear().toString().substring(2)}`;
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${dayLabel} ${hours}:${minutes}`;
+}
+
 // Get a styled status label for a pass
 function getPassStatusLabel(pass, now) {
     const isActive = now >= pass.start && now <= pass.end;
@@ -301,8 +331,16 @@ document.addEventListener('DOMContentLoaded', () => {
         SKED_PREDICTION_DAYS = parseInt(skedDaysSelect.value);
     });
     skedMinElevationSelect.addEventListener('change', () => {
-        SKED_MIN_ELEVATION = parseInt(skedMinElevationSelect.value);
+        SKED_MIN_ELEVATION = parseInt(skedMinElevationSelect.value, 10);
     });
+    const skedTimezoneSelect = document.getElementById('sked-timezone');
+    if (skedTimezoneSelect) {
+        skedTimezoneSelect.addEventListener('change', () => {
+            if (allSkedPasses && allSkedPasses.length > 0) {
+                filterSkedPlanningTable();
+            }
+        });
+    }
     refreshSkedPlanningBtn.addEventListener('click', generateSkedPlanningTable);
 });
 
@@ -608,9 +646,9 @@ function filterSkedPlanningTable() {
             row.classList.add('pass-upcoming');
         }
         
-        // Format dates
-        const startDateTime = formatDateTimeWithDate(pass.start);
-        const endDateTime = formatDateTimeWithDate(pass.end);
+        // Format dates (Local or UTC per user preference)
+        const startDateTime = formatDateTimeSked(pass.start);
+        const endDateTime = formatDateTimeSked(pass.end);
         
         // Create Google Calendar link
         const calendarLink = createGoogleCalendarLink(pass);
