@@ -1914,12 +1914,17 @@ function displayPasses(passes, container, visibleSats = []) {
     filteredPasses.forEach(pass => {
         const passItem = document.createElement('div');
         passItem.className = 'pass-item';
-        let isActive = now >= pass.start && now <= pass.end;
-        // Align with sat info: if sat is above horizon in real time near this pass, treat as active
         const msToStart = pass.start - now;
-        if (!isActive && msToStart <= 5 * 60 * 1000 && msToStart > -2 * 60 * 1000 && now <= pass.end) {
+        const inPassWindow = now >= pass.start && now <= pass.end;
+        const nearPassWindow = msToStart <= 5 * 60 * 1000 && msToStart > -2 * 60 * 1000 && now <= pass.end;
+        let isActive = false;
+        if (inPassWindow || nearPassWindow) {
             const lookAngles = calculateLookAngles(pass.satellite);
-            if (lookAngles && lookAngles.elevation >= 0) isActive = true;
+            if (lookAngles !== null) {
+                isActive = lookAngles.elevation >= 0 && now <= pass.end && now >= pass.start - 5 * 60 * 1000;
+            } else if (inPassWindow) {
+                isActive = true;
+            }
         }
         const isVisible = visibleSats.includes(pass.satellite);
         const timeToPass = (pass.start - now) / (60 * 1000);
@@ -2048,12 +2053,14 @@ window.passCountdownInterval = setInterval(() => {
             return false;
         }
         const msToStart = obj.pass.start - now;
-        let isActive = now >= obj.pass.start && now <= obj.pass.end;
-        // If we're near predicted start but not yet "active" by time, check real-time elevation
-        // so countdown/announcement match when sat is actually above horizon (fixes 1-min step lag)
-        if (!isActive && msToStart <= 5 * 60 * 1000 && msToStart > -2 * 60 * 1000 && now <= obj.pass.end) {
+        const inPassWindow = now >= obj.pass.start && now <= obj.pass.end;
+        const nearPassWindow = msToStart <= 5 * 60 * 1000 && msToStart > -2 * 60 * 1000 && now <= obj.pass.end;
+        let isActive = false;
+        if (inPassWindow || nearPassWindow) {
             const lookAngles = calculateLookAngles(obj.pass.satellite);
-            if (lookAngles && lookAngles.elevation >= 0) {
+            if (lookAngles !== null) {
+                isActive = lookAngles.elevation >= 0 && now <= obj.pass.end && now >= obj.pass.start - 5 * 60 * 1000;
+            } else if (inPassWindow) {
                 isActive = true;
             }
         }
