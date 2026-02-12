@@ -1831,7 +1831,13 @@ function displayPasses(passes, container, visibleSats = []) {
     filteredPasses.forEach(pass => {
         const passItem = document.createElement('div');
         passItem.className = 'pass-item';
-        const isActive = now >= pass.start && now <= pass.end;
+        let isActive = now >= pass.start && now <= pass.end;
+        // Align with sat info: if sat is above horizon in real time near this pass, treat as active
+        const msToStart = pass.start - now;
+        if (!isActive && msToStart <= 5 * 60 * 1000 && msToStart > -2 * 60 * 1000 && now <= pass.end) {
+            const lookAngles = calculateLookAngles(pass.satellite);
+            if (lookAngles && lookAngles.elevation >= 0) isActive = true;
+        }
         const isVisible = visibleSats.includes(pass.satellite);
         const timeToPass = (pass.start - now) / (60 * 1000);
 
@@ -1948,6 +1954,7 @@ function displayPasses(passes, container, visibleSats = []) {
 }
 
 // Enhanced interval: check all passes for countdown eligibility every second
+// Use real-time elevation so "Passing" and announcements align with sat actually above horizon
 window.passCountdownInterval = setInterval(() => {
     const now = new Date();
     // Remove ended passes from DOM and from _allPassItems
@@ -1958,9 +1965,16 @@ window.passCountdownInterval = setInterval(() => {
             }
             return false;
         }
-        // If pass is now within 10 minutes and doesn't have a countdown, add it
         const msToStart = obj.pass.start - now;
-        const isActive = now >= obj.pass.start && now <= obj.pass.end;
+        let isActive = now >= obj.pass.start && now <= obj.pass.end;
+        // If we're near predicted start but not yet "active" by time, check real-time elevation
+        // so countdown/announcement match when sat is actually above horizon (fixes 1-min step lag)
+        if (!isActive && msToStart <= 5 * 60 * 1000 && msToStart > -2 * 60 * 1000 && now <= obj.pass.end) {
+            const lookAngles = calculateLookAngles(obj.pass.satellite);
+            if (lookAngles && lookAngles.elevation >= 0) {
+                isActive = true;
+            }
+        }
         if (!isActive && msToStart > 0 && msToStart <= 10 * 60 * 1000 && !obj.countdownDiv) {
             // Add countdown div
             const countdownDiv = document.createElement('div');
@@ -2239,7 +2253,21 @@ function predictPasses(satrec, observer, startTime, endTime) {
             } else if (currentPass) {
                 // End of a pass when satellite goes below horizon
                 currentPass.end = new Date(time);
-                
+                // Refine rise time: step backward from start in 10s steps so countdown matches horizon
+                const stepSec = 10;
+                let t = new Date(currentPass.start.getTime());
+                const stepMs = stepSec * 1000;
+                while (t.getTime() > startTime.getTime()) {
+                    const prev = new Date(t.getTime() - stepMs);
+                    const pv = satellite.propagate(satrec, prev);
+                    if (pv.position) {
+                        const g = satellite.gstime(prev);
+                        const la = satellite.ecfToLookAngles(observerGd, satellite.eciToEcf(pv.position, g));
+                        if ((la.elevation * 180 / Math.PI) < 0) break;
+                    }
+                    t = prev;
+                }
+                currentPass.start = new Date(t);
                 // Only include pass if it ever went above the user's minimum elevation
                 if (currentPass.aboveMinElevation) {
                     passes.push(currentPass);
@@ -2254,6 +2282,21 @@ function predictPasses(satrec, observer, startTime, endTime) {
     // If we have an ongoing pass at the end time, add it
     if (currentPass) {
         currentPass.end = new Date(endTime);
+        // Refine rise time (same as above)
+        const stepSec = 10;
+        let t = new Date(currentPass.start.getTime());
+        const stepMs = stepSec * 1000;
+        while (t.getTime() > startTime.getTime()) {
+            const prev = new Date(t.getTime() - stepMs);
+            const pv = satellite.propagate(satrec, prev);
+            if (pv.position) {
+                const g = satellite.gstime(prev);
+                const la = satellite.ecfToLookAngles(observerGd, satellite.eciToEcf(pv.position, g));
+                if ((la.elevation * 180 / Math.PI) < 0) break;
+            }
+            t = prev;
+        }
+        currentPass.start = new Date(t);
         if (currentPass.aboveMinElevation) {
             passes.push(currentPass);
         }
