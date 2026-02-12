@@ -2033,6 +2033,10 @@ function loadSpeechVoices() {
 }
 
 function formatSatelliteNameForSpeech(satName) {
+    // Say "International Space Station" for ISS
+    if (typeof satName === 'string' && satName.trim().toUpperCase() === 'ISS') {
+        return 'International Space Station';
+    }
     if (speechUseNatoPhonetics) {
         // Use NATO phonetics
         const natoPhonetics = {
