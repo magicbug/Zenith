@@ -1,6 +1,6 @@
-const CACHE_NAME = 'zenith-v1.1.22';
-const STATIC_CACHE = 'zenith-static-v2.22';
-const DATA_CACHE = 'zenith-data-v22';
+const CACHE_NAME = 'zenith-v1.1.23';
+const STATIC_CACHE = 'zenith-static-v2.23';
+const DATA_CACHE = 'zenith-data-v23';
 
 // Files to cache immediately
 const STATIC_FILES = [
@@ -26,12 +26,19 @@ const STATIC_FILES = [
   '/assets/pwa_icons/windows/SplashScreen.scale-100.png'
 ];
 
-// Install event - cache static assets
+// Install event - cache static assets (don't skipWaiting; let page trigger it for force update)
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(STATIC_CACHE)
       .then((cache) => cache.addAll(STATIC_FILES))
   );
+});
+
+// Allow page to request activation of a waiting update
+self.addEventListener('message', (event) => {
+  if (event.data === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 // Activate event - clean up old caches

@@ -1,12 +1,13 @@
 // Global variables
-// Service Worker Registration
+// Service Worker Registration (store for force-update in Options)
+let swRegistration = null;
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
             .then(registration => {
+                swRegistration = registration;
                 console.log('ServiceWorker registration successful with scope: ', registration.scope);
                 
-                // Check for updates
                 registration.addEventListener('updatefound', () => {
                     const newWorker = registration.installing;
                     console.log('New service worker installing...');
@@ -14,7 +15,9 @@ if ('serviceWorker' in navigator) {
                     newWorker.addEventListener('statechange', () => {
                         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                             console.log('New content is available; please refresh.');
-                            // You could show a "New version available" notification here
+                            if (typeof showNotification === 'function') {
+                                showNotification('Update available', 'A new version is ready. Use Options → General → Check for updates to reload.');
+                            }
                         }
                     });
                 });
@@ -23,6 +26,80 @@ if ('serviceWorker' in navigator) {
                 console.log('ServiceWorker registration failed: ', err);
             });
     });
+}
+
+// Clear all Zenith PWA caches (so next load fetches fresh content)
+function clearZenithCaches() {
+    if (!('caches' in window)) return Promise.resolve();
+    return caches.keys().then((names) => {
+        return Promise.all(
+            names.filter((name) => name.startsWith('zenith-')).map((name) => caches.delete(name))
+        );
+    });
+}
+
+// Force PWA update: clear caches, check for new service worker, reload when available
+function checkForPwaUpdate() {
+    if (!('serviceWorker' in navigator) || !swRegistration) {
+        if (typeof showNotification === 'function') {
+            showNotification('Updates', 'Service worker not available (e.g. not HTTPS or not supported).');
+        }
+        return;
+    }
+    const btn = document.getElementById('pwa-check-updates');
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Clearing cache & checking...';
+    }
+    const done = (message, isError) => {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'Check for updates';
+        }
+        if (typeof showNotification === 'function' && message) {
+            showNotification(isError ? 'Update check' : 'Updates', message);
+        }
+    };
+    const tryActivateWaiting = (worker) => {
+        if (!worker) return;
+        const onControllerChange = () => {
+            navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
+            if (typeof showNotification === 'function') {
+                showNotification('Updates', 'Reloading to apply update...');
+            }
+            window.location.reload();
+        };
+        navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
+        worker.postMessage('SKIP_WAITING');
+    };
+    const runUpdateCheck = () => {
+        if (swRegistration.waiting) {
+            tryActivateWaiting(swRegistration.waiting);
+            return;
+        }
+        let resolved = false;
+        swRegistration.addEventListener('updatefound', function onUpdateFound() {
+            swRegistration.removeEventListener('updatefound', onUpdateFound);
+            const newWorker = swRegistration.installing;
+            newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && swRegistration.waiting) {
+                    resolved = true;
+                    tryActivateWaiting(swRegistration.waiting);
+                }
+            });
+        });
+        swRegistration.update().catch(() => {
+            if (!resolved) done('Update check failed.', true);
+        });
+        setTimeout(() => {
+            if (!resolved && !swRegistration.waiting) {
+                resolved = true;
+                done('Cache cleared. You are on the latest version.');
+            }
+        }, 2500);
+    };
+    // Clear all Zenith caches first, then check for update / reload
+    clearZenithCaches().then(runUpdateCheck);
 }
 
 // let map; // Remove Leaflet map instance
@@ -489,6 +566,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const testNotificationBtn = document.getElementById('test-notification');
     if (testNotificationBtn) {
         testNotificationBtn.addEventListener('click', showTestNotification);
+    }
+    
+    // PWA force-update button
+    const checkForUpdatesBtn = document.getElementById('pwa-check-updates');
+    if (checkForUpdatesBtn) {
+        checkForUpdatesBtn.addEventListener('click', checkForPwaUpdate);
     }
     
     // Speech settings event listeners
