@@ -151,7 +151,7 @@ const FOOTPRINT_POINTS = 36; // Number of points to draw the footprint circle
 
 // Add to your global variables at the top of the file
 let satInfoUpdateInterval = null;
-const SAT_INFO_UPDATE_INTERVAL_MS = 1000; // Updates every second
+const SAT_INFO_UPDATE_INTERVAL_MS = 500; // Updates twice per second for closer match to real-time elevation
 let currentInfoSatellite = null;
 // Add throttling variables
 let lastPositionUpdate = 0;
@@ -1486,29 +1486,18 @@ function updateSatelliteInfoDisplay(satName) {
         // Use cached position data if available and recent
         let position, lookAngles, inEclipse;
         
-        if (window.satPositionCache && 
-            window.satPositionCache[satName] && 
-            (new Date() - window.satPositionCache[satName].timestamp) < 1000) {
-            // Use cached data if less than 2 seconds old
-            position = window.satPositionCache[satName].position;
-            lookAngles = window.satPositionCache[satName].lookAngles;
-            inEclipse = window.satPositionCache[satName].inEclipse;
-        } else {
-            // Calculate new data
-            position = getSatellitePosition(satName);
-            // Only calculate look angles if position is available
-            lookAngles = position ? calculateLookAngles(satName) : null;
-            inEclipse = position ? isInEclipse(satName) : null;
-            
-            // Cache the results
-            if (!window.satPositionCache) window.satPositionCache = {};
-            window.satPositionCache[satName] = {
-                position: position,
-                lookAngles: lookAngles,
-                inEclipse: inEclipse,
-                timestamp: new Date()
-            };
-        }
+        // Always compute fresh position/look angles for the info panel so elevation
+        // matches real time (avoids ~0.3° lag from cache when comparing to other apps)
+        position = getSatellitePosition(satName);
+        lookAngles = position ? calculateLookAngles(satName) : null;
+        inEclipse = position ? isInEclipse(satName) : null;
+        if (!window.satPositionCache) window.satPositionCache = {};
+        window.satPositionCache[satName] = {
+            position: position,
+            lookAngles: lookAngles,
+            inEclipse: inEclipse,
+            timestamp: new Date()
+        };
     
         // Calculate these only once per display update
         const orbitalSpeed = calculateOrbitalSpeed(satName);
