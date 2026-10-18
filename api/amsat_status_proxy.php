@@ -3,8 +3,6 @@
 
 // Get POST data
 $postData = json_decode(file_get_contents('php://input'), true);
-file_put_contents('debug_log.txt', "=== New Request ===\n", FILE_APPEND);
-file_put_contents('debug_log.txt', "Raw POST data: " . print_r($postData, true) . "\n", FILE_APPEND);
 
 // Define required fields
 $requiredFields = ['satName', 'status', 'date', 'callsign', 'gridSquare'];
@@ -55,14 +53,6 @@ $urlParams = [
 
 
 $url = 'https://amsat.org/status/submit.php?' . http_build_query($urlParams);
-
-file_put_contents('debug_log.txt', "=== AMSAT URL Details ===\n", FILE_APPEND);
-file_put_contents('debug_log.txt', "Full URL: " . $url . "\n", FILE_APPEND);
-file_put_contents('debug_log.txt', "URL Parameters:\n", FILE_APPEND);
-foreach ($urlParams as $key => $value) {
-    file_put_contents('debug_log.txt', "$key: $value\n", FILE_APPEND);
-}
-file_put_contents('debug_log.txt', "========================\n", FILE_APPEND);
 
 // Initialize cURL session
 $ch = curl_init($url);
