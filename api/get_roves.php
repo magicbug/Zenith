@@ -42,8 +42,8 @@ $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
 // Check for errors
 if (curl_errno($ch)) {
-    $error = curl_error($ch);
-    echo json_encode(['error' => 'cURL error: ' . $error]);
+    http_response_code(502);
+    echo json_encode(['error' => 'Unable to fetch alerts']);
     exit();
 }
 

@@ -63,8 +63,7 @@ curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
 curl_setopt($ch, CURLOPT_HTTPHEADER, [
     'Content-Type: application/json',
 ]);
-curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+proxy_apply_cloudlog_tls_verify($ch);
 
 proxy_apply_curl_http_restrictions($ch);
 proxy_apply_curl_resolve($ch, $validated);
@@ -73,10 +72,9 @@ $response = curl_exec($ch);
 $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
 if (curl_errno($ch)) {
-    $error = 'CURL error: ' . curl_error($ch);
     curl_close($ch);
-    http_response_code(500);
-    echo json_encode(['error' => $error]);
+    http_response_code(502);
+    echo json_encode(['error' => 'Unable to reach Cloudlog']);
     exit();
 }
 
