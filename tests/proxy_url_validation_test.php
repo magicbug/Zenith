@@ -38,6 +38,30 @@ function test_accept(string $url, string $expectedBase, string $name): void
     $passed++;
 }
 
+function test_ip_blocked(string $ip, string $name): void
+{
+    global $passed, $failed;
+    if (proxy_is_blocked_ip($ip)) {
+        echo "PASS blocked ip: $name\n";
+        $passed++;
+        return;
+    }
+    echo "FAIL blocked ip: $name (expected blocked)\n";
+    $failed++;
+}
+
+function test_ip_allowed(string $ip, string $name): void
+{
+    global $passed, $failed;
+    if (!proxy_is_blocked_ip($ip)) {
+        echo "PASS allowed ip: $name\n";
+        $passed++;
+        return;
+    }
+    echo "FAIL allowed ip: $name (expected allowed)\n";
+    $failed++;
+}
+
 test_reject('file:///etc/passwd', 'file scheme');
 test_reject('file:///etc/passwd#', 'file scheme with fragment');
 test_reject('gopher://127.0.0.1:70/', 'gopher scheme');
@@ -50,6 +74,20 @@ test_reject('https://[::1]/cloudlog', 'loopback IPv6');
 test_reject('http://169.254.169.254/', 'link-local metadata');
 test_reject('http://user:pass@192.168.1.1/', 'userinfo in URL');
 test_reject('ftp://192.168.1.1/', 'ftp scheme');
+test_reject('http://0.1.2.3/', '0.0.0.0/8');
+test_reject('http://2130706433/', 'decimal loopback host');
+test_reject('http://0x7f.0.0.1/', 'hex octet host');
+test_reject('http://0177.0.0.1/', 'octal octet host');
+test_reject('http://0x7f.1/', 'hex dotted host');
+test_reject('https://example.com/foo%5Cbar', 'backslash in decoded path');
+test_reject('https://example.com/foo%20bar', 'space in decoded path');
+test_reject('https://example.com/foo@bar', 'at-sign in path');
+
+test_ip_blocked('::ffff:127.0.0.1', 'mapped loopback');
+test_ip_blocked('::ffff:169.254.169.254', 'mapped link-local');
+test_ip_blocked('::127.0.0.1', 'compatible loopback');
+test_ip_allowed('64:ff9b::192.0.2.1', 'NAT64 public embed');
+test_ip_blocked('64:ff9b::127.0.0.1', 'NAT64 loopback embed');
 
 test_accept('https://192.168.1.50/cloudlog/', 'https://192.168.1.50/cloudlog', 'LAN IPv4 with subdirectory');
 test_accept('http://10.0.0.5', 'http://10.0.0.5', 'LAN 10/8');

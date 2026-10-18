@@ -60,7 +60,11 @@ function proxy_validate_base_url(string $input): array
         return ['error' => 'Invalid URL'];
     }
 
-    $path = isset($parts['path']) ? proxy_normalize_path($parts['path']) : '';
+    $rawPath = isset($parts['path']) ? $parts['path'] : '';
+    $path = proxy_normalize_path(proxy_url_decode_for_inspection($rawPath));
+    if (!proxy_validate_path_chars($path)) {
+        return ['error' => 'Invalid URL'];
+    }
 
     $resolve = proxy_resolve_and_filter_host($host);
     if (isset($resolve['error'])) {
@@ -134,11 +138,60 @@ function proxy_is_valid_host(string $host): bool
         return false;
     }
 
-    if (filter_var($host, FILTER_VALIDATE_IP)) {
-        return true;
+    if (strpbrk($host, "\\@") !== false) {
+        return false;
+    }
+
+    if (proxy_host_uses_obfuscated_ipv4($host)) {
+        return false;
+    }
+
+    if (filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+        return !proxy_is_blocked_ip($host);
+    }
+
+    if (filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+        return !proxy_is_blocked_ip($host);
     }
 
     return (bool) preg_match('/^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/', $host);
+}
+
+function proxy_validate_path_chars(string $path): bool
+{
+    if ($path === '') {
+        return true;
+    }
+
+    return (bool) preg_match('#^/[a-zA-Z0-9\-._~]*(/[a-zA-Z0-9\-._~]*)*$#', $path);
+}
+
+function proxy_host_uses_obfuscated_ipv4(string $host): bool
+{
+    if (preg_match('/^\d+$/', $host)) {
+        return true;
+    }
+
+    if (!str_contains($host, '.')) {
+        return false;
+    }
+
+    foreach (explode('.', $host) as $label) {
+        if ($label === '') {
+            return true;
+        }
+        if (preg_match('/^0x[0-9a-fA-F]+$/', $label)) {
+            return true;
+        }
+        if (preg_match('/^0[0-7]+$/', $label)) {
+            return true;
+        }
+        if (preg_match('/^0\d+$/', $label)) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 /**
@@ -201,52 +254,106 @@ function proxy_pick_resolve_ip(array $ips): string
 function proxy_is_blocked_ip(string $ip): bool
 {
     if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
-        $long = ip2long($ip);
-        if ($long === false) {
-            return true;
-        }
-
-        if ($long === 0) {
-            return true;
-        }
-
-        // 127.0.0.0/8
-        if (($long & 0xFF000000) === 0x7F000000) {
-            return true;
-        }
-
-        // 169.254.0.0/16 (link-local / cloud metadata)
-        if (($long & 0xFFFF0000) === 0xA9FE0000) {
-            return true;
-        }
-
-        return false;
+        return proxy_is_blocked_ipv4($ip);
     }
 
     if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
-        $bin = inet_pton($ip);
-        if ($bin === false) {
-            return true;
-        }
-
-        if ($bin === inet_pton('::1') || $bin === inet_pton('::')) {
-            return true;
-        }
-
-        $bytes = unpack('C*', $bin);
-        if ($bytes === false) {
-            return true;
-        }
-
-        // fe80::/10
-        if ($bytes[1] === 0xfe && ($bytes[2] & 0xc0) === 0x80) {
-            return true;
-        }
-
-        return false;
+        return proxy_is_blocked_ipv6($ip);
     }
 
     return true;
+}
+
+function proxy_is_blocked_ipv4(string $ip): bool
+{
+    $packed = inet_pton($ip);
+    if ($packed === false || strlen($packed) !== 4) {
+        return true;
+    }
+
+    $long = unpack('N', $packed)[1];
+
+    // 0.0.0.0/8
+    if (($long & 0xFF000000) === 0) {
+        return true;
+    }
+
+    // 127.0.0.0/8
+    if (($long & 0xFF000000) === 0x7F000000) {
+        return true;
+    }
+
+    // 169.254.0.0/16 (link-local / cloud metadata)
+    if (($long & 0xFFFF0000) === 0xA9FE0000) {
+        return true;
+    }
+
+    return false;
+}
+
+function proxy_is_blocked_ipv6(string $ip): bool
+{
+    $bin = inet_pton($ip);
+    if ($bin === false || strlen($bin) !== 16) {
+        return true;
+    }
+
+    if ($bin === inet_pton('::1') || $bin === inet_pton('::')) {
+        return true;
+    }
+
+    $bytes = array_values(unpack('C*', $bin));
+
+    // fe80::/10
+    if ($bytes[0] === 0xfe && ($bytes[1] & 0xc0) === 0x80) {
+        return true;
+    }
+
+    $embedded = proxy_extract_embedded_ipv4_from_ipv6_bytes($bytes);
+    if ($embedded !== null && proxy_is_blocked_ipv4($embedded)) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * @param list<int> $bytes 16 byte values 0-255
+ */
+function proxy_extract_embedded_ipv4_from_ipv6_bytes(array $bytes): ?string
+{
+    if (count($bytes) !== 16) {
+        return null;
+    }
+
+    $v4Bytes = null;
+
+    // IPv4-mapped: ::ffff:x.x.x.x (80 zero bits + 16-bit ffff prefix + IPv4)
+    if (array_slice($bytes, 0, 10) === array_fill(0, 10, 0)
+        && $bytes[10] === 0xff
+        && $bytes[11] === 0xff) {
+        $v4Bytes = array_slice($bytes, 12, 4);
+    }
+
+    // NAT64 well-known prefix 64:ff9b::/96
+    $nat64Prefix = [0x00, 0x64, 0xff, 0x9b, 0, 0, 0, 0, 0, 0, 0, 0];
+    if ($v4Bytes === null && array_slice($bytes, 0, 12) === $nat64Prefix) {
+        $v4Bytes = array_slice($bytes, 12, 4);
+    }
+
+    // IPv4-compatible (deprecated): ::w.x.y.z (exclude :: and ::1 handled above)
+    if ($v4Bytes === null && array_slice($bytes, 0, 12) === array_fill(0, 12, 0)) {
+        $tail = array_slice($bytes, 12, 4);
+        if ($tail !== [0, 0, 0, 0] && $tail !== [0, 0, 0, 1]) {
+            $v4Bytes = $tail;
+        }
+    }
+
+    if ($v4Bytes === null) {
+        return null;
+    }
+
+    return implode('.', array_map('strval', $v4Bytes));
 }
 
 function proxy_apply_curl_http_restrictions($ch): void
@@ -268,6 +375,13 @@ function proxy_apply_curl_http_restrictions($ch): void
  */
 function proxy_apply_curl_resolve($ch, array $validated): void
 {
-    $entry = $validated['host'] . ':' . $validated['port'] . ':' . $validated['resolve_ip'];
+    $resolveIp = $validated['resolve_ip'];
+    if (filter_var($resolveIp, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+        $address = '[' . $resolveIp . ']';
+    } else {
+        $address = $resolveIp;
+    }
+
+    $entry = $validated['host'] . ':' . $validated['port'] . ':' . $address;
     curl_setopt($ch, CURLOPT_RESOLVE, [$entry]);
 }
