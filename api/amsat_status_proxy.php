@@ -1,5 +1,9 @@
 <?php
-// File: api/amsat-status-proxy.php
+
+ini_set('display_errors', '0');
+error_reporting(E_ALL);
+
+header('Content-Type: application/json');
 
 // Get POST data
 $postData = json_decode(file_get_contents('php://input'), true);
@@ -57,18 +61,21 @@ $url = 'https://amsat.org/status/submit.php?' . http_build_query($urlParams);
 // Initialize cURL session
 $ch = curl_init($url);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // For testing only
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
 $response = curl_exec($ch);
 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 $error = curl_error($ch);
 curl_close($ch);
 
-// Return result to the client
+if ($error !== '') {
+    http_response_code(502);
+    echo json_encode(['error' => 'Unable to submit AMSAT status']);
+    exit;
+}
+
 http_response_code($httpCode);
 echo json_encode([
     'status' => $httpCode,
-    'url' => $url,
     'response' => $response,
-    'error' => $error,
-    'data' => $postData
 ]);

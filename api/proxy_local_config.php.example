@@ -1,0 +1,11 @@
+<?php
+/**
+ * Optional operator overrides for api proxy endpoints.
+ *
+ * Copy this file to proxy_local_config.php (not committed). Never expose these
+ * settings to HTTP clients.
+ */
+
+// Set true only if this server must reach Cloudlog over HTTPS with a self-signed
+// certificate. Plain http:// LAN installs are unaffected. Default: verified TLS.
+// define('CLOUDLOG_PROXY_INSECURE_SSL', true);

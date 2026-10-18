@@ -2,3 +2,4 @@
 api/debug_log.txt
 api/*.log
 debug_log.txt
+api/proxy_local_config.php

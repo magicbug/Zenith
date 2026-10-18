@@ -356,6 +356,30 @@ function proxy_extract_embedded_ipv4_from_ipv6_bytes(array $bytes): ?string
     return implode('.', array_map('strval', $v4Bytes));
 }
 
+function proxy_load_local_config(): void
+{
+    static $loaded = false;
+    if ($loaded) {
+        return;
+    }
+    $localConfig = __DIR__ . '/proxy_local_config.php';
+    if (is_file($localConfig)) {
+        require_once $localConfig;
+    }
+    $loaded = true;
+}
+
+/**
+ * TLS verification for outbound HTTPS from Cloudlog proxy (operator opt-out only).
+ */
+function proxy_apply_cloudlog_tls_verify($ch): void
+{
+    proxy_load_local_config();
+    $insecure = defined('CLOUDLOG_PROXY_INSECURE_SSL') && CLOUDLOG_PROXY_INSECURE_SSL;
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, !$insecure);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, $insecure ? 0 : 2);
+}
+
 function proxy_apply_curl_http_restrictions($ch): void
 {
     if (defined('CURLOPT_PROTOCOLS_STR')) {
